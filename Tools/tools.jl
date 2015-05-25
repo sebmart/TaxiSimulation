@@ -6,7 +6,7 @@
 function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
                                        custs::Array{CustomerAssignment, 1})
   cost = 0.
-  road = edges(pb.network)
+
   #price paid by customers
   for (id,c) in enumerate(custs)
     if c.taxi != 0
@@ -14,12 +14,12 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
     end
   end
   for (k,t) in enumerate(taxis)
-    previous_index = 0
+    previous_index = Road(0,0)
     for r in t.path
-      if road[r].source == road[r].target
+      if src(r) == dst(r)
         cost += pb.waitingCost
-      elseif r != previous_index
-        cost += road[r].attributes["c"] #cost of taking the road
+      elseif r != previousRoad
+        cost += pb.roadCost[ src(r), dst(r)] #cost of taking the road
       end
       previous_index = r
     end
@@ -34,8 +34,8 @@ end
 function taxi_paths(pb::TaxiProblem,
    custs::Array{CustomerAssignment,1}, cpt::Array{Array{Int,1},1})
    sp = pb.sp
-   res = Array(Array{Int,1},length(pb.taxis))
-   for k in 1:length(res)
+   res = Array( Array{Edge,1}, length(pb.taxis))
+   for k in 1:length(pb.taxis)
      res[k] = Array(Int,pb.nTime)
      endTime = pb.nTime
      endDest = 0
@@ -48,19 +48,17 @@ function taxi_paths(pb::TaxiProblem,
 
        while t != custs[c].timeIn
          prev = sp.previous[pb.custs[c].orig,loc]
-         road = find_edge(pb.network,prev,loc)
-         for t2 in (t-road.attributes["l"]):(t-1)
-           res[k][t2] = road.index
+         for t2 in (t - pb.roadCost[prev,loc] ):(t-1)
+           res[k][t2] = Road(prev,loc)
          end
          loc = prev
-         t = t-road.attributes["l"]
+         t = t-pb.roadCost[prev,loc]
        end
 
        #After last customer: stays at the same place
        if i == length(cpt[k])
-         road = find_edge(pb.network,pb.custs[c].dest,pb.custs[c].dest)
          for t = custs[c].timeOut:endTime
-           res[k][t] = road.index
+           res[k][t] = Road(pb.custs[c].dest,pb.custs[c].dest)
          end
        #Travel from the end of the customer to the beginning of the next, then wait
        else
@@ -69,18 +67,16 @@ function taxi_paths(pb::TaxiProblem,
          t = custs[c].timeOut + sp.traveltime[pb.custs[c].dest,endDest]
          while t != custs[c].timeOut
            prev = sp.previous[pb.custs[c].dest,loc]
-           road = find_edge(pb.network,prev,loc)
-           for t2 in (t-road.attributes["l"]):(t-1)
-             res[k][t2] = road.index
+           for t2 in (t -  pb.roadCost[prev,loc] ):(t-1)
+             res[k][t2] = Road(prev, loc)
            end
            loc = prev
-           t = t-road.attributes["l"]
+           t = t - pb.roadCost[prev,loc]
          end
 
          #Wait before taking the next customer
-         road = find_edge(pb.network,endDest,endDest)
-         for t = (custs[c].timeOut + sp.traveltime[pb.custs[c].dest,endDest]):(endTime-1)
-           res[k][t] = road.index
+         for t = (custs[c].timeOut + sp.traveltime[pb.custs[c].dest, endDest] ):(endTime-1)
+           res[k][t] = Road(endDest,endDest)
          end
        end
        endTime = custs[c].timeIn
@@ -88,9 +84,8 @@ function taxi_paths(pb::TaxiProblem,
      end
      #If no customer : wait
      if length(cpt[k]) == 0
-       road = find_edge(pb.network,pb.taxis[k].initPos,pb.taxis[k].initPos)
        for t = 1:pb.nTime
-         res[k][t] = road.index
+         res[k][t] = Road(pb.taxis[k].initPos, pb.taxis[k].initPos)
        end
      #Travel from origin of taxi to first customer
      else
@@ -102,17 +97,16 @@ function taxi_paths(pb::TaxiProblem,
        while t != 1
          prev = sp.previous[pb.taxis[k].initPos,loc]
          road = find_edge(pb.network,prev,loc)
-         for t2 in (t-road.attributes["l"]):(t-1)
-           res[k][t2] = road.index
+         for t2 in (t - pb.roadCost[prev, loc] ):(t-1)
+           res[k][t2] = Road(prev, loc)
          end
          loc = prev
-         t = t-road.attributes["l"]
+         t   = t - pb.roadCost[prev, loc]
        end
 
        #Wait before taking the next customer
-       road = find_edge(pb.network,endDest,endDest)
-       for t = (1 + sp.traveltime[pb.taxis[k].initPos,endDest]):(endTime-1)
-         res[k][t] = road.index
+       for t = (1 + sp.traveltime[pb.taxis[k].initPos, endDest] ):(endTime-1)
+         res[k][t] = Road(endDest, endDest)
        end
      end
    end

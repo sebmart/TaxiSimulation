@@ -60,8 +60,8 @@ end
 #at each time, the road on which the taxi is, and the __ordered__ list of its
 #taken customers
 immutable TaxiActions
-  path::Array{Edge,1}
-  custs::Array{Int,1}
+  path::Vector{Edge}
+  custs::Vector{Int}
 end
 
 #Represent the solution of a simulation (paths of taxis, customers, and cost)
