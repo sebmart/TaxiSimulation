@@ -80,10 +80,8 @@ end
 
 ShortPaths() = ShortPaths( Array(Int8, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
-#Visitor of the graph that will calculate the cost of the path
-# during the running of Dijkstra
 
-
+#Should I keep this ?
 const TAKE, DROP = 1, 2
 
 #Represent a customer-related action of a taxi (take or drop)
@@ -121,4 +119,6 @@ end
 InitialData(pb::TaxiProblem) =
   InitialData(pb.network,pb.taxis,pb.nTime,pb.waitingCost,pb.sp)
 
-include("tools.jl")
+#tools
+include("Tools/print.jl")
+include("Tools/tools.jl")

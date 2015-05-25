@@ -1,13 +1,12 @@
 using LightGraphs
 g = Graph(2)
 
-a = 1
-a += 1
 add_vertex!(g)
 methods(add_vertex!)
-g
+e =Edge(2,1)
 vertices(g)
-add_edge!(g,1,1)
+add_edge!(g,1,2)
+
 g = DiGraph(10,30)
 edges(g)
 A = sparse([1,2,4,5],[2,3,5,20],[1.1,2.2,3.3,4.4])
