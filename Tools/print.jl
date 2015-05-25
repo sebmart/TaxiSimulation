@@ -3,7 +3,7 @@
 #----------------------------------------
 
 #Print a taxi assignment solution
-function printSolution(pb::TaxiProblem, s::TaxiSolution; verbose=0)
+function printSolution(pb::TaxiProblem, s::TaxiSolution; verbose=1)
   if verbose == 0
     printShort(pb,s)
   elseif verbose == 1

@@ -37,10 +37,10 @@ type Metropolis <: TaxiProblem
   tEnd::DateTime
 
 
-  function Metropolis(width::Int, nSub::Int; shortPaths=false)
+  function Metropolis(width::Int, nSub::Int)
     c = new()
     c.width = width
-    c.subWidth = int(floor(width/2))
+    c.subWidth = int( floor(width/2))
     c.nSub = nSub
     c.waitingCost = waitCost/120
 
@@ -51,11 +51,11 @@ type Metropolis <: TaxiProblem
     c.roadTime = spzeros(nLocs,nLocs)
     c.roadCost = spzeros(nLocs,nLocs)
     #add the main city
-    addSquare(n, width,0)
+    addSquare(c.network, c.roadTime, c.roadCost, width,0)
 
     #add the sub cities
-    for c in 1:nSub
-      addSquare(n, c.subWidth, width^2 + (c-1)*c.subWidth)
+    for sub in 1:nSub
+      addSquare(c.network, c.roadTime, c.roadCost, c.subWidth, width^2 + (sub - 1 )*(c.subWidth^2))
     end
 
     #link subs to city
@@ -91,7 +91,7 @@ type Metropolis <: TaxiProblem
     end
 
     #link subs between then (in a circle)
-    for c in 1:(nSub-1)
+    for sub in 1:(nSub-1)
       a, b = coordToLoc(1,c.subWidth,sub,c), coordToLoc(c.subWidth,1, sub+1,c)
       add_edge!(c.network, a, b)
       tt = cityTrvlTime()
@@ -130,12 +130,12 @@ clone(m::Metropolis) =
   Metropolis(m.network,m.roadTime,m.roadCost,m.custs,m.taxis,m.nTime,m.waitingCost,m.sp,m.width,m.subWidth,m.nSub,m.tStart,m.tEnd)
 
 # Add a square-city to the graph
-function addSquare(n::Network, width::Int, start::Int)
+function addSquare(n::Network,roadTime::SparseMatrixCSC{Float64, Int},
+  roadCost::SparseMatrixCSC{Float64, Int}, width::Int, start::Int)
 
   function coordToLoc(i,j)
     return start + j + (i-1)*width
   end
-
   for i in 1:(width-1), j in 1:width
     #Vertical roads
     a, b = coordToLoc(i,j), coordToLoc(i+1,j)

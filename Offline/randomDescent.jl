@@ -3,7 +3,7 @@
 #----------------------------------------
 include("offlineAssignment.jl")
 
-function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int}=[1:length(pb.custs)])
+function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)])
   initT = time()
   sp = pb.sp
 
@@ -13,8 +13,7 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int}=[1:lengt
 
   bestCost, bestSol = offlineAssignment(pb, order)
   println("Try: 1, $(-bestCost) dollars")
-  push!(descentTime,time()-initT)
-  push!(descentRes,-bestCost)
+
   for trys in 2:n
     #We do only on transposition from the best costn
     i = rand(1:length(order))
@@ -30,8 +29,6 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int}=[1:lengt
       if cost < bestCost
         println("====Try: $(trys), $(-cost) dollars")
         bestSol = sol
-        push!(descentTime,time()-initT)
-        push!(descentRes,-bestCost)
       end
       bestCost = cost
       order[i], order[j] = order[j], order[i]
@@ -48,6 +45,5 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int}=[1:lengt
   end
   return (TaxiSolution(taxiActs, nt, bestSol, bestCost), order)
 end
-randomDescent(pb::TaxiProblem, n::Int, start::Vector{Int}=[1:length(pb.custs)]) =
+randomDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)]) =
   randomDescentOrder(pb,n,start)[1]
-
