@@ -2,25 +2,26 @@ include("definitions.jl")
 include("Cities/squareCity.jl")
 include("Offline/randomAssignment.jl")
 
-
 const width  = 5
 const nTime  = 100
 const nTaxis = 10
 const nCusts = 50
 
 #Create the network
-city2 = SquareCity(width)
+city = SquareCity(width)
 
 #Populate the network
-generateProblem!(city2, nTaxis, nTime, nCusts)
+generateProblem!(city, nTaxis, nTime, nCusts)
 
-# printSolution(pb,sol1,verbose=1)
 
-#@time sol = randomDescent(city, 100, 1)
-#printSolution(city,sol,verbose=0)
+@time sol = randomAssignment(city, 100)
+printSolution(city,sol,verbose=0)
+printSolution(city,sol,verbose=1)
+printSolution(city,sol,verbose=2)
 
-@time sol = simpleOpt(city2)
-printSolution(city2,sol,verbose=0)
+
+
+
 
 
 

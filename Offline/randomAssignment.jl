@@ -17,7 +17,7 @@ function randomAssignment(pb::TaxiProblem, n::Int)
       bestCost=cost
     end
 
-    order = randomOrder()
+    order = randomOrder(pb)
   end
   println("Final: $(-bestCost) dollars")
   cpt, nt = customers_per_taxi(length(pb.taxis),bestSol)

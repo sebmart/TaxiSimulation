@@ -75,7 +75,7 @@ function printMedium(pb::TaxiProblem, s::TaxiSolution)
         moves = false
       end
     end
-    print("$(src(road))=>$(dest(road)) ($count) \n")
+    print("$(src(road))=>$(dst(road)) ($count) \n")
   end
 end
 

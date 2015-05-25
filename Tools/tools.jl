@@ -55,9 +55,9 @@ end
 function taxi_paths(pb::TaxiProblem,
    custs::Array{CustomerAssignment,1}, cpt::Array{Array{Int,1},1})
    sp = pb.sp
-   res = Array( Array{Edge,1}, length(pb.taxis))
+   res = Array( Array{Road,1}, length(pb.taxis))
    for k in 1:length(pb.taxis)
-     res[k] = Array(Int,pb.nTime)
+     res[k] = Array(Road,pb.nTime)
      endTime = pb.nTime
      endDest = 0
      for i in length(cpt[k]):-1:1
@@ -69,11 +69,11 @@ function taxi_paths(pb::TaxiProblem,
 
        while t != custs[c].timeIn
          prev = sp.previous[pb.custs[c].orig,loc]
-         for t2 in (t - pb.roadCost[prev,loc] ):(t-1)
+         for t2 in (t - pb.roadTime[prev,loc] ):(t-1)
            res[k][t2] = Road(prev,loc)
          end
+         t = t-pb.roadTime[prev,loc]
          loc = prev
-         t = t-pb.roadCost[prev,loc]
        end
 
        #After last customer: stays at the same place
@@ -88,11 +88,11 @@ function taxi_paths(pb::TaxiProblem,
          t = custs[c].timeOut + sp.traveltime[pb.custs[c].dest,endDest]
          while t != custs[c].timeOut
            prev = sp.previous[pb.custs[c].dest,loc]
-           for t2 in (t -  pb.roadCost[prev,loc] ):(t-1)
+           for t2 in (t -  pb.roadTime[prev,loc] ):(t-1)
              res[k][t2] = Road(prev, loc)
            end
+           t = t - pb.roadTime[prev,loc]
            loc = prev
-           t = t - pb.roadCost[prev,loc]
          end
 
          #Wait before taking the next customer
@@ -117,12 +117,11 @@ function taxi_paths(pb::TaxiProblem,
        t = 1 + sp.traveltime[pb.taxis[k].initPos,endDest]
        while t != 1
          prev = sp.previous[pb.taxis[k].initPos,loc]
-         road = find_edge(pb.network,prev,loc)
-         for t2 in (t - pb.roadCost[prev, loc] ):(t-1)
+         for t2 in (t - pb.roadTime[prev, loc] ):(t-1)
            res[k][t2] = Road(prev, loc)
          end
+         t   = t - pb.roadTime[prev, loc]
          loc = prev
-         t   = t - pb.roadCost[prev, loc]
        end
 
        #Wait before taking the next customer
