@@ -4,7 +4,7 @@
 
 type SquareCity <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int8, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -18,10 +18,10 @@ type SquareCity <: TaxiProblem
 
   #constructor that only create the graph
   function SquareCity(width::Int)
-    city = new()
+    c = new()
     #automatically select the number of customers
-    city.waitingCost = 0.25
-    city.width = width
+    c.waitingCost = 0.25
+    c.width = width
     #Locs are numerated as follow :
     #123
     #456
@@ -36,9 +36,9 @@ type SquareCity <: TaxiProblem
     end
 
 
-    network  = DiGraph(nLocs)
-    roadTime = spzeros(nLocs,nLocs)
-    roadCost = spzeros(nLocs,nLocs)
+    c.network  = DiGraph(nLocs)
+    c.roadTime = spzeros(nLocs,nLocs)
+    c.roadCost = spzeros(nLocs,nLocs)
 
     #We construct the roads
 
@@ -53,35 +53,32 @@ type SquareCity <: TaxiProblem
     for i in 1:(width-1), j in 1:width
       #Vertical roads
       tt = traveltime()
-      roadTime[ coordToLoc(i,j), coordToLoc(i+1,j) ] = tt
-      roadCost[ coordToLoc(i,j), coordToLoc(i+1,j) ] = travelcost(tt)
-      add_edge!(network, coordToLoc(i,j), coordToLoc(i+1,j))
+      c.roadTime[ coordToLoc(i,j), coordToLoc(i+1,j) ] = tt
+      c.roadCost[ coordToLoc(i,j), coordToLoc(i+1,j) ] = travelcost(tt)
+      add_edge!(c.network, coordToLoc(i,j), coordToLoc(i+1,j))
 
       tt = traveltime()
-      roadTime[ coordToLoc(i+1,j), coordToLoc(i,j) ] = tt
-      roadCost[ coordToLoc(i+1,j), coordToLoc(i,j) ] = travelcost(tt)
-      add_edge!(network, coordToLoc(i+1,j), coordToLoc(i,j))
+      c.roadTime[ coordToLoc(i+1,j), coordToLoc(i,j) ] = tt
+      c.roadCost[ coordToLoc(i+1,j), coordToLoc(i,j) ] = travelcost(tt)
+      add_edge!(c.network, coordToLoc(i+1,j), coordToLoc(i,j))
 
       #Horizontal roads
 
       tt = traveltime()
-      roadTime[ coordToLoc(j,i), coordToLoc(j,i+1) ] = tt
-      roadCost[ coordToLoc(j,i), coordToLoc(j,i+1) ] = travelcost(tt)
-      add_edge!(network, coordToLoc(j,i), coordToLoc(j,i+1))
+      c.roadTime[ coordToLoc(j,i), coordToLoc(j,i+1) ] = tt
+      c.roadCost[ coordToLoc(j,i), coordToLoc(j,i+1) ] = travelcost(tt)
+      add_edge!(c.network, coordToLoc(j,i), coordToLoc(j,i+1))
 
       tt = traveltime()
-      roadTime[ coordToLoc(j,i+1), coordToLoc(j,i) ] = tt
-      roadCost[ coordToLoc(j,i+1), coordToLoc(j,i) ] = travelcost(tt)
-      add_edge!(network, coordToLoc(j,i+1), coordToLoc(j,i))
+      c.roadTime[ coordToLoc(j,i+1), coordToLoc(j,i) ] = tt
+      c.roadCost[ coordToLoc(j,i+1), coordToLoc(j,i) ] = travelcost(tt)
+      add_edge!(c.network, coordToLoc(j,i+1), coordToLoc(j,i))
     end
 
-
-    city.network = network
-
     #We compute the shortest paths from everywhere to everywhere (takes time)
-    city.sp =  shortestPaths(network)
+    c.sp =  shortestPaths(c.network, c.roadTime, c.roadCost)
 
-    return city
+    return c
   end
 
   SquareCity(network::Network, roadTime::SparseMatrixCSC{Int8, Int},

@@ -5,13 +5,10 @@
 #Only return cost and list of assignment, given problem and order on customers
 function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
   #We need the shortestPaths
-  if !spComputed(pb)
-    shortestPath!(pb)
-  end
   tt = pb.sp.traveltime
   tc = pb.sp.travelcost
   road = edges(pb.network)
-  taxis = Array(Vector{AssignedCustomer},length(pb.taxis))
+  taxis = Array( Vector{AssignedCustomer}, length(pb.taxis))
   for i in 1:length(pb.taxis)
     taxis[i] = AssignedCustomer[]
   end
@@ -107,7 +104,7 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
       if i == 1
         tmin = max(1 + tt[t.initPos, c.orig], c.tmin)
         if length(custs) == 0
-          push!(custs,AssignedCustomer(c,tmin,min(c.tmaxt, pb.nTime - tt[c.orig,c.dest])))
+          push!( custs, AssignedCustomer(c,tmin,min(c.tmaxt, pb.nTime - tt[c.orig,c.dest])))
         else
           tmaxt = min(c.tmaxt,custs[1].tSup - tt[c.orig,c.dest] -
            tt[c.dest,custs[1].desc.orig])
@@ -150,24 +147,4 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
   end
   return (solutionCost(pb,taxis),res)
 
-end
-
-function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
-  cost = 0.0
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
-  for (k,custs) in enumerate(t)
-    pos = pb.taxis[k].initPos
-    time = 1
-    for c in custs
-      cost -= c.desc.price
-      cost += tc[pos,c.desc.orig]
-      cost += tc[c.desc.orig,c.desc.dest]
-      cost += (c.tTake - time - tt[pos,c.desc.orig])*pb.waitingCost
-      time =  c.tTake + tt[c.desc.orig,c.desc.dest]
-      pos = c.desc.dest
-    end
-    cost += (pb.nTime - time + 1)*pb.waitingCost
-  end
-  return cost
 end

@@ -21,7 +21,7 @@ longTrvlCost(trvltime) = trvltime * driveCost/120
 
 type Metropolis <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int8, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -38,24 +38,24 @@ type Metropolis <: TaxiProblem
 
 
   function Metropolis(width::Int, nSub::Int; shortPaths=false)
-    city = new()
-    city.width = width
-    city.subWidth = int(floor(width/2))
-    city.nSub = nSub
-    city.waitingCost = waitCost/120
+    c = new()
+    c.width = width
+    c.subWidth = int(floor(width/2))
+    c.nSub = nSub
+    c.waitingCost = waitCost/120
 
   #-----------------------------------
   #First, we construct the network
-    nLocs = width^2 + nSub * (city.subWidth^2)
-    network  = DiGraph(nLocs)
-    roadTime = spzeros(nLocs,nLocs)
-    roadCost = spzeros(nLocs,nLocs)
+    nLocs = width^2 + nSub * (c.subWidth^2)
+    c.network  = DiGraph(nLocs)
+    c.roadTime = spzeros(nLocs,nLocs)
+    c.roadCost = spzeros(nLocs,nLocs)
     #add the main city
     addSquare(n, width,0)
 
     #add the sub cities
     for c in 1:nSub
-      addSquare(n, city.subWidth, width^2 + (c-1)*city.subWidth)
+      addSquare(n, c.subWidth, width^2 + (c-1)*c.subWidth)
     end
 
     #link subs to city
@@ -64,9 +64,9 @@ type Metropolis <: TaxiProblem
       return (s-1)*width + t
     end
     anchors = sort( [(rand(1:4), rand(1:(width-1))) for i in 1:nSub], by=sortOrder)
-    for c in 1:nSub
+    for sub in 1:nSub
       #random anchor in big city
-      s, t = anchors[c]
+      s, t = anchors[sub]
       i, j = 0, 0
       if s == 1
         i, j = 1, t
@@ -78,52 +78,50 @@ type Metropolis <: TaxiProblem
         i, j = (width - t + 1), 1
       end
 
-      a, b = coordToLoc(1,1,c, city), coordToLoc(i,j,0,city)
-      add_edge!(n, a, b)
+      a, b = coordToLoc(1,1,sub,c), coordToLoc(i,j,0,c)
+      add_edge!(c.network, a, b)
       tt = longTrvlTime()
-      roadTime[a, b] = tt
-      roadCost[a, b] = longTrvlCost(tt)
+      c.roadTime[a, b] = tt
+      c.roadCost[a, b] = longTrvlCost(tt)
 
-      add_edge!(n, b, a)
+      add_edge!(c.network, b, a)
       tt = longTrvlTime()
-      roadTime[b, a] = tt
-      roadCost[b, a] = longTrvlCost(tt)
+      c.roadTime[b, a] = tt
+      c.roadCost[b, a] = longTrvlCost(tt)
     end
 
     #link subs between then (in a circle)
     for c in 1:(nSub-1)
-      a, b = coordToLoc(1,city.subWidth,c,city), coordToLoc(city.subWidth,1, c+1,city)
-      add_edge!(n, a, b)
+      a, b = coordToLoc(1,c.subWidth,sub,c), coordToLoc(c.subWidth,1, sub+1,c)
+      add_edge!(c.network, a, b)
       tt = cityTrvlTime()
-      roadTime[a, b] = tt
-      roadCost[a, b] = cityTrvlCost(tt)
+      c.roadTime[a, b] = tt
+      c.roadCost[a, b] = cityTrvlCost(tt)
 
-      add_edge!(n, b, a)
+      add_edge!(c.network, b, a)
       tt = cityTrvlTime()
-      roadTime[b, a] = tt
-      roadCost[b, a] = cityTrvlCost(tt)
+      c.roadTime[b, a] = tt
+      c.roadCost[b, a] = cityTrvlCost(tt)
     end
     #last link
     if nSub >1
-      a, b = coordToLoc(1,city.subWidth,nSub,city), coordToLoc(city.subWidth,1, 1,city)
-      add_edge!(n, a, b)
+      a, b = coordToLoc(1,c.subWidth,nSub,c), coordToLoc(c.subWidth,1, 1,c)
+      add_edge!(c.network, a, b)
       tt = cityTrvlTime()
-      roadTime[a, b] = tt
-      roadCost[a, b] = cityTrvlCost(tt)
+      c.roadTime[a, b] = tt
+      c.roadCost[a, b] = cityTrvlCost(tt)
 
-      add_edge!(n, b, a)
+      add_edge!(c.network, b, a)
       tt = cityTrvlTime()
-      roadTime[b, a] = tt
-      roadCost[b, a] = cityTrvlCost(tt)
+      c.roadTime[b, a] = tt
+      c.roadCost[b, a] = cityTrvlCost(tt)
     end
 
-    city.network = n
-
     #We compute the shortest paths from everywhere to everywhere (takes time)
-    city.sp = shortestPaths(n)
-    return city
+    c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+    return c
   end
-  
+
   Metropolis(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp,width,subWidth,nSub,tStart,tEnd) =
    new(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp,width,subWidth,nSub,tStart,tEnd)
 end
@@ -172,7 +170,7 @@ function generateProblem!(city::Metropolis, nTaxis::Int, demand::Float64,
 
    city.tStart = tStart
    city.tEnd   = tEnd
-   city.nTime  = 1 + floor((tEnd-tStart).value/(30 *1000))
+   city.nTime  = 1 + floor( (tEnd-tStart).value/(30 *1000))
    if city.nTime < 1
      error("Time of simulation is negative!")
    end
@@ -254,9 +252,9 @@ function generateTaxis!(sim::Metropolis, nTaxis::Int)
   sim.taxis = Taxi[]
   for k in 1:nTaxis
     if rand(1:2) == 1 #taxi in city
-      push!(sim.taxis, Taxi(k,coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)))
+      push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.width), rand(1:sim.width), 0, sim)))
     else
-      push!(sim.taxis, Taxi(k,coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)))
+      push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)))
     end
   end
 end
