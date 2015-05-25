@@ -67,29 +67,28 @@ function printShort(pb::TaxiProblem, s::TaxiSolution)
   end
 end
 
+#Print a solution in a reduced way, with factored taxi movements and customers
 function printMedium(pb::TaxiProblem, s::TaxiSolution)
   for (k,tax) in enumerate(s.taxis)
     println("\n=== TAXI $k")
     println("==========================")
     idc = 1
     count = 0
-    roadId = Edge(0,0)
+    road = tax.path[1]
     moves = false
     for t in 1:pb.nTime
       if !moves
         print("\nMoves: ")
         moves = true
       end
-      if tax.path[t] == roadId
+      if tax.path[t] == road
         count += 1
-      elseif roadId != 0
-        print("$(road[roadId].src)=>$(road[roadId].dst) ($count) - ")
-        count = 1
-        roadId = tax.path[t]
       else
+        print("$(src(road))=>$(dst(road)) ($count) - ")
         count = 1
-        roadId = tax.path[t]
+        road = tax.path[t]
       end
+
       if idc <= length(tax.custs) &&(s.custs[tax.custs[idc]].timeOut == t)
         print("\nDrops customer $(tax.custs[idc]) at time $t")
         moves = false
@@ -101,15 +100,15 @@ function printMedium(pb::TaxiProblem, s::TaxiSolution)
         moves = false
       end
     end
-    print("$(road[roadId].source)=>$(road[roadId].source) ($count) - \n")
+    print("$(src(road))=>$(dest(road)) ($count) \n")
   end
 end
 
+#Longer print, timestep by timestep
 function printLong(pb::TaxiProblem, s::TaxiSolution)
   for (k,tax) in enumerate(s.taxis)
     println("=== TAXI $k")
     println("==========================")
-    road = edges(pb.network)
     idc = 1
     for t in 1:pb.nTime
       println("== time $t")
@@ -122,10 +121,10 @@ function printLong(pb::TaxiProblem, s::TaxiSolution)
         println("Takes customer $(tax.custs[idc]) at location $(pb.custs[tax.custs[idc]].orig)")
       end
 
-      if road[tax.path[t]].source == road[tax.path[t]].target
-        println("Waits at location $(road[tax.path[t]].source)")
+      if src(tax.path[t]) == dst(tax.path[t])
+        println("Waits at location $(dst(tax.path[t]))")
       else
-        println("Moves from location $(road[tax.path[t]].source) to location $(road[tax.path[t]].target)")
+        println("Moves from location $(src(tax.path[t])) to location $(dst(tax.path[t]))")
       end
     end
   end
