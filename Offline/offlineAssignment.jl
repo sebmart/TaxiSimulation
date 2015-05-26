@@ -2,6 +2,13 @@
 #-- Compute a solution, given an order on customers
 #----------------------------------------
 
+#Represent an assigned customer
+type AssignedCustomer
+  desc::Customer
+  tTake::Int
+  tSup::Int
+end
+
 #Only return cost and list of assignment, given problem and order on customers
 function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
   #We need the shortestPaths

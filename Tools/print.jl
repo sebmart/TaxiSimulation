@@ -37,7 +37,7 @@ function printShort(pb::TaxiProblem, s::TaxiSolution)
     println("=== TAXI $k")
     println("==========================")
     for c in tax.custs
-      println("Takes customer $c at time $(s.custs[c].timeIn)")
+      println("Takes customer $c at time $(c.timeIn)")
     end
   end
 end
@@ -64,14 +64,14 @@ function printMedium(pb::TaxiProblem, s::TaxiSolution)
         road = tax.path[t]
       end
 
-      if idc <= length(tax.custs) &&(s.custs[tax.custs[idc]].timeOut == t)
-        print("\nDrops customer $(tax.custs[idc]) at time $t")
+      if idc <= length(tax.custs) &&(tax.custs[idc].timeOut == t)
+        print("\nDrops customer $(tax.custs[idc].id) at time $t")
         moves = false
         idc += 1
       end
 
-      if idc <= length(tax.custs) && (s.custs[tax.custs[idc]].timeIn == t)
-        print("\nTakes customer $(tax.custs[idc]) at time $t")
+      if idc <= length(tax.custs) && (tax.custs[idc].timeIn == t)
+        print("\nTakes customer $(tax.custs[idc].id) at time $t")
         moves = false
       end
     end
@@ -87,13 +87,13 @@ function printLong(pb::TaxiProblem, s::TaxiSolution)
     idc = 1
     for t in 1:pb.nTime
       println("== time $t")
-      if idc <= length(tax.custs) &&(s.custs[tax.custs[idc]].timeOut == t)
-        println("Drops customer $(tax.custs[idc]) at location $(pb.custs[tax.custs[idc]].dest)")
+      if idc <= length(tax.custs) && (tax.custs[idc].timeOut == t)
+        println("Drops customer $(tax.custs[idc].id) at location $(pb.custs[tax.custs[idc].id].dest)")
         idc += 1
       end
 
-      if idc <= length(tax.custs) && (s.custs[tax.custs[idc]].timeIn == t)
-        println("Takes customer $(tax.custs[idc]) at location $(pb.custs[tax.custs[idc]].orig)")
+      if idc <= length(tax.custs) && (tax.custs[idc].timeIn == t)
+        println("Takes customer $(tax.custs[idc].id) at location $(pb.custs[tax.custs[idc].id].orig)")
       end
 
       if src(tax.path[t]) == dst(tax.path[t])

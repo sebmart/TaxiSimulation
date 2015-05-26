@@ -44,7 +44,7 @@ abstract TaxiProblem
 #Represent the assignement of a customer
 #taxi == 0 <=> unassigned
 immutable CustomerAssignment
-  taxi::Int
+  id::Int
   timeIn::Int
   timeOut::Int
 end
@@ -61,7 +61,7 @@ end
 #taken customers
 immutable TaxiActions
   path::Vector{Edge}
-  custs::Vector{ (Int, Int, Int)} #customer in order: (id, pickup, dropoff)
+  custs::Vector{ CustomerAssignment} #customer in order: (id, pickup, dropoff)
 end
 
 #Represent the solution of a simulation (paths of taxis, customers, and cost)
