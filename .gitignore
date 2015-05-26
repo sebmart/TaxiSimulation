@@ -1,4 +1,5 @@
 Cities/Saved
 Outputs
 *.pdf
-*.osm
+Cities/Manhattan/Construction/*.jld
+Cities/Manhattan/Construction/*.osm
