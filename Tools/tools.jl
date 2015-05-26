@@ -50,87 +50,83 @@ end
 
 
 
-#Reconstruct the complete path of the taxis from their assigned customers
+#Reconstruct the complete path of a taxis from their assigned customers (in order)
 #The rule is to wait near the next customers if the taxi has to wait
-function taxi_paths(pb::TaxiProblem,
-   custs::Array{CustomerAssignment,1}, cpt::Array{Array{Int,1},1})
+function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
    sp = pb.sp
-   res = Array( Array{Road,1}, length(pb.taxis))
-   for k in 1:length(pb.taxis)
-     res[k] = Array(Road,pb.nTime)
-     endTime = pb.nTime
-     endDest = 0
-     for i in length(cpt[k]):-1:1
-       c = cpt[k][i]
+   path = Array(Road,pb.nTime)
+   endTime = pb.nTime
+   endDest = 0
+   for i in length(custs):-1:1
+     c = custs[i]
 
-       #Trajectory from origin to dest of customer (computed backward)
-       loc = pb.custs[c].dest
-       t = custs[c].timeOut
+     #Trajectory from origin to dest of customer (computed backward)
+     loc = pb.custs[c.id].dest
+     t = c.timeOut
 
-       while t != custs[c].timeIn
-         prev = sp.previous[pb.custs[c].orig,loc]
-         for t2 in (t - pb.roadTime[prev,loc] ):(t-1)
-           res[k][t2] = Road(prev,loc)
-         end
-         t = t-pb.roadTime[prev,loc]
-         loc = prev
+     while t != c.timeIn
+       prev = sp.previous[pb.custs[c.id].orig,loc]
+       for t2 in (t - pb.roadTime[prev,loc] ):(t-1)
+         path[t2] = Road(prev,loc)
        end
-
-       #After last customer: stays at the same place
-       if i == length(cpt[k])
-         for t = custs[c].timeOut:endTime
-           res[k][t] = Road(pb.custs[c].dest,pb.custs[c].dest)
-         end
-       #Travel from the end of the customer to the beginning of the next, then wait
-       else
-         #Trajectory from dest to orig of next customer (computed backward)
-         loc = endDest
-         t = custs[c].timeOut + sp.traveltime[pb.custs[c].dest,endDest]
-         while t != custs[c].timeOut
-           prev = sp.previous[pb.custs[c].dest,loc]
-           for t2 in (t -  pb.roadTime[prev,loc] ):(t-1)
-             res[k][t2] = Road(prev, loc)
-           end
-           t = t - pb.roadTime[prev,loc]
-           loc = prev
-         end
-
-         #Wait before taking the next customer
-         for t = (custs[c].timeOut + sp.traveltime[pb.custs[c].dest, endDest] ):(endTime-1)
-           res[k][t] = Road(endDest,endDest)
-         end
-       end
-       endTime = custs[c].timeIn
-       endDest = pb.custs[c].orig
+       t = t-pb.roadTime[prev,loc]
+       loc = prev
      end
-     #If no customer : wait
-     if length(cpt[k]) == 0
-       for t = 1:pb.nTime
-         res[k][t] = Road(pb.taxis[k].initPos, pb.taxis[k].initPos)
+
+     #After last customer: stays at the same place
+     if i == length(custs)
+       for t = c.timeOut:endTime
+         path[t] = Road(pb.custs[c.id].dest,pb.custs[c.id].dest)
        end
-     #Travel from origin of taxi to first customer
+     #Travel from the end of the customer to the beginning of the next, then wait
      else
-       endDest = pb.custs[cpt[k][1]].orig
-       endTime = custs[cpt[k][1]].timeIn
-       #Trajectory from origin of taxi to origin of first cust
+       #Trajectory from dest to orig of next customer (computed backward)
        loc = endDest
-       t = 1 + sp.traveltime[pb.taxis[k].initPos,endDest]
-       while t != 1
-         prev = sp.previous[pb.taxis[k].initPos,loc]
-         for t2 in (t - pb.roadTime[prev, loc] ):(t-1)
-           res[k][t2] = Road(prev, loc)
+       t = c.timeOut + sp.traveltime[pb.custs[c.id].dest,endDest]
+       while t != c.timeOut
+         prev = sp.previous[pb.custs[c.id].dest,loc]
+         for t2 in (t -  pb.roadTime[prev,loc] ):(t-1)
+           path[t2] = Road(prev, loc)
          end
-         t   = t - pb.roadTime[prev, loc]
+         t = t - pb.roadTime[prev,loc]
          loc = prev
        end
 
        #Wait before taking the next customer
-       for t = (1 + sp.traveltime[pb.taxis[k].initPos, endDest] ):(endTime-1)
-         res[k][t] = Road(endDest, endDest)
+       for t = (c.timeOut + sp.traveltime[pb.custs[c.id].dest, endDest] ):(endTime-1)
+         path[t] = Road(endDest,endDest)
        end
      end
+     endTime = c.timeIn
+     endDest = pb.custs[c.id].orig
    end
-   return res
+   #If no customer : wait
+   if length(custs) == 0
+     for t = 1:pb.nTime
+       path[t] = Road(pb.taxis[id_taxi].initPos, pb.taxis[id_taxi].initPos)
+     end
+   #Travel from origin of taxi to first customer
+   else
+     endDest = pb.custs[custs[1].id].orig
+     endTime = custs[1].timeIn
+     #Trajectory from origin of taxi to origin of first cust
+     loc = endDest
+     t = 1 + sp.traveltime[pb.taxis[id_taxi].initPos,endDest]
+     while t != 1
+       prev = sp.previous[pb.taxis[id_taxi].initPos,loc]
+       for t2 in (t - pb.roadTime[prev, loc] ):(t-1)
+         path[t2] = Road(prev, loc)
+       end
+       t   = t - pb.roadTime[prev, loc]
+       loc = prev
+     end
+
+     #Wait before taking the next customer
+     for t = (1 + sp.traveltime[pb.taxis[id_taxi].initPos, endDest] ):(endTime-1)
+       path[t] = Road(endDest, endDest)
+     end
+   end
+   return path
 end
 
 #Transform the list of each customer's assignment into a list of each taxi's

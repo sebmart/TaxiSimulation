@@ -49,13 +49,6 @@ immutable CustomerAssignment
   timeOut::Int
 end
 
-#Represent an assigned customer
-type AssignedCustomer
-  desc::Customer
-  tTake::Int
-  tSup::Int
-end
-
 #Represent the actions of a taxi during a simulation
 #at each time, the road on which the taxi is, and the __ordered__ list of its
 #taken customers
