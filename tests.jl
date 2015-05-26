@@ -6,7 +6,6 @@ include("Offline/randomAssignment.jl")
 include("Offline/randomDescent.jl")
 include("Offline/simpleOpt.jl")
 
-@time sol = simpleOpt(city)
 
 const width  = 5
 const nTime  = 75
@@ -34,18 +33,19 @@ printSolution(city,sol,verbose=2)
 @time printSolution(city, randomDescent(city, 1000))
 
 #Create the network
-city = Metropolis(width, 4)
+city = Metropolis(width, 10)
 
 #Populate the network
 generateProblem!(city, nTaxis, 1.0, now(), now()+Hour(2))
 
 
 @time sol = randomAssignment(city, 100)
+println(sol.cost)
 printSolution(city,sol,verbose=0)
 printSolution(city,sol,verbose=1)
 printSolution(city,sol,verbose=2)
 
-@time randomDescent(city, 100).cost
+@time randomDescent(city, 20000).cost
 
-a =1
-a +=1
+drawNetwork(city, "test")
+dotFile(city, "test")
