@@ -1,9 +1,13 @@
-using OpenStreetMap, Graphs
-using HDF5, JLD
-import LightGraphs
+#----------------------------------------
+#-- Real Manhattan network, from OpenStreetMap data
+#----------------------------------------
+
+
 
 type Manhattan <: TaxiProblem
   network::Network
+  roadTime::SparseMatrixCSC{Float64, Int}
+  roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
   nTime::Int
@@ -12,38 +16,18 @@ type Manhattan <: TaxiProblem
 
   #--------------
   #Specific attributes
-    tStart::DateTime
-
-    tEnd::DateTime
-
-
-
-
-end
-
-
-
-cd("/Users/Sebastien/Documents/Dropbox (MIT)/Research/Taxi/JuliaSimulation")
-
-
-idToVertex = data["network"].v
-oldGraph   = data["network"].g
-w = data["network"].w
-
-data = load("Cities/Manhattan/manhattan.jld")
-
-graphMan = LightGraphs.DiGraph(num_vertices(oldGraph))
-
-for i in vertices(oldGraph), j in Set( out_neighbors(i,oldGraph))
-  LightGraphs.add_edge!(graphMan, i.index, j.index)
-end
+  distances::SparseMatrixCSC{Float64, Int}
+  positions::Vector{ (Float64, Float64)}
+  tStart::DateTime
+  tEnd::DateTime
+  function Manhattan()
+    c = new()
+    data = load("Manhattan/manhattan.jld")
+    c.network   = data["network"]
+    c.distances = data["distances"]
+    c.roadTime  = data["timings"]
+    c.positions = data["positions"]
+  end
 
 
-weights = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
-times   = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
-positions = [(0.0,0.0) for i in 1:num_vertices(oldGraph))
-
-for i in vertices(oldGraph), e in Set( out_edges(i,oldGraph))
-  weights[ i.index, target(e).index] = w[e.index]
-  times[ i.index, target(e).index] = 3.6*w[e.index]/OpenStreetMap.SPEED_ROADS_URBAN[data["network"].class[e.index]]
 end
