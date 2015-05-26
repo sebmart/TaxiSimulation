@@ -148,11 +148,11 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
 
   #Each customer must have the time to be dropped before the end
   @addConstraint(m, c6[k=1:nTaxis, c=1:nCusts,
-   t=max(cust[c].tmin, nTime - tt[cust[c].orig,cust[c].dest]):(cust[c].tmaxt)],
+   t=max(cust[c].tmin, nTime - tt[cust[c].orig, cust[c].dest ]):(cust[c].tmaxt)],
   y[k,c,t] == 0
   )
   @addConstraint(m, c7[k=1:nTaxis, c=1:nCusts, c0=1:length(pCusts[c]),
-   t=max(cust[c].tmin, nTime - tt[cust[c].orig,cust[c].dest]):(cust[c].tmaxt)],
+   t=max(cust[c].tmin, nTime - tt[cust[c].orig, cust[c].dest ]):(cust[c].tmaxt)],
   x[k,c,c0,t] == 0
   )
 
@@ -180,10 +180,10 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
   for i = 1:nTaxis
     taxiActs[i] = TaxiActions(tp[i],cpt[i])
   end
-  println(getObjectiveValue(m))
-  println(solutionCost(pb,taxiActs,res))
+  println( getObjectiveValue(m))
+  println( solutionCost(pb,taxiActs,res))
 
-  return TaxiSolution(taxiActs,nt,res,getObjectiveValue(m))
+  return TaxiSolution( taxiActs, nt, res, getObjectiveValue(m))
 end
 
 

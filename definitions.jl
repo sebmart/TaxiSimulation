@@ -61,14 +61,13 @@ end
 #taken customers
 immutable TaxiActions
   path::Vector{Edge}
-  custs::Vector{Int}
+  custs::Vector{ (Int, Int, Int)} #customer in order: (id, pickup, dropoff)
 end
 
 #Represent the solution of a simulation (paths of taxis, customers, and cost)
 immutable TaxiSolution
   taxis::Array{TaxiActions, 1}
   notTakenCustomers::Array{Int,1}
-  custs::Array{CustomerAssignment,1}
   cost::Float64
 end
 
