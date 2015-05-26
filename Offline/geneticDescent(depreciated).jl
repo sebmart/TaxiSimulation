@@ -13,7 +13,7 @@ function geneticDescentOrder(pb::TaxiProblem, popSize::Int, generations::Int;
   sp = pb.sp
 
   population = generatePopulation(pb,popSize)
-  costs = [offlineAssignment(pb,p)[1] for p in population]
+  costs = [offlineAssignmentQuick(pb,p)[1] for p in population]
   sort = sortperm(costs)
   costs = costs[sort]
   lastCost = Inf
@@ -31,7 +31,7 @@ function geneticDescentOrder(pb::TaxiProblem, popSize::Int, generations::Int;
     for j in 1:childrenNumber
       child[j] = childOrder(parents(d,population))
     end
-    childCosts = [offlineAssignment(pb,p)[1] for p in child]
+    childCosts = [offlineAssignmentQuick(pb,p)[1] for p in child]
 
     #---------------------------
     #-- We eliminate the worst results
@@ -48,7 +48,7 @@ function geneticDescentOrder(pb::TaxiProblem, popSize::Int, generations::Int;
       println(costs)
 
   end
-  bestCost, bestSol =  offlineAssignment(pb,population[1])
+  bestCost, bestSol =  offlineAssignmentQuick(pb,population[1])
   cpt, nt = customers_per_taxi(length(pb.taxis),bestSol)
   tp = taxi_paths(pb,bestSol,cpt)
 

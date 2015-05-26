@@ -9,7 +9,7 @@ function randomAssignment(pb::TaxiProblem, n::Int)
   bestCost = Inf
   bestSol = 0
   for trys in 1:n
-    cost, sol = offlineAssignment(pb, order)
+    cost, sol = offlineAssignmentQuick(pb, order)
 
     if cost < bestCost
       println("Try: $trys, $(-cost) dollars")

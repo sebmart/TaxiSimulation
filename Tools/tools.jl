@@ -129,32 +129,6 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
    return path
 end
 
-#Transform the list of each customer's assignment into a list of each taxi's
-# list of assignments (ordered), plus a list of the non-taken customers
-function customers_per_taxi(nTaxis::Int, custs::Array{CustomerAssignment,1})
-  taxis = [(Int64, Int64)[] for i in 1:nTaxis]
-  notTaken = Int64[]
-
-  for (cust,temp) in enumerate(custs)
-    taxi = temp.taxi
-    time = temp.timeIn
-    if taxi == 0
-      push!(notTaken,cust)
-    else
-      push!(taxis[taxi], (cust,time))
-    end
-  end
-
-  result = [Int64[] for i in 1:nTaxis]
-
-  for k in 1:nTaxis
-    for (c,t) in sort(taxis[k], by = (x->x[2]))
-      push!(result[k],c)
-    end
-  end
-  return result, notTaken
-end
-
 function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)
   save("Cities/Saved/$name.jld", "pb", pb, compress=compress)
 end

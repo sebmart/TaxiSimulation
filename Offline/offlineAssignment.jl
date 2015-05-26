@@ -5,20 +5,17 @@
 #Represent an assigned customer
 type AssignedCustomer
   desc::Customer
-  tTake::Int
+  tInf::Int
   tSup::Int
 end
 
 #Only return cost and list of assignment, given problem and order on customers
-function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
+function offlineAssignmentQuick(pb::TaxiProblem, order::Vector{Int})
   #We need the shortestPaths
   tt = pb.sp.traveltime
   tc = pb.sp.travelcost
-  road = edges(pb.network)
-  taxis = Array( Vector{AssignedCustomer}, length(pb.taxis))
-  for i in 1:length(pb.taxis)
-    taxis[i] = AssignedCustomer[]
-  end
+  taxis = [AssignedCustomer[] for i =1:length(pb.taxis)]
+
   for custNb in [order[i] for i in 1:length(pb.custs)]
     #-------------------------
     # Select the taxi to assign
@@ -60,9 +57,9 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
 
       #Second Case: taking customer after all the others
       if length(custs) > 0 &&
-          custs[end].tTake + tt[custs[end].desc.orig, custs[end].desc.dest] +
+          custs[end].tInf + tt[custs[end].desc.orig, custs[end].desc.dest] +
           tt[custs[end].desc.dest, c.orig] <= c.tmaxt &&
-          custs[end].tTake + tt[custs[end].desc.orig, custs[end].desc.dest] +
+          custs[end].tInf + tt[custs[end].desc.orig, custs[end].desc.dest] +
           tt[custs[end].desc.dest, c.orig] + tt[c.orig,c.dest] <= pb.nTime
         cost = tc[custs[end].desc.dest, c.orig] + tc[c.orig, c.dest] -
             (tt[custs[end].desc.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
@@ -76,9 +73,9 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
       #Last Case: taking customer in-between two customers
       if length(custs) > 2
         for i in 1:length(custs)-1
-          if custs[i].tTake + tt[custs[i].desc.orig, custs[i].desc.dest] +
+          if custs[i].tInf + tt[custs[i].desc.orig, custs[i].desc.dest] +
              tt[custs[i].desc.dest, c.orig] <= c.tmaxt &&
-             max(custs[i].tTake +
+             max(custs[i].tInf +
              tt[custs[i].desc.orig, custs[i].desc.dest] +
                tt[custs[i].desc.dest, c.orig], c.tmin)+
                   tt[c.orig, c.dest] + tt[c.dest, custs[i+1].desc.orig] <= custs[i+1].tSup
@@ -118,7 +115,7 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
           insert!(custs, 1, AssignedCustomer(c, tmin, tmaxt))
         end
       else
-        tmin = max(c.tmin, custs[i-1].tTake +
+        tmin = max(c.tmin, custs[i-1].tInf +
         tt[custs[i-1].desc.orig, custs[i-1].desc.dest] +
         tt[custs[i-1].desc.dest, c.orig])
         if i > length(custs) #If inserted in last position
@@ -133,25 +130,60 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
        #-------------------------
       # Update the freedom intervals of the other assigned customers
       #-------------------------
-      for j = (i-1):(-1):1
+      for j = (i-1) :(-1):1
         custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup -
           tt[custs[j].desc.orig, custs[j].desc.dest] -
           tt[custs[j].desc.dest, custs[j+1].desc.orig])
       end
-      for j = (i+1):length(custs)
-        custs[j].tTake = max(custs[j].tTake, custs[j-1].tTake +
+      for j = (i+1) :length(custs)
+        custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf +
           tt[custs[j-1].desc.orig, custs[j-1].desc.dest] +
           tt[custs[j-1].desc.dest, custs[j].desc.orig])
       end
     end
   end
-  res = [CustomerAssignment(0,0,0) for i in 1:length(pb.custs)]
-  for (k,custs) in enumerate(taxis)
-    for c in custs
-      res[c.desc.id] = CustomerAssignment(k,c.tTake,c.tTake +
-       tt[c.desc.orig, c.desc.dest])
-    end
-  end
-  return (solutionCost(pb,taxis),res)
 
+  return (solutionCost(pb,taxis), taxis)
+
+end
+
+#Return the full solution, rule: pick up customers as early as possible
+function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
+  cost, sol = offlineAssignmentQuick(pb,order)
+
+  nTaxis, nCusts = length(pb.taxis), length(pb.custs)
+  actions = Array(TaxiActions, nTaxis)
+  notInfn = IntSet(1:nCusts)
+  for k in 1:nTaxis
+    custs = CustomerAssignment[]
+    for c in sol[k]
+        push!( custs, CustomerAssignment(c.desc.id,c.tInf,c.tInf + pb.sp.traveltime[c.desc.orig, c.desc.dest]))
+        symdiff!(notInfn, c.desc.id) #remove customer c from the non-taken
+      end
+    end
+    actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
+  end
+  return TaxiSolution(actions, collect(notInfn), cost)
+end
+
+
+#Quickly compute the cost using assigned customers
+function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
+  cost = 0.0
+  tt = pb.sp.traveltime
+  tc = pb.sp.travelcost
+  for (k,custs) in enumerate(t)
+    pos = pb.taxis[k].initPos
+    time = 1
+    for c in custs
+      cost -= c.desc.price
+      cost += tc[pos,c.desc.orig]
+      cost += tc[c.desc.orig,c.desc.dest]
+      cost += (c.tInf - time - tt[pos,c.desc.orig])*pb.waitingCost
+      time =  c.tInf + tt[c.desc.orig,c.desc.dest]
+      pos = c.desc.dest
+    end
+    cost += (pb.nTime - time + 1)*pb.waitingCost
+  end
+  return cost
 end

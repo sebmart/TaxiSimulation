@@ -11,7 +11,7 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
   bestCost = Inf
   bestSol = 0
 
-  bestCost, bestSol = offlineAssignment(pb, order)
+  bestCost, bestSol = offlineAssignmentQuick(pb, order)
   println("Try: 1, $(-bestCost) dollars")
 
   for trys in 2:n
