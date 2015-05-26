@@ -2,6 +2,35 @@
 #--Run a problem the online way
 #----------------------------------------
 
+
+#The type of any online model
+abstract OnlineModel
+
+# Represent the actions chosen by the online algorithm for the current time-step
+immutable OnlineActions
+  moves::Array{Int,1} #Edge of each taxi
+  actions::Array{CustomerAction, 1}
+end
+
+# Represent the new information provided to the online algorithms at each
+#new time-step
+immutable OnlineUpdate
+  newCusts::Array{Customer, 1}
+end
+
+
+# Represent all the informations of the problem, excepted the customers
+immutable InitialData
+  network::Network
+  taxis::Array{Taxi,1}
+  nTime::Int
+  waitingCost::Float64
+  sp::ShortPaths
+end
+
+InitialData(pb::TaxiProblem) =
+  InitialData(pb.network,pb.taxis,pb.nTime,pb.waitingCost,pb.sp)
+  
 function onlineSim(pb::TaxiProblem, model::OnlineModel; verbose=0, noCost=false)
   taxi = pb.taxis
   cust = pb.custs

@@ -147,10 +147,15 @@ function offlineAssignmentQuick(pb::TaxiProblem, order::Vector{Int})
 
 end
 
-#Return the full solution, rule: pick up customers as early as possible
+#Return the full solution
 function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
   cost, sol = offlineAssignmentQuick(pb,order)
 
+  return offlineAssignmentSolution(pb, sol, cost)
+end
+
+#Return the full solution, rule: pick up customers as early as possible
+function offlineAssignmentSolution(pb::TaxiProblem, sol::Vector{AssignedCustomer}, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
   actions = Array(TaxiActions, nTaxis)
   notInfn = IntSet(1:nCusts)
@@ -165,7 +170,6 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
   end
   return TaxiSolution(actions, collect(notInfn), cost)
 end
-
 
 #Quickly compute the cost using assigned customers
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})

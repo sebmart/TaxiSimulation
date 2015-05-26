@@ -20,12 +20,5 @@ function randomAssignment(pb::TaxiProblem, n::Int)
     order = randomOrder(pb)
   end
   println("Final: $(-bestCost) dollars")
-  cpt, nt = customers_per_taxi(length(pb.taxis),bestSol)
-  tp = taxi_paths(pb,bestSol,cpt)
-
-  taxiActs = Array(TaxiActions,nTaxis)
-  for i = 1:nTaxis
-    taxiActs[i] = TaxiActions(tp[i],cpt[i])
-  end
-  return TaxiSolution(taxiActs, nt, bestSol, bestCost)
+  return offlineAssignmentSolution(pb, bestSol, bestCost)
 end

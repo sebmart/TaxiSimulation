@@ -73,43 +73,7 @@ end
 ShortPaths() = ShortPaths( Array(Int8, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 
-#Should I keep this ?
-const TAKE, DROP = 1, 2
 
-#Represent a customer-related action of a taxi (take or drop)
-immutable CustomerAction
-  cust::Int
-  action::Int
-  taxi::Int
-end
-
-#The type of any online model
-abstract OnlineModel
-
-# Represent the actions chosen by the online algorithm for the current time-step
-immutable OnlineActions
-  moves::Array{Int,1} #Edge of each taxi
-  actions::Array{CustomerAction, 1}
-end
-
-# Represent the new information provided to the online algorithms at each
-#new time-step
-immutable OnlineUpdate
-  newCusts::Array{Customer, 1}
-end
-
-
-# Represent all the informations of the problem, excepted the customers
-immutable InitialData
-  network::Network
-  taxis::Array{Taxi,1}
-  nTime::Int
-  waitingCost::Float64
-  sp::ShortPaths
-end
-
-InitialData(pb::TaxiProblem) =
-  InitialData(pb.network,pb.taxis,pb.nTime,pb.waitingCost,pb.sp)
 
 #tools
 include("Tools/print.jl")

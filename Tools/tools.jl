@@ -27,26 +27,6 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
   return cost
 end
 
-#compute the cost using a different way (must be equivalent)
-function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
-  cost = 0.0
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
-  for (k,custs) in enumerate(t)
-    pos = pb.taxis[k].initPos
-    time = 1
-    for c in custs
-      cost -= c.desc.price
-      cost += tc[pos,c.desc.orig]
-      cost += tc[c.desc.orig,c.desc.dest]
-      cost += (c.tTake - time - tt[pos,c.desc.orig])*pb.waitingCost
-      time =  c.tTake + tt[c.desc.orig,c.desc.dest]
-      pos = c.desc.dest
-    end
-    cost += (pb.nTime - time + 1)*pb.waitingCost
-  end
-  return cost
-end
 
 
 

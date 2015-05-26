@@ -24,7 +24,7 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
 
     order[i], order[j] = order[j], order[i]
 
-    cost, sol = offlineAssignment(pb, order)
+    cost, sol = offlineAssignmentQuick(pb, order)
     if cost <= bestCost
       if cost < bestCost
         println("====Try: $(trys), $(-cost) dollars")
@@ -36,14 +36,9 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
     order[i], order[j] = order[j], order[i]
   end
   println("Final: $(-bestCost) dollars")
-  cpt, nt = customers_per_taxi(length(pb.taxis),bestSol)
-  tp = taxi_paths(pb,bestSol,cpt)
 
-  taxiActs = Array(TaxiActions,length(pb.taxis))
-  for i = 1:length(pb.taxis)
-    taxiActs[i] = TaxiActions(tp[i],cpt[i])
-  end
-  return (TaxiSolution(taxiActs, nt, bestSol, bestCost), order)
+  return (offlineAssignmentSolution(pb, bestSol, bestCost), order)
 end
+
 randomDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)]) =
   randomDescentOrder(pb,n,start)[1]
