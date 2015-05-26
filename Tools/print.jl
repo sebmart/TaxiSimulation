@@ -37,7 +37,7 @@ function printShort(pb::TaxiProblem, s::TaxiSolution)
     println("=== TAXI $k")
     println("==========================")
     for c in tax.custs
-      println("Takes customer $c at time $(c.timeIn)")
+      println("Takes customer $(c.id) at time $(c.timeIn)")
     end
   end
 end

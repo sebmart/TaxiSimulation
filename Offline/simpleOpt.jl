@@ -19,7 +19,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
 
   #Compute the list of the lists of customers that can be before each customer
   pCusts = Array(Array{Int,1},nCusts)
-  nextCusts = Array(Array{(Int,Int),1},nCusts)
+  nextCusts = Array( Array{(Int,Int),1},nCusts)
   for i=1:nCusts
     nextCusts[i] = (Int,Int)[]
   end
@@ -160,30 +160,9 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
   tx = getValue(x)
   ty = getValue(y)
 
-  #custs is (taxi, time_taken, time_dropped) for each customer, with (0,0) if not taken
-  res = [CustomerAssignment(0,0,0) for i in 1:nCusts]
-
-  for k=1:nTaxis, c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt
-    if ty[k,c,t] == 1
-      res[c] = CustomerAssignment(k,t,t+tt[cust[c].orig, cust[c].dest])
-    end
-  end
-  for k=1:nTaxis, c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt
-    if tx[k,c,c0,t] == 1
-      res[c] = CustomerAssignment(k,t,t+tt[cust[c].orig, cust[c].dest])
-    end
-  end
-  cpt, nt = customers_per_taxi(nTaxis,res)
-  tp = taxi_paths(pb,res,cpt)
-
-  taxiActs = Array(TaxiActions,nTaxis)
-  for i = 1:nTaxis
-    taxiActs[i] = TaxiActions(tp[i],cpt[i])
-  end
   println( getObjectiveValue(m))
-  println( solutionCost(pb,taxiActs,res))
 
-  return simpleOpt_solution( pb, getValue(x), getValue(y), getObjectiveValue(m))
+  return simpleOpt_solution( pb, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
 end
 
 
@@ -194,16 +173,17 @@ simpleOpt(pb::TaxiProblem, init::TaxiSolution) =
   simpleOpt(pb,init; useInit = true)
 
 simpleOpt(pb::TaxiProblem) =
-    simpleOpt(pb,TaxiSolution(TaxiActions[],Int[],CustomerAssignment[],0.); useInit = false)
+    simpleOpt( pb,TaxiSolution(TaxiActions[],Int[],0.); useInit = false)
 
-function simpleOpt_solution(pb::TaxiProblem, x, y, cost::Float64)
+function simpleOpt_solution(pb::TaxiProblem, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
+  println(y)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
   actions = Array(TaxiActions, nTaxis)
   notTaken = IntSet(1:nCusts)
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     nbCusts =0
-    for c=1:nCusts, t=1:pb.cust[c].tmin : pb.cust[c].tmaxt
+    for c=1:nCusts, t=pb.custs[c].tmin : pb.custs[c].tmaxt
       if y[k,c,t] > 0.9
         push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
         symdiff!(notTaken, c) #remove customer c from the non-taken
@@ -212,8 +192,8 @@ function simpleOpt_solution(pb::TaxiProblem, x, y, cost::Float64)
     while nbCusts < length(custs)
       nbCusts +=1
       c0 = custs[end].id
-      for c=1:nCusts, t=1:pb.cust[c].tmin : pb.cust[c].tmaxt
-        if x[k,c,c0,t] > 0.9
+      for (c,id) in nextCusts[c0], t=pb.custs[c].tmin : pb.custs[c].tmaxt
+        if x[k,c,id,t] > 0.9
           push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
           symdiff!(notTaken, c)
         end

@@ -155,16 +155,16 @@ function offlineAssignment(pb::TaxiProblem, order::Vector{Int})
 end
 
 #Return the full solution, rule: pick up customers as early as possible
-function offlineAssignmentSolution(pb::TaxiProblem, sol::Vector{AssignedCustomer}, cost::Float64)
+function offlineAssignmentSolution(pb::TaxiProblem, sol::Vector{Vector{AssignedCustomer}}, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
   actions = Array(TaxiActions, nTaxis)
   notInfn = IntSet(1:nCusts)
+
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     for c in sol[k]
         push!( custs, CustomerAssignment(c.desc.id,c.tInf,c.tInf + pb.sp.traveltime[c.desc.orig, c.desc.dest]))
         symdiff!(notInfn, c.desc.id) #remove customer c from the non-taken
-      end
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end

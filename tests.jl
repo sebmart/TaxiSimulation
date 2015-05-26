@@ -6,11 +6,12 @@ include("Offline/randomAssignment.jl")
 include("Offline/randomDescent.jl")
 include("Offline/simpleOpt.jl")
 
+@time sol = simpleOpt(city)
 
 const width  = 5
-const nTime  = 100
-const nTaxis = 5
-const nCusts = 25
+const nTime  = 75
+const nTaxis = 3
+const nCusts = 20
 
 #Create the network
 city = SquareCity(width)
@@ -45,3 +46,6 @@ printSolution(city,sol,verbose=1)
 printSolution(city,sol,verbose=2)
 
 @time randomDescent(city, 100).cost
+
+a =1
+a +=1
