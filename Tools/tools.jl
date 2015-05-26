@@ -14,14 +14,14 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
     end
   end
   for (k,t) in enumerate(taxis)
-    previous_index = Road(0,0)
+    previousRoad = Road(0,0)
     for r in t.path
       if src(r) == dst(r)
         cost += pb.waitingCost
       elseif r != previousRoad
         cost += pb.roadCost[ src(r), dst(r)] #cost of taking the road
       end
-      previous_index = r
+      previousRoad = r
     end
   end
   return cost
@@ -136,28 +136,23 @@ end
 #Transform the list of each customer's assignment into a list of each taxi's
 # list of assignments (ordered), plus a list of the non-taken customers
 function customers_per_taxi(nTaxis::Int, custs::Array{CustomerAssignment,1})
-  dict = Dict{Int64, Array{(Int64, Int64),1}}()
-  notTaken = Int[]
+  taxis = [(Int64, Int64)[] for i in 1:nTaxis]
+  notTaken = Int64[]
 
   for (cust,temp) in enumerate(custs)
     taxi = temp.taxi
     time = temp.timeIn
     if taxi == 0
       push!(notTaken,cust)
-    elseif haskey(dict,taxi)
-      push!(dict[taxi],(cust,time))
     else
-      dict[taxi] = [(cust,time)]
+      push!(taxis[taxi], (cust,time))
     end
   end
 
-  result = Array(Array{Int,1},nTaxis)
-  for k in 1:nTaxis
-    result[k] = Int[]
-  end
+  result = [Int64[] for i in 1:nTaxis]
 
-  for k in sort(collect(keys(dict)))
-    for (c,t) in sort(dict[k],by=(x->x[2]))
+  for k in 1:nTaxis
+    for (c,t) in sort(taxis[k], by = (x->x[2]))
       push!(result[k],c)
     end
   end

@@ -10,4 +10,6 @@
 
 - Clean the project a little
 
-- Verify the equivalence of the cost functions 
+- Verify the equivalence of the cost functions
+
+- Change Solution type

@@ -3,10 +3,6 @@ using Gurobi
 
 #The MILP formulation, needs the previous computation of the shortest paths
 function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
-  #We need the shortestPaths
-  if !spComputed(pb)
-    shortestPath!(pb)
-  end
 
   sp = pb.sp
 
@@ -33,13 +29,13 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
     tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
     [1:nCusts])
     for (id,j) in enumerate(pCusts[i])
-      push!(nextCusts[j],(i,id))
+      push!(nextCusts[j], (i,id))
     end
   end
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver=GurobiSolver(TimeLimit=10000,MIPFocus=1))
+  m = Model( solver= GurobiSolver( TimeLimit=100,MIPFocus=1))
 
   # =====================================================
   # Decision variables
