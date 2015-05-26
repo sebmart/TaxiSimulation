@@ -1,5 +1,6 @@
 using OpenStreetMap, Graphs
 using HDF5, JLD
+import LightGraphs
 
 type Manhattan <: TaxiProblem
   network::Network
@@ -12,7 +13,7 @@ type Manhattan <: TaxiProblem
   #--------------
   #Specific attributes
     tStart::DateTime
-  
+
     tEnd::DateTime
 
 
@@ -22,20 +23,27 @@ end
 
 
 
-mapFile = "Cities/Manhattan/manhattan-raw.osm"
 cd("/Users/Sebastien/Documents/Dropbox (MIT)/Research/Taxi/JuliaSimulation")
-nodes, hwys, builds, feats = getOSMData(mapFile)
-1+1
 
 
-network6.
-city = load("Cities/Manhattan/manhattan.jld")
-city = city["network"]
-stdin, proc = open(`neato -n2 -Tpdf -o graph.pdf`, "w")
-drawGraph(city.g,stdin)
-close(stdin)
-city.
-a=3
-1+1
+idToVertex = data["network"].v
+oldGraph   = data["network"].g
+w = data["network"].w
 
-[1,2,3]
+data = load("Cities/Manhattan/manhattan.jld")
+
+graphMan = LightGraphs.DiGraph(num_vertices(oldGraph))
+
+for i in vertices(oldGraph), j in Set( out_neighbors(i,oldGraph))
+  LightGraphs.add_edge!(graphMan, i.index, j.index)
+end
+
+
+weights = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
+times   = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
+positions = [(0.0,0.0) for i in 1:num_vertices(oldGraph))
+
+for i in vertices(oldGraph), e in Set( out_edges(i,oldGraph))
+  weights[ i.index, target(e).index] = w[e.index]
+  times[ i.index, target(e).index] = 3.6*w[e.index]/OpenStreetMap.SPEED_ROADS_URBAN[data["network"].class[e.index]]
+end

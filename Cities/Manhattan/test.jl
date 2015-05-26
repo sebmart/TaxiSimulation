@@ -88,8 +88,7 @@ ENUbis = Dict{Int64,ENU}()
 for i in nodes
     ENUbis[i] = nodesENU[i]
 end
-save("Cities/Manhattan/manhattan.jld", "network", network4)
-save("Cities/Manhattan/manhattan.jld", "nodes", ENUbis)
+save("Cities/Manhattan/manhattan.jld", "network", network4,"nodes", ENUbis)
 
 
 
@@ -203,3 +202,38 @@ function remove_vertices(remInd, segments, intersections, rev=false)
     return OpenStreetMap.Network(g, v, w, class)
 
 end
+
+
+#---------------------------------------------------
+#-- CONSTRUCTION GRAPH
+#---------------------------------------------------
+
+
+data = load("Cities/Manhattan/manhattan_raw.jld")
+
+idToVertex = data["network"].v
+oldGraph   = data["network"].g
+nodes = data["nodes"]
+w = data["network"].w
+
+graphMan = LightGraphs.DiGraph(num_vertices(oldGraph))
+
+for i in vertices(oldGraph), j in Set( out_neighbors(i,oldGraph))
+  LightGraphs.add_edge!(graphMan, i.index, j.index)
+end
+
+
+weights = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
+times   = spzeros(num_vertices(oldGraph),num_vertices(oldGraph))
+positions = [(0.0,0.0) for i in 1:num_vertices(oldGraph)]
+
+for i in vertices(oldGraph), e in Set( out_edges(i,oldGraph))
+  weights[ i.index, target(e).index] = w[e.index]
+  times[ i.index, target(e).index] = 3.6*w[e.index]/OpenStreetMap.SPEED_ROADS_URBAN[data["network"].class[e.index]]
+end
+
+for i in vertices(oldGraph)
+  positions[i.index] = (nodes[i.key].east, nodes[i.key].north)
+end
+
+save("Cities/Manhattan/manhattan.jld", "network", graphMan, "distances", weights, "timings", times, "positions", positions)
