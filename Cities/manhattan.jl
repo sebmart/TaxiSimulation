@@ -1,8 +1,12 @@
 #----------------------------------------
 #-- Real Manhattan network, from OpenStreetMap data
 #----------------------------------------
+using Dates
 
-
+immutable Coordinates
+  x::Float64
+  y::Float64
+end
 
 type Manhattan <: TaxiProblem
   network::Network
@@ -17,17 +21,33 @@ type Manhattan <: TaxiProblem
   #--------------
   #Specific attributes
   distances::SparseMatrixCSC{Float64, Int}
-  positions::Vector{ (Float64, Float64)}
+  positions::Vector{Coordinates}
   tStart::DateTime
   tEnd::DateTime
   function Manhattan()
     c = new()
-    data = load("Manhattan/manhattan.jld")
+    data = load("Cities/Manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
     c.roadTime  = data["timings"]
-    c.positions = data["positions"]
+    c.roadCost  = c.roadTime/100 #temporary
+    c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
+    c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+    return c
   end
+end
 
 
+#Output the graph vizualization to pdf file (see GraphViz library)
+function drawNetwork(pb::Manhattan, name::String = "graph")
+  stdin, proc = open(`neato -n2 -Tpdf -o Outputs/$name.pdf`, "w")
+  write(stdin, "digraph  citygraph {\n")
+  for i in vertices(pb.network)
+    write(stdin, "$i [\"pos\"=\"$(pb.positions[i].x),$(pb.positions[i].y)!\"]\n")
+  end
+  for i in vertices(pb.network), j in out_neighbors(pb.network,i)
+    write(stdin, "$i -> $j\n")
+  end
+  write(stdin, "}\n")
+  close(stdin)
 end

@@ -49,3 +49,10 @@ printSolution(city,sol,verbose=2)
 
 drawNetwork(city, "test")
 dotFile(city, "test")
+
+
+#------------------------
+#-- Manhattan
+#------------------------
+include("Cities/manhattan.jl")
+man =
