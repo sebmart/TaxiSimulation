@@ -5,6 +5,7 @@ include("Cities/metropolis.jl")
 include("Offline/randomAssignment.jl")
 include("Offline/randomDescent.jl")
 include("Offline/simpleOpt.jl")
+include("Offline/intervalOpt.jl")
 
 
 const width  = 5
@@ -32,6 +33,9 @@ printSolution(city,sol,verbose=2)
 
 @time printSolution(city, randomDescent(city, 1000))
 
+@time printSolution(city, intervalOpt(city))
+
+
 #Create the network
 city = Metropolis(width, 10)
 
@@ -49,6 +53,9 @@ printSolution(city,sol,verbose=2)
 
 drawNetwork(city, "test")
 dotFile(city, "test")
+
+
+
 
 
 #------------------------

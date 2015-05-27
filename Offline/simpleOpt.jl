@@ -154,7 +154,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
 
   println( getObjectiveValue(m))
 
-  return simpleOpt_solution( pb, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
+  return simpleOpt_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
 end
 
 
@@ -167,34 +167,34 @@ simpleOpt(pb::TaxiProblem, init::TaxiSolution) =
 simpleOpt(pb::TaxiProblem) =
     simpleOpt( pb,TaxiSolution(TaxiActions[],Int[],0.); useInit = false)
 
-function simpleOpt_solution(pb::TaxiProblem, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
+function simpleOpt_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
-  chain = [0 for i in 1:nCusts]
-  first = [0 for i in 1:nTaxis]
+  chain = [(0,0) for i in 1:nCusts]
+  first = [(0,0) for i in 1:nTaxis]
 
   for c =1:nCusts, k = 1:nTaxis, t = pb.custs[c].tmin : pb.custs[c].tmaxt
-    if ty[k,c,t] > 0.9
-      first[k] = c
+    if y[k,c,t] > 0.9
+      first[k] = (c,t)
     end
   end
 
   for c =1:nCusts, t=pb.custs[c].tmin : pb.custs[c].tmaxt, k = 1:nTaxis,
      c0= 1:length(pCusts[c])
-    if tx[k,c,c0,t] > 0.9
-      chain[pCusts[c][c0]] = c
+    if x[k,c,c0,t] > 0.9
+      chain[pCusts[c][c0]] = (c,t)
     end
   end
 
   notTakenMask = trues(nCusts)
   for k= 1:nTaxis
-    if first[k] > 0
-      notTakenMask[first[k]] = false
+    if first[k][1] > 0
+      notTakenMask[first[k][1]] = false
     end
   end
   for c= 1:nCusts
-    if chain[c] > 0
-      notTakenMask[chain[c]] = false
+    if chain[c][1] > 0
+      notTakenMask[chain[c][1]] = false
     end
   end
   notTaken = [1:nCusts][notTakenMask]
@@ -202,12 +202,10 @@ function simpleOpt_solution(pb::TaxiProblem, nextCusts::Vector{ Vector{ (Int,Int
   actions = Array(TaxiActions, nTaxis)
   for k=1:nTaxis
     custs = CustomerAssignment[]
-    if first[k] != 0
-      tempC = first[k]
-      while tempC != 0
-        push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
-        tempC = chain[tempC]
-      end
+    c, t = first[k]
+    while c != 0
+      push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
+      c,t  = chain[c]
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end

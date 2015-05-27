@@ -22,7 +22,7 @@ end
 
 function intervalOpt(pb::TaxiProblem)
   sol = solveIntervals(pb)
-  custs = [[CustomerAssignment(c, intervals[c].inf, intervals[c].inf +
+  custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
    pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
   return TaxiSolution(
   [ TaxiActions( taxi_path(pb,k,custs[k]), custs[k]) for k in 1:length(pb.taxis)],
