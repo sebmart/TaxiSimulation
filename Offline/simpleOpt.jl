@@ -1,5 +1,8 @@
-using JuMP
-using Gurobi
+#----------------------------------------
+#-- 0-1 optimisation, "taxi k takes customer c at time t after customer d"
+#----------------------------------------
+
+using JuMP, Gurobi
 
 #The MILP formulation, needs the previous computation of the shortest paths
 function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
@@ -17,21 +20,10 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
   tt = sp.traveltime
   tc = sp.travelcost
 
-  #Compute the list of the lists of customers that can be before each customer
-  pCusts = Array(Array{Int,1},nCusts)
-  nextCusts = Array( Array{(Int,Int),1},nCusts)
-  for i=1:nCusts
-    nextCusts[i] = (Int,Int)[]
-  end
+  #Compute the list of the lists of customers that can be picked-up
+  #before each customer
+  pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
-  for (i,c1) in enumerate(cust)
-    pCusts[i]= filter(c2->c2 != i && cust[c2].tmin +
-    tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
-    [1:nCusts])
-    for (id,j) in enumerate(pCusts[i])
-      push!(nextCusts[j], (i,id))
-    end
-  end
 
 
   #Solver : Gurobi (modify parameters)
@@ -176,30 +168,49 @@ simpleOpt(pb::TaxiProblem) =
     simpleOpt( pb,TaxiSolution(TaxiActions[],Int[],0.); useInit = false)
 
 function simpleOpt_solution(pb::TaxiProblem, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
-  println(y)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
-  actions = Array(TaxiActions, nTaxis)
-  notTaken = IntSet(1:nCusts)
-  for k in 1:nTaxis
-    custs = CustomerAssignment[]
-    nbCusts =0
-    for c=1:nCusts, t=pb.custs[c].tmin : pb.custs[c].tmaxt
-      if y[k,c,t] > 0.9
-        push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
-        symdiff!(notTaken, c) #remove customer c from the non-taken
-      end
+
+  chain = [0 for i in 1:nCusts]
+  first = [0 for i in 1:nTaxis]
+
+  for c =1:nCusts, k = 1:nTaxis, t = pb.custs[c].tmin : pb.custs[c].tmaxt
+    if ty[k,c,t] > 0.9
+      first[k] = c
     end
-    while nbCusts < length(custs)
-      nbCusts +=1
-      c0 = custs[end].id
-      for (c,id) in nextCusts[c0], t=pb.custs[c].tmin : pb.custs[c].tmaxt
-        if x[k,c,id,t] > 0.9
-          push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
-          symdiff!(notTaken, c)
-        end
+  end
+
+  for c =1:nCusts, t=pb.custs[c].tmin : pb.custs[c].tmaxt, k = 1:nTaxis,
+     c0= 1:length(pCusts[c])
+    if tx[k,c,c0,t] > 0.9
+      chain[pCusts[c][c0]] = c
+    end
+  end
+
+  notTakenMask = trues(nCusts)
+  for k= 1:nTaxis
+    if first[k] > 0
+      notTakenMask[first[k]] = false
+    end
+  end
+  for c= 1:nCusts
+    if chain[c] > 0
+      notTakenMask[chain[c]] = false
+    end
+  end
+  notTaken = [1:nCusts][notTakenMask]
+
+  actions = Array(TaxiActions, nTaxis)
+  for k=1:nTaxis
+    custs = CustomerAssignment[]
+    if first[k] != 0
+      tempC = first[k]
+      while tempC != 0
+        push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
+        tempC = chain[tempC]
       end
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end
+
   return TaxiSolution(actions, collect(notTaken), cost)
 end

@@ -5,3 +5,7 @@
 - Verify the equivalence of the cost functions
 
 - Implement Manhattan city
+
+- Improve customer preprocessing (?)
+
+- Total unimodularity (!)

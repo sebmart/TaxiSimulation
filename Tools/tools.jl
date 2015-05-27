@@ -152,3 +152,22 @@ function randomOrder(pb::TaxiProblem)
   end
   return order
 end
+
+#Return customers that can be taken before other customers
+function customersCompatibility(pb::TaxiProblem)
+  pCusts = Array(Array{Int,1},nCusts)
+  nextCusts = Array( Array{(Int,Int),1},nCusts)
+  for i=1:nCusts
+    nextCusts[i] = (Int,Int)[]
+  end
+
+  for (i,c1) in enumerate(cust)
+    pCusts[i]= filter(c2->c2 != i && cust[c2].tmin +
+    tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
+    [1:nCusts])
+    for (id,j) in enumerate(pCusts[i])
+      push!(nextCusts[j], (i,id))
+    end
+  end
+  return pCusts, nextCusts
+end
