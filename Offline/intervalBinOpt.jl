@@ -24,8 +24,8 @@ if !isdefined(:TimeWindow)
   end
 end
 
-function intervalOpt(pb::TaxiProblem)
-  sol = solveIntervals(pb)
+function intervalBinOpt(pb::TaxiProblem)
+  sol = solveBinIntervals(pb)
   custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
    pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
   return TaxiSolution(
@@ -36,7 +36,7 @@ function intervalOpt(pb::TaxiProblem)
 end
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function solveIntervals(pb::TaxiProblem)
+function solveBinIntervals(pb::TaxiProblem)
 
   taxi = pb.taxis
   cust = pb.custs
@@ -65,10 +65,9 @@ function solveIntervals(pb::TaxiProblem)
   @defVar(m, x[k=1:nTaxis, c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
   #Taxi k takes customer c, as a first customer
   @defVar(m, y[k=1:nTaxis,c=1:nCusts], Bin)
-  #Lower bound of pick-up time window
-  @defVar(m, i[c=1:nCusts] >= cust[c].tmin)
-  #Upper bound of pick-up time window
-  @defVar(m, s[c=1:nCusts] <= cust[c].tmaxt)
+  #Time window timesteps
+  @defVar(m, tw[c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt] >= cust[c].tmin)
+
 
 
   # =====================================================
@@ -126,34 +125,49 @@ function solveIntervals(pb::TaxiProblem)
 
   M = 1000 #For bigM method
 
-  #inf <= sup
+  #Time window not empty
   @addConstraint(m, c5[c=1:nCusts],
-  i[c] <= s[c])
+   sum{tw[c,t], t=cust[c].tmin : cust[c].tmaxt} > 0)
 
-  #Sup bounds rules
-  @addConstraint(m, c6[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c])],
-  s[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - s[c] <= M*(1 - x[k, c, c0]))
+  #Compatibility rules
+  @addConstraint(m, c6[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt],
+   sum{tw[c,t2], t2= cust[c].tmin : min(cust[c].tmaxt,
+    t - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
+   tt[cust[pCusts[c][c0]].dest, cust[c].orig])} >= tw[c, t] + x[k,c,c0] - 1)
 
-  #Inf bounds rules
-  @addConstraint(m, c7[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c])],
-  i[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - i[c] <= M*(1 - x[k, c, c0]))
+
   #First move constraint
-  @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts],
-  i[c] - tt[taxi[k].initPos, cust[c].orig] >= M*(y[k, c] - 1))
+  @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts,
+   t=cust[c].tmin : min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig])],
+  tw[c,t] <= 1 - y[k, c])
 
   status = solve(m)
   tx = getValue(x)
   ty = getValue(y)
-  ti = getValue(i)
-  ts = getValue(s)
+  ttw = getValue(tw)
 
   chain = [0 for i in 1:nCusts]
   first = [0 for i in 1:nTaxis]
   custs = [Int[] for k in 1:nTaxis]
 
-  intervals = [TimeWindow( int(ti[c]), int(ts[c])) for c=1:nCusts]
+  intervals = Array(TimeWindow,nCusts)
+  for c = 1:nCusts
+    minT = 0
+    for t=cust[c].tmin : cust[c].tmaxt
+      if ttw[c,t] >0.9
+        minT = t
+        break
+      end
+    end
+    maxT = 0
+    for t=cust[c].tmaxt : -1 : cust[c].tmin
+      if ttw[c,t] >0.9
+        maxT = t
+        break
+      end
+    end
+    intervals[c] = TimeWindow(minT,maxT)  
+  end
 
 
   for c =1:nCusts, k = 1:nTaxis

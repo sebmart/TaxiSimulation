@@ -6,7 +6,7 @@ include("Offline/randomAssignment.jl")
 include("Offline/randomDescent.jl")
 include("Offline/simpleOpt.jl")
 include("Offline/intervalOpt.jl")
-
+include("Offline/intervalBinOpt.jl")
 
 const width  = 5
 const nTime  = 75
@@ -31,9 +31,11 @@ printSolution(city,sol,verbose=0)
 printSolution(city,sol,verbose=1)
 printSolution(city,sol,verbose=2)
 
-@time printSolution(city, randomDescent(city, 1000))
+@time printSolution(city, randomDescent(city, 1000), verbose=0)
 
-@time printSolution(city, intervalOpt(city))
+@time printSolution(city, intervalOpt(city), verbose=0)
+@time printSolution(city, intervalBinOpt(city), verbose=0)
+
 
 
 #Create the network
@@ -54,7 +56,7 @@ printSolution(city,sol,verbose=2)
 drawNetwork(city, "test")
 dotFile(city, "test")
 
-
+methods(y)
 
 
 
