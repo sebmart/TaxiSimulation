@@ -12,9 +12,6 @@ if !isdefined(:TimeWindow)
     inf::Int
     sup::Int
   end
-  if !isdefined(:x)
-    x = 2
-  end
   #represent a time-window solution
   immutable IntervalSolution
     custs::Vector{Vector{Int}}
@@ -55,18 +52,18 @@ function solveBinIntervals(pb::TaxiProblem)
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver= GurobiSolver(TimeLimit=100))
+  m = Model(solver= GurobiSolver(TimeLimit=250,MIPFocus=1))
 
   # =====================================================
   # Decision variables
   # =====================================================
 
   #Taxi k takes customer c, right after customer c0
-  @defVar(m, x[k=1:nTaxis, c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
+  @defVar(m, x[c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
   #Taxi k takes customer c, as a first customer
   @defVar(m, y[k=1:nTaxis,c=1:nCusts], Bin)
   #Time window timesteps
-  @defVar(m, tw[c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt] >= cust[c].tmin)
+  @defVar(m, tw[c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt],  Bin)
 
 
 
@@ -76,8 +73,8 @@ function solveBinIntervals(pb::TaxiProblem)
   #Price paid by customers
   @defExpr(customerCost, sum{
   (tc[cust[pCusts[c][c0]].dest, cust[c].orig] +
-  tc[cust[c].orig, cust[c].dest] - cust[c].price)*x[k,c,c0],
-  k=1:nTaxis, c=1:nCusts, c0= 1:length(pCusts[c])})
+  tc[cust[c].orig, cust[c].dest] - cust[c].price)*x[c,c0],
+  c=1:nCusts, c0= 1:length(pCusts[c])})
 
   #Price paid by "first customers"
   @defExpr(firstCustomerCost, sum{
@@ -89,8 +86,8 @@ function solveBinIntervals(pb::TaxiProblem)
   #Busy time
   @defExpr(busyTime, sum{
   (tt[cust[pCusts[c][c0]].dest, cust[c].orig] +
-  tt[cust[c].orig, cust[c].dest] )*(-pb.waitingCost)*x[k,c,c0],
-  k=1:nTaxis,c=1:nCusts, c0= 1:length(pCusts[c])})
+  tt[cust[c].orig, cust[c].dest] )*(-pb.waitingCost)*x[c,c0],
+  c=1:nCusts, c0= 1:length(pCusts[c])})
 
   #Busy time during "first customer"
   @defExpr(firstBusyTime, sum{
@@ -107,33 +104,31 @@ function solveBinIntervals(pb::TaxiProblem)
 
   #Each customer can only be taken at most once and can only have one other customer before
   @addConstraint(m, c1[c=1:nCusts],
-  sum{x[k,c,c0], k=1:nTaxis, c0= 1:length(pCusts[c])} +
+  sum{x[c,c0],  c0= 1:length(pCusts[c])} +
   sum{y[k,c], k=1:nTaxis} <= 1)
 
   #Each customer can only have one next customer
   @addConstraint(m, c2[c0=1:nCusts],
-  sum{x[k,c,id], k=1:nTaxis, (c,id) = nextCusts[c0]} <= 1)
+  sum{x[c,id],  (c,id) = nextCusts[c0]} <= 1)
 
   #Only one first customer per taxi
   @addConstraint(m, c3[k=1:nTaxis],
   sum{y[k,c], c = 1:nCusts} <= 1)
 
   #c0 has been taken before by the same taxi
-  @addConstraint(m, c4[k=1:nTaxis,c=1:nCusts, c0= 1:length(pCusts[c])],
-  sum{x[k,pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
-  y[k,pCusts[c][c0]] >= x[k,c,c0])
-
-  M = 1000 #For bigM method
+  @addConstraint(m, c4[c=1:nCusts, c0= 1:length(pCusts[c])],
+  sum{x[pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
+  sum{y[k,pCusts[c][c0]], k=1:nTaxis} >= x[c,c0])
 
   #Time window not empty
   @addConstraint(m, c5[c=1:nCusts],
-   sum{tw[c,t], t=cust[c].tmin : cust[c].tmaxt} > 0)
+   sum{tw[c,t], t= (cust[c].tmin) :(cust[c].tmaxt)} >= 1)
 
   #Compatibility rules
-  @addConstraint(m, c6[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt],
-   sum{tw[c,t2], t2= cust[c].tmin : min(cust[c].tmaxt,
+  @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt],
+   sum{tw[pCusts[c][c0],t2], t2= (cust[pCusts[c][c0]].tmin) : min(cust[pCusts[c][c0]].tmaxt,
     t - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
-   tt[cust[pCusts[c][c0]].dest, cust[c].orig])} >= tw[c, t] + x[k,c,c0] - 1)
+   tt[cust[pCusts[c][c0]].dest, cust[c].orig])} >= tw[c, t] + x[c,c0] - 1)
 
 
   #First move constraint
@@ -166,7 +161,7 @@ function solveBinIntervals(pb::TaxiProblem)
         break
       end
     end
-    intervals[c] = TimeWindow(minT,maxT)  
+    intervals[c] = TimeWindow(minT,maxT)
   end
 
 
@@ -176,8 +171,8 @@ function solveBinIntervals(pb::TaxiProblem)
     end
   end
 
-  for c =1:nCusts, k = 1:nTaxis, c0=1:length(pCusts[c])
-    if tx[k,c,c0] > 0.9
+  for c =1:nCusts, c0=1:length(pCusts[c])
+    if tx[c,c0] > 0.9
       chain[pCusts[c][c0]] = c
     end
   end

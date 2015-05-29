@@ -12,9 +12,7 @@ if !isdefined(:TimeWindow)
     inf::Int
     sup::Int
   end
-  if !isdefined(:x)
-    x = 2
-  end
+
   #represent a time-window solution
   immutable IntervalSolution
     custs::Vector{Vector{Int}}
@@ -24,8 +22,8 @@ if !isdefined(:TimeWindow)
   end
 end
 
-function intervalOpt(pb::TaxiProblem)
-  sol = solveIntervals(pb)
+function intervalOptBis(pb::TaxiProblem)
+  sol = solveIntervalsBis(pb)
   custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
    pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
   return TaxiSolution(
@@ -36,7 +34,7 @@ function intervalOpt(pb::TaxiProblem)
 end
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function solveIntervals(pb::TaxiProblem)
+function solveIntervalsBis(pb::TaxiProblem)
 
   taxi = pb.taxis
   cust = pb.custs
@@ -55,14 +53,14 @@ function solveIntervals(pb::TaxiProblem)
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver= GurobiSolver(TimeLimit=100))
+  m = Model(solver= GurobiSolver(TimeLimit=250,MIPFocus=1))
 
   # =====================================================
   # Decision variables
   # =====================================================
 
   #Taxi k takes customer c, right after customer c0
-  @defVar(m, x[k=1:nTaxis, c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
+  @defVar(m, x[c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
   #Taxi k takes customer c, as a first customer
   @defVar(m, y[k=1:nTaxis,c=1:nCusts], Bin)
   #Lower bound of pick-up time window
@@ -77,8 +75,8 @@ function solveIntervals(pb::TaxiProblem)
   #Price paid by customers
   @defExpr(customerCost, sum{
   (tc[cust[pCusts[c][c0]].dest, cust[c].orig] +
-  tc[cust[c].orig, cust[c].dest] - cust[c].price)*x[k,c,c0],
-  k=1:nTaxis, c=1:nCusts, c0= 1:length(pCusts[c])})
+  tc[cust[c].orig, cust[c].dest] - cust[c].price)*x[c,c0],
+  c=1:nCusts, c0= 1:length(pCusts[c])})
 
   #Price paid by "first customers"
   @defExpr(firstCustomerCost, sum{
@@ -90,8 +88,8 @@ function solveIntervals(pb::TaxiProblem)
   #Busy time
   @defExpr(busyTime, sum{
   (tt[cust[pCusts[c][c0]].dest, cust[c].orig] +
-  tt[cust[c].orig, cust[c].dest] )*(-pb.waitingCost)*x[k,c,c0],
-  k=1:nTaxis,c=1:nCusts, c0= 1:length(pCusts[c])})
+  tt[cust[c].orig, cust[c].dest] )*(-pb.waitingCost)*x[c,c0],
+  c=1:nCusts, c0= 1:length(pCusts[c])})
 
   #Busy time during "first customer"
   @defExpr(firstBusyTime, sum{
@@ -108,21 +106,21 @@ function solveIntervals(pb::TaxiProblem)
 
   #Each customer can only be taken at most once and can only have one other customer before
   @addConstraint(m, c1[c=1:nCusts],
-  sum{x[k,c,c0], k=1:nTaxis, c0= 1:length(pCusts[c])} +
+  sum{x[c,c0], c0= 1:length(pCusts[c])} +
   sum{y[k,c], k=1:nTaxis} <= 1)
 
   #Each customer can only have one next customer
   @addConstraint(m, c2[c0=1:nCusts],
-  sum{x[k,c,id], k=1:nTaxis, (c,id) = nextCusts[c0]} <= 1)
+  sum{x[c,id], (c,id) = nextCusts[c0]} <= 1)
 
   #Only one first customer per taxi
   @addConstraint(m, c3[k=1:nTaxis],
   sum{y[k,c], c = 1:nCusts} <= 1)
 
   #c0 has been taken before by the same taxi
-  @addConstraint(m, c4[k=1:nTaxis,c=1:nCusts, c0= 1:length(pCusts[c])],
-  sum{x[k,pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
-  y[k,pCusts[c][c0]] >= x[k,c,c0])
+  @addConstraint(m, c4[c=1:nCusts, c0= 1:length(pCusts[c])],
+  sum{x[pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
+  sum{y[k,pCusts[c][c0]], k=1:nTaxis} >= x[c,c0])
 
   M = 1000 #For bigM method
 
@@ -131,14 +129,14 @@ function solveIntervals(pb::TaxiProblem)
   i[c] <= s[c])
 
   #Sup bounds rules
-  @addConstraint(m, c6[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c])],
+  @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c])],
   s[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - s[c] <= M*(1 - x[k, c, c0]))
+  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - s[c] <= M*(1 - x[c, c0]))
 
   #Inf bounds rules
-  @addConstraint(m, c7[k=1:nTaxis,c=1:nCusts, c0=1:length(pCusts[c])],
+  @addConstraint(m, c7[c=1:nCusts, c0=1:length(pCusts[c])],
   i[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - i[c] <= M*(1 - x[k, c, c0]))
+  tt[cust[pCusts[c][c0]].dest, cust[c].orig] - i[c] <= M*(1 - x[c, c0]))
   #First move constraint
   @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts],
   i[c] - tt[taxi[k].initPos, cust[c].orig] >= M*(y[k, c] - 1))
@@ -162,8 +160,8 @@ function solveIntervals(pb::TaxiProblem)
     end
   end
 
-  for c =1:nCusts, k = 1:nTaxis, c0=1:length(pCusts[c])
-    if tx[k,c,c0] > 0.9
+  for c =1:nCusts,  c0=1:length(pCusts[c])
+    if tx[c,c0] > 0.9
       chain[pCusts[c][c0]] = c
     end
   end
