@@ -2,27 +2,13 @@
 #-- mixed integer optimisation,
 #-- "taxi k takes customer c after customer d"
 #-- and time intervals to take each customer (continuous)
+#-- NOT GUARANTED FOR SOLVING DISCRETE TIME!
 #----------------------------------------
 
 using JuMP, Gurobi
 
-if !isdefined(:TimeWindow)
-  #represent a time window
-  immutable TimeWindow
-    inf::Int
-    sup::Int
-  end
 
-  #represent a time-window solution
-  immutable IntervalSolution
-    custs::Vector{Vector{Int}}
-    notTaken::Vector{Int}
-    intervals::Vector{TimeWindow}
-    cost::Float64
-  end
-end
-
-function intervalOptBis(pb::TaxiProblem)
+function intervalOpt(pb::TaxiProblem)
   sol = solveIntervalsBis(pb)
   custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
    pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
@@ -34,7 +20,7 @@ function intervalOptBis(pb::TaxiProblem)
 end
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function solveIntervalsBis(pb::TaxiProblem)
+function solveIntervals(pb::TaxiProblem init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 
   taxi = pb.taxis
   cust = pb.custs
@@ -68,6 +54,33 @@ function solveIntervalsBis(pb::TaxiProblem)
   #Upper bound of pick-up time window
   @defVar(m, s[c=1:nCusts] <= cust[c].tmaxt)
 
+  # =====================================================
+  # Initialisation
+  # =====================================================
+  if length(init.taxis) == length(pb.taxis)
+    for c=1:nCusts, c0 =1:length(pCusts[c])
+      setValue(x[c,c0],0)
+    end
+    for k=1:nTaxis, c=1:nCusts
+      setValue(y[k,c],0)
+    end
+
+    windows = timeWindows(pb,init)
+    for (k,t) in enumerate(init.taxis)
+      l = t.custs
+      if length(l) > 0
+        setValue(y[k,l[1].id], 1)
+      end
+      for i= 2:length(l)
+        setValue(
+        x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
+      end
+      for (c,w) in enumerate(windows)
+          setValue(i[c],w.inf)
+          setValue(s[c],w.sup)
+      end
+    end
+  end
 
   # =====================================================
   # Objective (do not depend on time windows!)
