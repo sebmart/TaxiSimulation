@@ -128,8 +128,8 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     maxWaiting = rand(1:10)
 
     price = (20+5*rand())*pathlength
-    tmaxt = rand(1:max(1, nTime - clienttime))
-    tmax  = min(nTime, tmaxt + clienttime)
+    tmaxt = rand(1:max(1, city.nTime - clienttime))
+    tmax  = min(city.nTime, tmaxt + clienttime)
     tmin = max(1, tmaxt - maxWaiting)
 
     maxBooking = rand(1:80)

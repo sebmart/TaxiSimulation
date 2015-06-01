@@ -174,3 +174,37 @@ function customersCompatibility(pb::TaxiProblem)
   end
   return pCusts, nextCusts
 end
+
+#Given a solution, returns the time-windows
+timeWindows(pb::TaxiProblem, sol::TaxiSolution)=
+  timeWindows(pb, [int([c.id for c in sol.taxis[k].custs])::Vector{Int} for k in 1:nTaxis])
+
+function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
+  windows = [TimeWindow(pb.custs[c].tmin,pb.custs[c].tmaxt) for c = 1:length(pb.custs)]
+  tt = pb.sp.traveltime
+  for (k,taxi) = enumerate(pb.taxis)
+    cust =[ AssignedCustomer(pb.custs[c], pb.custs[c].tmin, pb.custs[c].tmaxt)
+               for c in custs[k]]
+    if length(cust) >= 1
+      cust[1].tInf = max(cust[1].tInf, 1+tt[taxi.initPos, cust[1].desc.orig])
+    end
+    for i = 2:(length(cust))
+      cust[i].tInf = max(cust[i].tInf, cust[i-1].tInf+
+      tt[cust[i-1].desc.orig, cust[i-1].desc.dest]+
+      tt[cust[i-1].desc.dest, cust[i].desc.orig])
+    end
+    for i = (length(cust) - 1):(-1):1
+      cust[i].tSup = min(cust[i].tSup, cust[i+1].tSup-
+      tt[cust[i].desc.orig, cust[i].desc.dest]-
+      tt[cust[i].desc.dest, cust[i+1].desc.orig])
+    end
+    for c in cust
+      if c.tSup < c.tInf
+        error("Solution not feasible")
+      else
+        windows[c.desc.id] = TimeWindow(c.tInf,c.tSup)
+      end
+    end
+  end
+  return windows
+end

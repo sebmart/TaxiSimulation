@@ -2,14 +2,13 @@
 #-- Print a solution
 #----------------------------------------
 
-#Print a taxi assignment solution
-function printSolution(pb::TaxiProblem, s::TaxiSolution; verbose=1)
+function printSolution(s::TaxiSolution; verbose=1)
   if verbose == 0
-    printShort(pb,s)
+    printShort(s)
   elseif verbose == 1
-    printMedium(pb,s)
+    printMedium(s)
   else
-    printLong(pb,s)
+    printLong(s)
   end
 
   nt = s.notTakenCustomers
@@ -32,7 +31,7 @@ function printSolution(pb::TaxiProblem, s::TaxiSolution; verbose=1)
 
 end
 
-function printShort(pb::TaxiProblem, s::TaxiSolution)
+function printShort(s::TaxiSolution)
   for (k,tax) in enumerate(s.taxis)
     println("=== TAXI $k")
     println("==========================")
@@ -43,7 +42,7 @@ function printShort(pb::TaxiProblem, s::TaxiSolution)
 end
 
 #Print a solution in a reduced way, with factored taxi movements and customers
-function printMedium(pb::TaxiProblem, s::TaxiSolution)
+function printMedium(s::TaxiSolution)
   for (k,tax) in enumerate(s.taxis)
     println("\n=== TAXI $k")
     println("==========================")
@@ -51,7 +50,7 @@ function printMedium(pb::TaxiProblem, s::TaxiSolution)
     count = 0
     road = tax.path[1]
     moves = false
-    for t in 1:pb.nTime
+    for t in 1:length(tax.path)
       if !moves
         print("\nMoves: ")
         moves = true
@@ -85,7 +84,7 @@ function printLong(pb::TaxiProblem, s::TaxiSolution)
     println("=== TAXI $k")
     println("==========================")
     idc = 1
-    for t in 1:pb.nTime
+    for t in 1:length(tax.path)
       println("== time $t")
       if idc <= length(tax.custs) && (tax.custs[idc].timeOut == t)
         println("Drops customer $(tax.custs[idc].id) at location $(pb.custs[tax.custs[idc].id].dest)")

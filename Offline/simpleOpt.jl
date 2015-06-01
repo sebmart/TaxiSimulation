@@ -5,7 +5,7 @@
 using JuMP, Gurobi
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
+function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 
   sp = pb.sp
 
@@ -42,7 +42,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
   # =====================================================
   # Initialisation
   # =====================================================
-  if useInit
+  if length(init.taxis) == length(pb.taxis)
     for k=1:nTaxis, c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt
       setValue(x[k,c,c0,t],0)
     end
@@ -53,11 +53,11 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
     for (k,t) in enumerate(init.taxis)
       l = t.custs
       if length(l) > 0
-        setValue(y[k,l[1],init.custs[l[1]].timeIn], 1)
+        setValue(y[k,l[1].id,l[1].timeIn], 1)
       end
       for i=2:length(l)
         setValue(
-        x[k,l[i],findfirst(pCusts[l[i]],l[i-1]),init.custs[l[i]].timeIn], 1)
+        x[k, l[i].id, findfirst(pCusts[l[i].id], l[i-1].id), l[i].timeIn], 1)
       end
     end
   end
@@ -158,14 +158,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution; useInit = true)
 end
 
 
-#several aliases to simplify calls
-
-
-simpleOpt(pb::TaxiProblem, init::TaxiSolution) =
-  simpleOpt(pb,init; useInit = true)
-
-simpleOpt(pb::TaxiProblem) =
-    simpleOpt( pb,TaxiSolution(TaxiActions[],Int[],0.); useInit = false)
+#Gives return the solution in the right form given the solution of the optimisation problem
 
 function simpleOpt_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)

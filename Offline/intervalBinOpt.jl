@@ -6,25 +6,11 @@
 
 using JuMP, Gurobi
 
-if !isdefined(:TimeWindow)
-  #represent a time window
-  immutable TimeWindow
-    inf::Int
-    sup::Int
-  end
-  #represent a time-window solution
-  immutable IntervalSolution
-    custs::Vector{Vector{Int}}
-    notTaken::Vector{Int}
-    intervals::Vector{TimeWindow}
-    cost::Float64
-  end
-end
 
-function intervalBinOpt(pb::TaxiProblem)
-  sol = solveBinIntervals(pb)
+function intervalBinOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+  sol = solveBinIntervals(pb,init)
   custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
-   pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
+   pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:length(pb.taxis)]
   return TaxiSolution(
   [ TaxiActions( taxi_path(pb,k,custs[k]), custs[k]) for k in 1:length(pb.taxis)],
     sol.notTaken,
@@ -33,7 +19,7 @@ function intervalBinOpt(pb::TaxiProblem)
 end
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function solveBinIntervals(pb::TaxiProblem)
+function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 
   taxi = pb.taxis
   cust = pb.custs
@@ -65,7 +51,36 @@ function solveBinIntervals(pb::TaxiProblem)
   #Time window timesteps
   @defVar(m, tw[c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt],  Bin)
 
-
+  # =====================================================
+  # Initialisation
+  # =====================================================
+  if length(init.taxis) == length(pb.taxis)
+    for c=1:nCusts, c0 =1:length(pCusts[c])
+      setValue(x[c,c0],0)
+    end
+    for k=1:nTaxis, c=1:nCusts
+      setValue(y[k,c],0)
+    end
+    for c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt
+      setValue(tw[c,t],0)
+    end
+    windows = timeWindows(pb,init)
+    for (k,t) in enumerate(init.taxis)
+      l = t.custs
+      if length(l) > 0
+        setValue(y[k,l[1].id], 1)
+      end
+      for i= 2:length(l)
+        setValue(
+        x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
+      end
+      for (c,w) in enumerate(windows), t=w.inf:w.sup
+        if t>0
+          setValue(tw[c,t],1)
+        end
+      end
+    end
+  end
 
   # =====================================================
   # Objective (do not depend on time windows!)
@@ -120,7 +135,7 @@ function solveBinIntervals(pb::TaxiProblem)
   sum{x[pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
   sum{y[k,pCusts[c][c0]], k=1:nTaxis} >= x[c,c0])
 
-  #Time window not empty
+  #Time window not empty (if taken)
   @addConstraint(m, c5[c=1:nCusts],
    sum{tw[c,t], t= (cust[c].tmin) :(cust[c].tmaxt)} >= 1)
 
@@ -140,6 +155,7 @@ function solveBinIntervals(pb::TaxiProblem)
   tx = getValue(x)
   ty = getValue(y)
   ttw = getValue(tw)
+
 
   chain = [0 for i in 1:nCusts]
   first = [0 for i in 1:nTaxis]

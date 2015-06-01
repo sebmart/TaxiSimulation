@@ -73,6 +73,26 @@ end
 ShortPaths() = ShortPaths( Array(Int8, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 
+#represent a time window
+immutable TimeWindow
+  inf::Int
+  sup::Int
+end
+
+#represent a time-window solution
+immutable IntervalSolution
+  custs::Vector{Vector{Int}}
+  notTaken::Vector{Int}
+  intervals::Vector{TimeWindow}
+  cost::Float64
+end
+
+#Represent an assigned customer (not fixed time-windows)
+type AssignedCustomer
+  desc::Customer
+  tInf::Int
+  tSup::Int
+end
 
 
 #tools

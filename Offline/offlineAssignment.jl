@@ -2,12 +2,7 @@
 #-- Compute a solution, given an order on customers
 #----------------------------------------
 
-#Represent an assigned customer
-type AssignedCustomer
-  desc::Customer
-  tInf::Int
-  tSup::Int
-end
+
 
 #Only return cost and list of assignment, given problem and order on customers
 function offlineAssignmentQuick(pb::TaxiProblem, order::Vector{Int})
