@@ -20,7 +20,7 @@ function intervalOpt(pb::TaxiProblem)
 end
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function solveIntervals(pb::TaxiProblem init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+function solveIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 
   taxi = pb.taxis
   cust = pb.custs

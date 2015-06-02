@@ -158,7 +158,7 @@ function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
   tt = pb.sp.traveltime
   nCusts = length(cust)
-  pCusts = Array(Array{Int,1},nCusts)
+  pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{(Int,Int),1},nCusts)
   for i=1:nCusts
     nextCusts[i] = (Int,Int)[]

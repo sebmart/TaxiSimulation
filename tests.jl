@@ -64,4 +64,8 @@ methods(y)
 #-- Manhattan
 #------------------------
 include("Cities/manhattan.jl")
-man =
+using DataFrames
+man = Manhattan();
+df = DataFrame(east = [c.x for c in man.positions], north = [c.y for c in man.positions])
+
+writetable("nodesENU.csv", df)

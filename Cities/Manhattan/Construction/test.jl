@@ -1,11 +1,13 @@
-using OpenStreetMap, Graphs
+using OpenStreetMap
 mapFile = "Cities/Manhattan/manhattan-raw.osm"
 cd("/Users/Sebastien/Documents/Dropbox (MIT)/Research/Taxi/JuliaSimulation")
 @time nodes, hwys, builds, feats = getOSMData(mapFile)
 length(nodes),  length(hwys)
 
-
+(40.6780 + 40.8860)/2
+(-74.0382 -73.9030)/2
 bounds = Bounds(40.6780, 40.8860, -74.0382, -73.9030)
+center(bounds)
 boundsENU = ENU(bounds)
 nodesENU = ENU(nodes,center(bounds))
 typeof(nodesENU)
