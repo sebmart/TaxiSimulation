@@ -152,8 +152,6 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
   tx = getValue(x)
   ty = getValue(y)
 
-  println( getObjectiveValue(m))
-
   return simpleOpt_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
 end
 
@@ -203,5 +201,5 @@ function simpleOpt_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCu
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end
 
-  return TaxiSolution(actions, collect(notTaken), cost)
+  return TaxiSolution(actions, notTaken, cost)
 end
