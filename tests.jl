@@ -5,8 +5,19 @@ include("Cities/metropolis.jl");
 include("Offline/randomAssignment.jl");
 include("Offline/randomDescent.jl");
 include("Offline/simpleOpt.jl");
+include("Offline/fullOpt.jl");
 include("Offline/intervalOpt.jl");
 include("Offline/intervalBinOpt.jl");
+
+width, nTime, nTaxis, nCusts = 3, 20, 1, 2;
+
+city = SquareCity(width);
+
+generateProblem!(city, nTaxis, nTime, nCusts);
+@time sol = fullOpt(city);
+printSolution(sol)
+
+
 
 width, nTime, nTaxis, nCusts = 10, 150, 15, 100;
 width, nTime, nTaxis, nCusts = 5, 50, 2, 10;
