@@ -9,3 +9,5 @@
 - Improve customer preprocessing (?)
 
 - Total unimodularity (!)
+
+- Change cost to revenues (not negative...)

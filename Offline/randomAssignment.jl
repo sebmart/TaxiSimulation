@@ -7,20 +7,19 @@ function randomAssignment(pb::TaxiProblem, n::Int)
   initT = time()
   sp = pb.sp
   order = randomOrder(pb)
-  bestCost = Inf
-  bestSol = 0
-  for trys in 1:n
-    cost, sol = offlineAssignmentQuick(pb, order)
+  best = offlineAssignmentQuick(pb, order)
+  println("Try: 1, $(-best.cost) dollars")
+  for trys in 2:n
+    sol = offlineAssignmentQuick(pb, order)
 
-    if cost < bestCost
-      push!(resRandom, (time()-initT, -cost))
-      println("Try: $trys, $(-cost) dollars")
-      bestSol = sol
-      bestCost=cost
+    if sol.cost < best.cost
+      push!(resRandom, (time()-initT, -sol.cost))
+      println("Try: $trys, $(-sol.cost) dollars")
+      best = sol
     end
 
     order = randomOrder(pb)
   end
-  println("Final: $(-bestCost) dollars")
-  return offlineAssignmentSolution(pb, bestSol, bestCost)
+  println("Final: $(-best.cost) dollars")
+  return TaxiSolution(pb, best)
 end

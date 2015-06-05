@@ -210,7 +210,7 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
     if first[k] != 0
       tempC = first[k]
       while tempC != 0
-        push!(custs[k], IntervalSolution(tempC, intervals[c][1], intervals[c][2]))
+        push!(custs[k], AssignedCustomer(tempC, intervals[tempC][1], intervals[tempC][2]))
         tempC = chain[tempC]
       end
     end

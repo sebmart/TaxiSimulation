@@ -36,12 +36,13 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
     pos = pb.taxis[k].initPos
     time = 1
     for c in custs
-      cost -= c.desc.price
-      cost += tc[pos,c.desc.orig]
-      cost += tc[c.desc.orig,c.desc.dest]
-      cost += (c.tInf - time - tt[pos,c.desc.orig])*pb.waitingCost
-      time =  c.tInf + tt[c.desc.orig,c.desc.dest]
-      pos = c.desc.dest
+      c1 = pb.custs[c.id]
+      cost -= c1.price
+      cost += tc[pos,c1.orig]
+      cost += tc[c1.orig,c1.dest]
+      cost += (c.tInf - time - tt[pos,c1.orig])*pb.waitingCost
+      time =  c.tInf + tt[c1.orig,c1.dest]
+      pos = c1.dest
     end
     cost += (pb.nTime - time + 1)*pb.waitingCost
   end
@@ -225,4 +226,22 @@ function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
     end
   end
   return res
+end
+
+#Transform Interval solution into regular solution
+#rule: pick up customers as early as possible
+function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
+
+  nTaxis, nCusts = length(pb.taxis), length(pb.custs)
+  actions = Array(TaxiActions, nTaxis)
+
+  for k in 1:nTaxis
+    custs = CustomerAssignment[]
+    for c in sol.custs[k]
+        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest]))
+    end
+    actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
+  end
+  return TaxiSolution(actions, sol.notTaken, sol.cost)
+
 end

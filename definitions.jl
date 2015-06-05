@@ -81,7 +81,7 @@ type AssignedCustomer
 end
 
 #represent a time-window solution
-immutable IntervalSolution
+type IntervalSolution
   custs::Vector{Vector{AssignedCustomer}}
   notTaken::BitVector
   cost::Float64

@@ -8,11 +8,9 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
   sp = pb.sp
 
   order = start
-  bestCost = Inf
-  bestSol = 0
 
-  bestCost, bestSol = offlineAssignmentQuick(pb, order)
-  println("Try: 1, $(-bestCost) dollars")
+  best = offlineAssignmentQuick(pb, order)
+  println("Try: 1, $(-best.cost) dollars")
 
   for trys in 2:n
     #We do only on transposition from the best costn
@@ -24,21 +22,20 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
 
     order[i], order[j] = order[j], order[i]
 
-    cost, sol = offlineAssignmentQuick(pb, order)
-    if cost <= bestCost
-      if cost < bestCost
-        push!(results, (time()-initT, -cost))
-        println("====Try: $(trys), $(-cost) dollars")
-        bestSol = sol
+    sol = offlineAssignmentQuick(pb, order)
+    if sol.cost <= best.cost
+      if sol.cost < best.cost
+        push!(results, (time()-initT, -sol.cost))
+        println("====Try: $(trys), $(-sol.cost) dollars")
+        best = sol
       end
-      bestCost = cost
       order[i], order[j] = order[j], order[i]
     end
     order[i], order[j] = order[j], order[i]
   end
-  println("Final: $(-bestCost) dollars")
+  println("Final: $(-best.cost) dollars")
 
-  return (offlineAssignmentSolution(pb, bestSol, bestCost), order)
+  return (TaxiSolution(pb, best), order)
 end
 
 randomDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)]) =

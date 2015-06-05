@@ -18,7 +18,6 @@ generateProblem!(city, nTaxis, nTime, nCusts);
 printSolution(sol)
 
 
-width, nTime, nTaxis, nCusts = 10, 150, 15, 100;
 width, nTime, nTaxis, nCusts = 5, 50, 2, 10;
 
 
@@ -32,19 +31,18 @@ generateProblem!(city, nTaxis, nTime, nCusts);
 @time sol = simpleOpt(city);
 @time sol = intervalBinOpt(city);
 
-printSolution(city,sol,verbose=0)
-printSolution(city,sol,verbose=1)
-printSolution(city,sol,verbose=2)
-
+printSolution(citysol,verbose=0)
+printSolution(citysol,verbose=1)
+printSolution(citysol,verbose=2)
 @time sol = randomAssignment(city, 100)
-printSolution(city,sol,verbose=0)
-printSolution(city,sol,verbose=1)
-printSolution(city,sol,verbose=2)
+printSolution(sol,verbose=0)
+printSolution(sol,verbose=1)
+printSolution(sol,verbose=2)
 
-@time printSolution(city, randomDescent(city, 1000), verbose=0)
+@time printSolution(randomDescent(city, 1000), verbose=0)
 
-@time printSolution(city, intervalOpt(city), verbose=0)
-@time printSolution(city, intervalBinOpt(city), verbose=0)
+@time printSolution( intervalOpt(city), verbose=0)
+@time printSolution( intervalBinOpt(city), verbose=0)
 
 
 
@@ -57,9 +55,9 @@ generateProblem!(city, nTaxis, 1.0, now(), now()+Hour(2))
 
 @time sol = randomAssignment(city, 100)
 println(sol.cost)
-printSolution(city,sol,verbose=0)
-printSolution(city,sol,verbose=1)
-printSolution(city,sol,verbose=2)
+printSolution(sol,verbose=0)
+printSolution(sol,verbose=1)
+printSolution(sol,verbose=2)
 
 @time randomDescent(city, 20000).cost
 
