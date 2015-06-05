@@ -66,19 +66,23 @@ function solveIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiAc
     end
 
     windows = timeWindows(pb,init)
-    for (k,t) in enumerate(init.taxis)
-      l = t.custs
+    for (c,w) in enumerate(pb.custs)
+        setValue(i[c],w.tmin)
+        setValue(s[c],w.tmaxt)
+    end
+    for (k,l) in enumerate(windows)
       if length(l) > 0
         setValue(y[k,l[1].id], 1)
+        setValue(i[l[1].id],l[1].tInf)
+        setValue(s[l[1].id],l[1].tSup)
       end
       for i= 2:length(l)
         setValue(
         x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
+        setValue(i[l[i].id],l[i].tInf)
+        setValue(s[l[i].id],l[i].tSup)
       end
-      for (c,w) in enumerate(windows)
-          setValue(i[c],w.inf)
-          setValue(s[c],w.sup)
-      end
+
     end
   end
 

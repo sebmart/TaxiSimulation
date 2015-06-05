@@ -62,19 +62,24 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
       setValue(y[k,c],0)
     end
     windows = timeWindows(pb,init)
-
-    for (k,t) in enumerate(init.taxis)
-      l = t.custs
+    for (c,w) in enumerate(pb.custs), t=w.tmin:w.tmaxt
+        setValue(tw[c,t],1)
+    end
+    for (k,l) in enumerate(windows)
       if length(l) > 0
         setValue(y[k,l[1].id], 1)
+        for t=l[1].tInf:l[1].tSup
+            setValue(tw[l[1].id,t],1)
+        end
       end
       for i= 2:length(l)
         setValue(
         x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
+        for t=l[i].tInf:l[i].tSup
+            setValue(tw[l[i].id,t],1)
+        end
       end
-      for (c,w) in enumerate(windows), t=w.inf:w.sup
-          setValue(tw[c,t],1)
-      end
+
     end
   end
 

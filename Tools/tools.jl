@@ -27,7 +27,26 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
   return cost
 end
 
-
+#Quickly compute the cost using assigned customers
+function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
+  cost = 0.0
+  tt = pb.sp.traveltime
+  tc = pb.sp.travelcost
+  for (k,custs) in enumerate(t)
+    pos = pb.taxis[k].initPos
+    time = 1
+    for c in custs
+      cost -= c.desc.price
+      cost += tc[pos,c.desc.orig]
+      cost += tc[c.desc.orig,c.desc.dest]
+      cost += (c.tInf - time - tt[pos,c.desc.orig])*pb.waitingCost
+      time =  c.tInf + tt[c.desc.orig,c.desc.dest]
+      pos = c.desc.dest
+    end
+    cost += (pb.nTime - time + 1)*pb.waitingCost
+  end
+  return cost
+end
 
 
 #Reconstruct the complete path of a taxis from their assigned customers (in order)
@@ -175,18 +194,19 @@ function customersCompatibility(pb::TaxiProblem)
   return pCusts, nextCusts
 end
 
-#Given a solution, returns the time-windows
+#Given a solution, returns the time-windows ::Vector(Vector(AssignedCustomer))
 timeWindows(pb::TaxiProblem, sol::TaxiSolution)=
   timeWindows(pb, [int([c.id for c in sol.taxis[k].custs])::Vector{Int} for k in 1:nTaxis])
 
 function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
-  windows = [TimeWindow(pb.custs[c].tmin,pb.custs[c].tmaxt) for c = 1:length(pb.custs)]
+  res = Array(Vector{AssignedCustomer}, length(custs))
+  for k =1:length(custs)
+    res[k] = [AssignedCustomer(c, pb.custs[c].tmin, pb.custs[c].tmaxt) for c in custs[k]]
+  end
   tt = pb.sp.traveltime
-  for (k,taxi) = enumerate(pb.taxis)
-    cust =[ AssignedCustomer(pb.custs[c], pb.custs[c].tmin, pb.custs[c].tmaxt)
-               for c in custs[k]]
+  for (k,cust) = enumerate(res)
     if length(cust) >= 1
-      cust[1].tInf = max(cust[1].tInf, 1+tt[taxi.initPos, cust[1].desc.orig])
+      cust[1].tInf = max(cust[1].tInf, 1+tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
     end
     for i = 2:(length(cust))
       cust[i].tInf = max(cust[i].tInf, cust[i-1].tInf+
@@ -195,16 +215,14 @@ function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
     end
     for i = (length(cust) - 1):(-1):1
       cust[i].tSup = min(cust[i].tSup, cust[i+1].tSup-
-      tt[cust[i].desc.orig, cust[i].desc.dest]-
-      tt[cust[i].desc.dest, cust[i+1].desc.orig])
+      tt[pb.custs[cust[i].id].orig,pb.custs[cust[i].id].dest]-
+      tt[pb.custs[cust[i].id].dest, pb.custs[cust[i+1].id].orig])
     end
     for c in cust
       if c.tSup < c.tInf
         error("Solution not feasible")
-      else
-        windows[c.desc.id] = TimeWindow(c.tInf,c.tSup)
       end
     end
   end
-  return windows
+  return res
 end
