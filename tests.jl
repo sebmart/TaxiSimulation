@@ -18,7 +18,6 @@ generateProblem!(city, nTaxis, nTime, nCusts);
 printSolution(sol)
 
 
-
 width, nTime, nTaxis, nCusts = 10, 150, 15, 100;
 width, nTime, nTaxis, nCusts = 5, 50, 2, 10;
 

@@ -27,7 +27,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model( solver= GurobiSolver( TimeLimit=100,MIPFocus=1))
+  m = Model( solver= GurobiSolver( TimeLimit=150,MIPFocus=1))
 
   # =====================================================
   # Decision variables
