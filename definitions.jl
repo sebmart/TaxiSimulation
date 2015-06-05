@@ -60,7 +60,7 @@ end
 #Represent the solution of a simulation (paths of taxis, customers, and cost)
 immutable TaxiSolution
   taxis::Array{TaxiActions, 1}
-  notTakenCustomers::Array{Int,1}
+  notTaken::BitVector
   cost::Float64
 end
 
@@ -73,26 +73,21 @@ end
 ShortPaths() = ShortPaths( Array(Int8, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 
-#represent a time window
-immutable TimeWindow
-  inf::Int
-  sup::Int
+#Represent an assigned customer (not fixed time-windows)
+type AssignedCustomer
+  id::Int
+  tInf::Int
+  tSup::Int
 end
 
 #represent a time-window solution
 immutable IntervalSolution
-  custs::Vector{Vector{Int}}
-  notTaken::Vector{Int}
-  intervals::Vector{TimeWindow}
+  custs::Vector{Vector{AssignedCustomer}}
+  notTaken::BitVector
   cost::Float64
 end
 
-#Represent an assigned customer (not fixed time-windows)
-type AssignedCustomer
-  desc::Customer
-  tInf::Int
-  tSup::Int
-end
+
 
 
 #tools

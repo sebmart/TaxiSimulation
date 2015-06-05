@@ -156,7 +156,7 @@ function fullOpt(pb::TaxiProblem)
   tw = getValue(w)
 
   sol_c = [ CustomerAssignment[] for i =1:nTaxis]
-  notTakenMask = trues(nCusts)
+  notTaken = trues(nCusts)
 
   for c in 1:nCusts, k in 1:nTaxis
     t1, t2 = 0, 0
@@ -175,10 +175,9 @@ function fullOpt(pb::TaxiProblem)
 
       push!(sol_c[k], CustomerAssignment(c,t1,t2))
 
-      notTakenMask[c] = false
+      notTaken[c] = false
     end
   end
-  notTaken = [1:nCusts][notTakenMask]
 
   for k in 1:nTaxis
     sort!(sol_c[k], by= x->x.timeIn)

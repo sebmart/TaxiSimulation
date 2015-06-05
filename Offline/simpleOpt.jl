@@ -177,18 +177,17 @@ function simpleOpt_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCu
     end
   end
 
-  notTakenMask = trues(nCusts)
+  notTaken = trues(nCusts)
   for k= 1:nTaxis
     if first[k][1] > 0
-      notTakenMask[first[k][1]] = false
+      notTaken[first[k][1]] = false
     end
   end
   for c= 1:nCusts
     if chain[c][1] > 0
-      notTakenMask[chain[c][1]] = false
+      notTaken[chain[c][1]] = false
     end
   end
-  notTaken = [1:nCusts][notTakenMask]
 
   actions = Array(TaxiActions, nTaxis)
   for k=1:nTaxis

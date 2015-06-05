@@ -10,8 +10,8 @@ using JuMP, Gurobi
 
 function intervalOpt(pb::TaxiProblem)
   sol = solveIntervalsBis(pb)
-  custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
-   pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:nTaxis]
+  custs = [[CustomerAssignment(c.id, c.tInf, c.tInf +
+   pb.sp.traveltime[pb.custs[c.id].orig,pb.custs[c.id].dest]) for c in sol.custs[k]] for k in 1:length(pb.taxis)]
   return TaxiSolution(
   [ TaxiActions( taxi_path(pb,k,custs[k]), custs[k]) for k in 1:length(pb.taxis)],
     sol.notTaken,
@@ -162,9 +162,8 @@ function solveIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiAc
 
   chain = [0 for i in 1:nCusts]
   first = [0 for i in 1:nTaxis]
-  custs = [Int[] for k in 1:nTaxis]
+  custs = [AssignedCustomer[] for k in 1:nTaxis]
 
-  intervals = [TimeWindow( int(ti[c]), int(ts[c])) for c=1:nCusts]
 
 
   for c =1:nCusts, k = 1:nTaxis
@@ -179,7 +178,7 @@ function solveIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiAc
     end
   end
 
-  notTakenMask = trues(nCusts)
+  notTaken = trues(nCusts)
   for k= 1:nTaxis
     if first[k] > 0
       notTakenMask[first[k]] = false
@@ -190,16 +189,15 @@ function solveIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiAc
       notTakenMask[chain[c]] = false
     end
   end
-  notTaken = [1:nCusts][notTakenMask]
 
   for k=1:nTaxis
     if first[k] != 0
       tempC = first[k]
       while tempC != 0
-        push!(custs[k], tempC)
+        push!(custs[k], IntervalSolution(tempC, int(ti[tempC]), int(ts[tempC])))
         tempC = chain[tempC]
       end
     end
   end
-  return IntervalSolution(custs,notTaken, intervals, getObjectiveValue(m) )
+  return IntervalSolution(custs,notTaken, getObjectiveValue(m) )
 end

@@ -153,17 +153,17 @@ end
 function offlineAssignmentSolution(pb::TaxiProblem, sol::Vector{Vector{AssignedCustomer}}, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
   actions = Array(TaxiActions, nTaxis)
-  notInfn = IntSet(1:nCusts)
+  notTaken = trues(nCusts)
 
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     for c in sol[k]
         push!( custs, CustomerAssignment(c.desc.id,c.tInf,c.tInf + pb.sp.traveltime[c.desc.orig, c.desc.dest]))
-        symdiff!(notInfn, c.desc.id) #remove customer c from the non-taken
+        notTaken[c.desc.id] = false
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end
-  return TaxiSolution(actions, collect(notInfn), cost)
+  return TaxiSolution(actions, notTaken, cost)
 end
 
 #Quickly compute the cost using assigned customers
@@ -186,3 +186,5 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   end
   return cost
 end
+
+#Take an IntervalSolution and insert

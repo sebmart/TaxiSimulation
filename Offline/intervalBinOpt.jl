@@ -9,8 +9,8 @@ using JuMP, Gurobi
 
 function intervalBinOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
   sol = solveBinIntervals(pb,init)
-  custs = [[CustomerAssignment(c, sol.intervals[c].inf, sol.intervals[c].inf +
-   pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]) for c in sol.custs[k]] for k in 1:length(pb.taxis)]
+  custs = [[CustomerAssignment(c.id, c.tInf, c.tInf +
+   pb.sp.traveltime[pb.custs[c.id].orig,pb.custs[c.id].dest]) for c in sol.custs[k]] for k in 1:length(pb.taxis)]
   return TaxiSolution(
   [ TaxiActions( taxi_path(pb,k,custs[k]), custs[k]) for k in 1:length(pb.taxis)],
     sol.notTaken,
@@ -155,9 +155,9 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
 
   chain = [0 for i in 1:nCusts]
   first = [0 for i in 1:nTaxis]
-  custs = [Int[] for k in 1:nTaxis]
+  custs = [AssignedCustomer[] for k in 1:nTaxis]
 
-  intervals = Array(TimeWindow,nCusts)
+  intervals = Array((Int,Int),nCusts)
   for c = 1:nCusts
     minT = 0
     for t=cust[c].tmin : cust[c].tmaxt
@@ -173,7 +173,7 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
         break
       end
     end
-    intervals[c] = TimeWindow(minT,maxT)
+    intervals[c] = (minT,maxT)
   end
 
 
@@ -189,27 +189,26 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
     end
   end
 
-  notTakenMask = trues(nCusts)
+  notTaken = trues(nCusts)
   for k= 1:nTaxis
     if first[k] > 0
-      notTakenMask[first[k]] = false
+      notTaken[first[k]] = false
     end
   end
   for c= 1:nCusts
     if chain[c] > 0
-      notTakenMask[chain[c]] = false
+      notTaken[chain[c]] = false
     end
   end
-  notTaken = [1:nCusts][notTakenMask]
 
   for k=1:nTaxis
     if first[k] != 0
       tempC = first[k]
       while tempC != 0
-        push!(custs[k], tempC)
+        push!(custs[k], IntervalSolution(tempC, intervals[c][1], intervals[c][2]))
         tempC = chain[tempC]
       end
     end
   end
-  return IntervalSolution(custs,notTaken, intervals, getObjectiveValue(m) )
+  return IntervalSolution(custs, notTaken, getObjectiveValue(m) )
 end

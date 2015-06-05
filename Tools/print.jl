@@ -11,7 +11,7 @@ function printSolution(s::TaxiSolution; verbose=1)
     printLong(s)
   end
 
-  nt = s.notTakenCustomers
+  nt = [1:length(s.notTaken)][s.notTaken]
   if length(nt) != 0
     println("=== NOT TAKEN")
     println("==========================")
