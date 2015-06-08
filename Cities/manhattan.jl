@@ -10,7 +10,7 @@ end
 
 type Manhattan <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Float64, Int}
+  roadTime::SparseMatrixCSC{Int, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -24,20 +24,22 @@ type Manhattan <: TaxiProblem
   positions::Vector{Coordinates}
   tStart::DateTime
   tEnd::DateTime
-  function Manhattan()
+  function Manhattan(;sp=false)
     c = new()
     data = load("Cities/Manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
-    c.roadTime  = data["timings"]
+    c.roadTime  = int(data["timings"])
     c.roadCost  = c.roadTime/100 #temporary
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
-    #c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+    if sp
+      c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+    end
     return c
   end
 end
 
-
+man = Manhattan()
 #Output the graph vizualization to pdf file (see GraphViz library)
 function drawNetwork(pb::Manhattan, name::String = "graph")
   stdin, proc = open(`neato -n2 -Tpdf -o Outputs/$name.pdf`, "w")

@@ -1,41 +1,24 @@
-type PathCost <: LightGraphs.AbstractDijkstraVisitor
-  costs::SparseMatrixCSC{Float64,Int}
-  init::Int
-  pathCost::Array{Float64,2}
-end
-
-
-#Calculate the cost of the shortest path during Dijkstra
-function LightGraphs.include_vertex!(visitor::PathCost, u, v, d)
-  if u!=v
-    visitor.pathCost[visitor.init,v] = visitor.pathCost[visitor.init,u] + visitor.costs[u,v]
-  end
-  return true
-end
-
 #Run an all-pair shortest path using dijkstra, minimizing time and not costs
-function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
+function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Int, Int},
                                    roadCost::SparseMatrixCSC{Float64, Int})
 
   nLocs  = length( vertices(n))
   pathTime = Array(Int, (nLocs,nLocs))
+  pathCost = Array(Float64, (nLocs,nLocs))
   previous = Array(Int, (nLocs,nLocs))
-  visit = PathCost(roadCost,1, zeros(Float64, (nLocs,nLocs)))
 
   for i in 1:nLocs
-    visit.init = i
-    res = dijkstra_shortest_paths(n,i, edge_dists=roadTime, visitor=visit)
-    for j in 1:nLocs
-      pathTime[i,j] = int(res.dists[j])
-      previous[i,j] = res.parents[j]
-    end
+    parents, dists, costs = custom_dijkstra(n,i, roadTime, roadCost)
+    previous[i,:] = parents
+    pathTime[i,:] = dists
+    pathCost[i,:] = costs
   end
-  return ShortPaths(pathTime, visit.pathCost, previous)
+  return ShortPaths(pathTime, pathCost, previous)
 end
 
 #Compute the table of the next locations on the shortest paths
 #next[i, j] = location after i when going to j
-function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Float64, Int})
+function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Int, Int})
   nLocs = size(sp.previous,1)
   next = Array(Int, (nLocs,nLocs))
   for i in 1:nLocs, j in 1:nLocs
@@ -54,4 +37,60 @@ function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Float64, 
     end
   end
   return next
+end
+
+#TEMPORARY FIX
+#Dijkstra algorithm
+
+function custom_dijkstra(
+    g::AbstractGraph,
+    src::Int,
+    edge_dists::AbstractArray{Int, 2},
+    edge_costs::AbstractArray{Float64,2})
+
+
+    nvg = nv(g)
+    dists = fill(typemax(Int), nvg)
+    costs = fill(typemax(Float64), nvg)
+    parents = zeros(Int, nvg)
+    visited = falses(nvg)
+    H = Int[]
+    dists[src] = 0
+    costs[src] = 0.0
+    sizehint(H, nvg)
+    heappush!(H, src)
+    while !isempty(H)
+        u = heappop!(H)
+        for v in out_neighbors(g,u)
+            if dists[u] == typemax(Int)
+                alt = typemax(Int)
+                alt2 = typemax(Float64)
+            else
+                alt = dists[u] + edge_dists[u,v]
+                alt2 = costs[u] + edge_costs[u,v]
+
+            end
+            if !visited[v]
+                dists[v] = alt
+                costs[v] = alt2
+                parents[v] = u
+                visited[v] = true
+                heappush!(H, v)
+            else
+                if alt < dists[v]
+                    dists[v] = alt
+                    costs[v] = alt2
+                    parents[v] = u
+                    heappush!(H, v)
+                end
+            end
+        end
+    end
+
+    dists[src] = 0
+    costs[src] = 0.0
+    parents[src] = 0
+
+
+    return parents, dists, costs
 end

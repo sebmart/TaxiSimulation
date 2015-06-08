@@ -31,7 +31,7 @@ end
 #-- TaxiProblem: All data needed for simulation
 #-- has to include:
 #---- network::Network (graph of city)
-#---- roadTime::SparseMatrixCSC{Float64,Int} Time to cross a road
+#---- roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
 #---- roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
 #---- custs::Array{Customer,1} (customers)
 #---- taxis::Array{Taxi,1} (taxis)

@@ -12,4 +12,8 @@
 
 - Change cost to revenues (not negative...)
 
-- takenby instead of not-taken
+- taken by instead of not-taken
+
+- fix print long
+
+- better shortest path (cost computation..)

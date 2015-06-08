@@ -4,7 +4,7 @@
 
 type SquareCity <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Float64, Int}
+  roadTime::SparseMatrixCSC{Int, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
