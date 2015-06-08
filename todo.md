@@ -11,3 +11,5 @@
 - Total unimodularity (!)
 
 - Change cost to revenues (not negative...)
+
+- takenby instead of not-taken

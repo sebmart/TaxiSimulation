@@ -8,6 +8,7 @@ include("Offline/simpleOpt.jl");
 include("Offline/fullOpt.jl");
 include("Offline/intervalOpt.jl");
 include("Offline/intervalBinOpt.jl");
+include("Offline/localOpt.jl");
 
 width, nTime, nTaxis, nCusts = 3, 20, 1, 2;
 
@@ -18,7 +19,7 @@ generateProblem!(city, nTaxis, nTime, nCusts);
 printSolution(sol)
 
 
-width, nTime, nTaxis, nCusts = 5, 50, 2, 10;
+width, nTime, nTaxis, nCusts = 5, 50, 3, 10;
 
 
 #Create the network
@@ -40,6 +41,7 @@ printSolution(sol,verbose=1)
 printSolution(sol,verbose=2)
 
 @time printSolution(randomDescent(city, 1000), verbose=0)
+@time localOpt(city, 1000, 3).cost
 
 @time printSolution( intervalOpt(city), verbose=0)
 @time printSolution( intervalBinOpt(city), verbose=0)
