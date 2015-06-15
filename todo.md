@@ -17,3 +17,5 @@
 - fix print long
 
 - better shortest path (cost computation..)
+
+- make package

@@ -7,19 +7,7 @@
 using JuMP, Gurobi
 
 
-function intervalBinOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
-  sol = solveBinIntervals(pb,init)
-  custs = [[CustomerAssignment(c.id, c.tInf, c.tInf +
-   pb.sp.traveltime[pb.custs[c.id].orig,pb.custs[c.id].dest]) for c in sol.custs[k]] for k in 1:length(pb.taxis)]
-  return TaxiSolution(
-  [ TaxiActions( taxi_path(pb,k,custs[k]), custs[k]) for k in 1:length(pb.taxis)],
-    sol.notTaken,
-    sol.cost
-  )
-end
-
-#The MILP formulation, needs the previous computation of the shortest paths
-function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.))
 
   taxi = pb.taxis
   cust = pb.custs
@@ -38,7 +26,7 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver= GurobiSolver(TimeLimit=250,MIPFocus=1))
+  m = Model(solver= GurobiSolver(TimeLimit=150, MIPFocus=1, Method=1, Presolve=0))
 
   # =====================================================
   # Decision variables
@@ -54,8 +42,7 @@ function solveBinIntervals(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(Tax
   # =====================================================
   # Initialisation
   # =====================================================
-  if length(init.taxis) == length(pb.taxis)
-    init2 = IntervalSolution(pb,init)
+  if length(init.custs) == length(pb.taxis)
 
     for c=1:nCusts, c0 =1:length(pCusts[c])
       setValue(x[c,c0],0)

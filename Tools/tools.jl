@@ -60,13 +60,20 @@ function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
     if length(list) >= 1
       list[1].tInf = max(custs[list[1].id].tmin, 1+tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
       list[end].tSup = custs[list[end].id].tmaxt
-      nt[list[1].id] = false
-    end
+      if nt[list[1].id]
+          nt[list[1].id] = false
+      else
+          error("Customer $(list[1].id) picked-up twice")
+      end    end
     for i = 2:(length(list))
       list[i].tInf = max(list[i].tInf, list[i-1].tInf+
       tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
       tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
-      nt[list[i].id] = false
+      if nt[list[i].id]
+          nt[list[i].id] = false
+      else
+          error("Customer $(list[i].id) picked-up twice")
+      end
     end
     for i = (length(list) - 1):(-1):1
       list[i].tSup = min(list[i].tSup, list[i+1].tSup-

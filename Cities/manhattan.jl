@@ -37,7 +37,6 @@ type Manhattan <: TaxiProblem
   end
 end
 
-man = Manhattan()
 #Output the graph vizualization to pdf file (see GraphViz library)
 function drawNetwork(pb::Manhattan, name::String = "graph")
   stdin, proc = open(`neato -n2 -Tpdf -o Outputs/$name.pdf`, "w")
