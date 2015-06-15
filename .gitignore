@@ -1,5 +1,5 @@
-Cities/Saved
-Outputs
+Cities/Saved/*
+Outputs/*
 *.pdf
 Cities/Manhattan/Construction/*.jld
 Cities/Manhattan/Construction/*.osm
