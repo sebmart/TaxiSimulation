@@ -10,7 +10,7 @@ end
 
 type Manhattan <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -29,7 +29,7 @@ type Manhattan <: TaxiProblem
     data = load("Cities/Manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
-    c.roadTime  = int(data["timings"])
+    c.roadTime  = data["timings"]
     c.roadCost  = c.roadTime/100 #temporary
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
