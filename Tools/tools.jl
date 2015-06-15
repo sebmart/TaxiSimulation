@@ -49,6 +49,46 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   return cost
 end
 
+#test interval solution, if it is indeed feasible
+function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
+  custs = pb.custs
+  nt = trues(length(pb.custs))
+  tt = pb.sp.traveltime
+
+  for k = 1:length(pb.taxis)
+    list = sol.custs[k]
+    if length(list) >= 1
+      list[1].tInf = max(custs[list[1].id].tmin, 1+tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+      list[end].tSup = custs[list[end].id].tmaxt
+      nt[list[1].id] = false
+    end
+    for i = 2:(length(list))
+      list[i].tInf = max(list[i].tInf, list[i-1].tInf+
+      tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
+      tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
+      nt[list[i].id] = false
+    end
+    for i = (length(list) - 1):(-1):1
+      list[i].tSup = min(list[i].tSup, list[i+1].tSup-
+      tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
+      tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
+    end
+    for c in list
+      if c.tInf > c.tSup
+        error("Solution Infeasible for taxi $k")
+      end
+    end
+  end
+  if sol.notTaken != nt
+    println("NotTaken was not correct: fixed")
+    sol.notTaken = nt
+  end
+  cost = solutionCost(pb,sol.custs)
+  if sol.cost != cost
+    println("Cost was not correct: fixed")
+    sol.cost = cost
+  end
+end
 
 #Reconstruct the complete path of a taxis from their assigned customers (in order)
 #The rule is to wait near the next customers if the taxi has to wait
@@ -173,6 +213,7 @@ function randomOrder(n::Int)
   return order
 end
 randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
+
 #Return customers that can be taken before other customers
 function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
@@ -195,24 +236,25 @@ function customersCompatibility(pb::TaxiProblem)
   return pCusts, nextCusts
 end
 
-#Given a solution, returns the time-windows ::Vector(Vector(AssignedCustomer))
-timeWindows(pb::TaxiProblem, sol::TaxiSolution)=
-  timeWindows(pb, [int([c.id for c in sol.taxis[k].custs])::Vector{Int} for k in 1:nTaxis])
-
-function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
-  res = Array(Vector{AssignedCustomer}, length(custs))
-  for k =1:length(custs)
-    res[k] = [AssignedCustomer(c, pb.custs[c].tmin, pb.custs[c].tmaxt) for c in custs[k]]
+#Given a solution, returns the time-windows
+function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
+  res = Array(Vector{AssignedCustomer}, length(pb.taxis))
+  nt = trues(length(pb.custs))
+  for k =1:length(sol.taxis)
+    res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
   end
   tt = pb.sp.traveltime
+
   for (k,cust) = enumerate(res)
     if length(cust) >= 1
       cust[1].tInf = max(cust[1].tInf, 1+tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
+      nt[cust[1].id] = false
     end
     for i = 2:(length(cust))
       cust[i].tInf = max(cust[i].tInf, cust[i-1].tInf+
       tt[pb.custs[cust[i-1].id].orig, pb.custs[cust[i-1].id].dest]+
       tt[pb.custs[cust[i-1].id].dest, pb.custs[cust[i].id].orig])
+      nt[cust[i].id] = false
     end
     for i = (length(cust) - 1):(-1):1
       cust[i].tSup = min(cust[i].tSup, cust[i+1].tSup-
@@ -225,7 +267,7 @@ function timeWindows(pb::TaxiProblem, custs::Vector{Vector{Int}})
       end
     end
   end
-  return res
+  return IntervalSolution(res, nt, solutionCost(pb,res))
 end
 
 #Transform Interval solution into regular solution
@@ -250,4 +292,4 @@ IntervalSolution(pb::TaxiProblem) =
 IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
 trues(length(pb.custs)), -pb.nTime * length(pb.taxis) * pb.waitingCost)
 
-copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost) 
+copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)

@@ -154,12 +154,14 @@ function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
   deleteat!(list, i)
   tt = pb.sp.traveltime
   tc = pb.sp.travelcost
+  custs = pb.custs
 
   #-------------------------
   # Update the freedom intervals of the other assigned customers
   #-------------------------
   if length(list) >= 1
-    list[1].tInf = max(list[1].tInf, 1+tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+    list[1].tInf = max(custs[list[1].id].tmin, 1+tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+    list[end].tSup = custs[list[end].id].tmaxt
   end
   for i = 2:(length(list))
     list[i].tInf = max(list[i].tInf, list[i-1].tInf+
@@ -172,4 +174,165 @@ function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
     tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
   end
   sol.notTaken[c] = true;
+end
+
+#Split a customer list and exchange with another taxi. Returns the best between
+#this solution and the previous one
+function splitAndMove!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, k2::Int)
+  tt = pb.sp.traveltime
+  custs = pb.custs
+  #-------------------------
+  # UPDATE TAXI B
+  #-------------------------
+
+  #Look for the first place we can insert it in k2
+  custsA = sol.custs[k][i:end]
+  i2 = 1
+  for (j,c) in enumerate(sol.custs[k2])
+    if c.tInf + tt[custs[c.id].orig, custs[c.id].dest] +
+                tt[custs[c.id].dest, custs[custsA[1].id].orig] <=
+                custsA[1].tSup
+      i2 = j+1
+    else
+      break
+    end
+  end
+  #if just impossible to assign it => stop
+  if i2 == 1 && (1 + tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig]) > custsA[1].tSup
+    return sol
+  end
+
+  sol2 = copySolution(sol)
+
+  #Extract the list to move from k
+
+  sol.custs[k] = sol.custs[k][1:i-1]
+  #Extract the list to move from k2
+  custsB = sol.custs[k2][i2:end]
+  sol.custs[k2] = sol.custs[k2][1:i2-1]
+
+  #Update the windows of custsA
+  if isempty(sol.custs[k2])
+    custsA[1].tInf = max(custs[custsA[1].id].tmin,
+     1 + tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig])
+  else
+     custsA[1].tInf = max(custs[custsA[1].id].tmin,
+      sol.custs[k2][end].tInf + tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
+      + tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig])
+  end
+  for j = 2: length(custsA)
+    custsA[j].tInf = max(custs[custsA[j].id].tmin,
+    custsA[j-1].tInf + tt[custs[custsA[j-1].id].orig, custs[custsA[j-1].id].dest]
+     + tt[custs[custsA[j-1].id].dest, custs[custsA[j].id].orig])
+  end
+  #update the windows of k2
+  if !isempty(sol.custs[k2])
+    sol.custs[k2][end].tSup = min(custs[sol.custs[k2][end].id].tmaxt,
+    custsA[1].tSup - tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
+     - tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig])
+    for j = (length(sol.custs[k2])-1):-1:1
+     sol.custs[k2][j].tSup = min(custs[sol.custs[k2][j].id].tmaxt,
+       sol.custs[k2][j+1].tSup - tt[custs[sol.custs[k2][j].id].orig, custs[sol.custs[k2][j].id].dest] -
+         tt[custs[sol.custs[k2][j].id].dest, custs[sol.custs[k2][j+1].id].orig])
+   end
+  end
+  #reconstruct k2 customers
+  append!(sol.custs[k2], custsA)
+
+
+  #-------------------------
+  # UPDATE TAXI A
+  #-------------------------
+
+  #Removing customers we cannot take anymore
+
+  i2 = 1
+  if isempty(sol.custs[k])
+    pos = pb.taxis[k].initPos
+    for (j,c) in enumerate(custsB)
+      if 1 + tt[pos, custs[c.id].orig] <= c.tSup
+        break
+      else
+        i2 = j + 1
+      end
+    end
+
+  else
+    for (j,c) in enumerate(custsB)
+      pc = sol.custs[k][end]
+      if pc.tInf + tt[custs[pc.id].orig, custs[pc.id].dest] +
+                   tt[custs[pc.id].dest, custs[c.id].orig] <= c.tSup
+        break
+      else
+        i2 = j+1
+      end
+    end
+  end
+  #We delete those we cannot take
+  for j in 1:(i2 - 1)
+    sol.notTaken[custsB[j].id] = true
+  end
+
+  custsB = custsB[i2: length(custsB)]
+
+  if isempty(custsB)
+    #Just update the window of taxi k
+    if !isempty(sol.custs[k])
+      sol.custs[k][end].tSup = custs[sol.custs[k][end].id].tmaxt
+      for j = (length(sol.custs[k])-1):-1:1
+       sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
+         sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
+          - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig])
+      end
+    end
+  else
+    #Update the windows of custsB
+    if isempty(sol.custs[k])
+      custsB[1].tInf = max(custs[custsB[1].id].tmin,
+       1 + tt[pb.taxis[k].initPos, custs[custsB[1].id].orig])
+    else
+       custsB[1].tInf = max(custs[custsB[1].id].tmin,
+        sol.custs[k][end].tInf + tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
+        + tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig])
+    end
+    for j = 2: length(custsB)
+      custsB[j].tInf = max(custs[custsB[j].id].tmin,
+      custsB[j-1].tInf + tt[custs[custsB[j-1].id].orig, custs[custsB[j-1].id].dest]
+       + tt[custs[custsB[j-1].id].dest, custs[custsB[j].id].orig])
+    end
+    #update the windows of taxi k
+    if !isempty(sol.custs[k])
+      sol.custs[k][end].tSup = min(custs[sol.custs[k][end].id].tmaxt,
+      custsB[1].tSup - tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
+       - tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig])
+      for j = (length(sol.custs[k])-1):-1:1
+       sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
+         sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
+          - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig])
+      end
+    end
+    #reconstruct k customers
+    append!(sol.custs[k], custsB)
+  end
+
+  #-------------------------
+  # INSERT other customers (can be made more efficient)
+  #-------------------------
+  freeCusts = [1: length(custs)][sol.notTaken]
+  order = randomOrder( length(freeCusts))
+  #For each free customer
+  for i in 1:length(freeCusts)
+    c = freeCusts[order[i]]
+    insertCustomer!(pb,sol,c)
+  end
+
+  #compute the costs
+  cost = solutionCost(pb, sol.custs)
+  if cost <= sol.cost
+    sol.cost = cost
+  else
+    sol = sol2
+  end
+
+  return sol
 end

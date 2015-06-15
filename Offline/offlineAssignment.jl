@@ -2,7 +2,7 @@
 #-- Compute a solution, given an order on customers (multiple insertions)
 #----------------------------------------
 
-include("insertCustomer.jl")
+include("moveCustomer.jl")
 
 
 #Only return cost and list of assignment, given problem and order on customers

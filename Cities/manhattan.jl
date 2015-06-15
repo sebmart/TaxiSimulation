@@ -32,9 +32,7 @@ type Manhattan <: TaxiProblem
     c.roadTime  = int(data["timings"])
     c.roadCost  = c.roadTime/100 #temporary
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
-    if sp
-      c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
-    end
+    c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
     return c
   end
 end
