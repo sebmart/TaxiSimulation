@@ -1,7 +1,6 @@
 #----------------------------------------
 #-- Random "genetic descent"
 #----------------------------------------
-using Distributions
 include("offlineAssignment.jl")
 
 function geneticDescentOrder(pb::TaxiProblem, popSize::Int, generations::Int;

@@ -4,8 +4,6 @@
 #-- and time intervals to take each customer (continuous)
 #----------------------------------------
 
-using JuMP, Gurobi
-
 
 function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.))
 

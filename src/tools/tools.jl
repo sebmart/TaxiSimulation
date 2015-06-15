@@ -177,24 +177,24 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
 end
 
 function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)
-  save("Cities/Saved/$name.jld", "pb", pb, compress=compress)
+  save("../.cache/$name.jld", "pb", pb, compress=compress)
 end
 
 function loadTaxiPb(name::String)
-  pb = load("Cities/Saved/$name.jld","pb")
+  pb = load("../.cache/$name.jld","pb")
   return pb
 end
 
 #Output the graph vizualization to pdf file (see GraphViz library)
 function drawNetwork(pb::TaxiProblem, name::String = "graph")
-  stdin, proc = open(`neato -Tpdf -o Outputs/$(name).pdf`, "w")
+  stdin, proc = open(`neato -Tpdf -o ../outputs/$(name).pdf`, "w")
   to_dot(pb,stdin)
   close(stdin)
 end
 
 #Output dotfile
 function dotFile(pb::TaxiProblem, name::String = "graph")
-  open("Outputs/$name.dot","w") do f
+  open("../outputs/$name.dot","w") do f
     to_dot(pb, f)
   end
 end

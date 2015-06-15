@@ -2,8 +2,6 @@
 #-- 0-1 optimisation, "taxi k takes customer c at time t after customer d"
 #----------------------------------------
 
-using JuMP, Gurobi
-
 #The MILP formulation, needs the previous computation of the shortest paths
 function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 

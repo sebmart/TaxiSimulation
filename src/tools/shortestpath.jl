@@ -1,5 +1,9 @@
-using Base.Collections
 #Run an all-pair shortest path using dijkstra, minimizing time and not costs
+function shortestPaths!(pb::TaxiProblem)
+    pb.sp = shortestPaths(pb.network, pb.roadTime, pb.roadCost)
+end
+
+
 function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Int, Int},
                                    roadCost::SparseMatrixCSC{Float64, Int})
 

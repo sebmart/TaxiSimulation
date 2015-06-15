@@ -5,8 +5,6 @@
 #-- NOT GUARANTED FOR SOLVING DISCRETE TIME!
 #----------------------------------------
 
-using JuMP, Gurobi
-
 
 function intervalOpt(pb::TaxiProblem)
   sol = solveIntervalsBis(pb)

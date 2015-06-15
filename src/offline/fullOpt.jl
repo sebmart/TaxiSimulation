@@ -2,9 +2,6 @@
 #--Full optimisation model (not tractable)
 #----------------------------------------
 
-using JuMP, Gurobi
-
-
 function fullOpt(pb::TaxiProblem)
 
   taxi = pb.taxis
