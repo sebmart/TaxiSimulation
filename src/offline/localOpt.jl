@@ -26,5 +26,6 @@ function localOpt(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = offlin
       best = sol.cost
     end
   end
+  println("====Final: $(-sol.cost) dollars")
   return sol
 end

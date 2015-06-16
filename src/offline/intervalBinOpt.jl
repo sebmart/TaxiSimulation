@@ -201,5 +201,7 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
       end
     end
   end
-  return IntervalSolution(custs, notTaken, getObjectiveValue(m) )
+  rev = solutionCost(pb, custs)
+  println("Final revenue = $(-rev)")
+  return IntervalSolution(custs, notTaken, rev)
 end
