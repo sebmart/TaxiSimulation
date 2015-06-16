@@ -11,7 +11,6 @@ function randomAssignment(pb::TaxiProblem, n::Int)
     sol = offlineAssignmentQuick(pb, order)
 
     if sol.cost < best.cost
-      push!(resRandom, (time()-initT, -sol.cost))
       println("Try: $trys, $(-sol.cost) dollars")
       best = sol
     end
