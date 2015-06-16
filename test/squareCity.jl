@@ -14,12 +14,12 @@ printSolution(sol,verbose=2)
 #try simple opt
 width, nTime, nTaxis, nCusts = 5, 50, 3, 10;
 city = SquareCity(width);
-generateProblem!(city, nTaxis, nTime, nCusts);sol = simpleOpt(city);
+generateProblem!(city, nTaxis, nTime, nCusts);
 
 sol1 = simpleOpt(city);
 sol2 = intervalBinOpt(city);
 
-@test sol1.cost == sol2.cost
+@test_approx_eq_eps sol1.cost sol2.cost 1e-5
 
 
 #Try interval opt and heuristics
