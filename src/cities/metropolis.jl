@@ -4,10 +4,6 @@
 #-- 1time-step = 30s
 #----------------------------------------
 
-
-using Dates, Distributions
-
-
 #Price paid by customer for an hour's ride
 hourFare(t::DateTime) = 150
 #Cost for a taxi to drive an hour

@@ -3,8 +3,6 @@
 #--  to represent a taxi problem and its solutions
 #----------------------------------------
 
-using HDF5, JLD, LightGraphs
-
 typealias Network   DiGraph
 typealias Road      Edge
 
@@ -86,11 +84,3 @@ type IntervalSolution
   notTaken::BitVector
   cost::Float64
 end
-
-
-
-
-#tools
-include("Tools/print.jl")
-include("Tools/shortestpath.jl")
-include("Tools/tools.jl")

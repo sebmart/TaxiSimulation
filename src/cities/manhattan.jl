@@ -1,7 +1,6 @@
 #----------------------------------------
 #-- Real Manhattan network, from OpenStreetMap data
 #----------------------------------------
-using Dates
 
 immutable Coordinates
   x::Float64
@@ -26,7 +25,7 @@ type Manhattan <: TaxiProblem
   tEnd::DateTime
   function Manhattan(;sp=false)
     c = new()
-    data = load("Cities/Manhattan/manhattan.jld")
+    data = load("cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
     c.roadTime  = data["timings"]
@@ -41,7 +40,7 @@ end
 
 #Output the graph vizualization to pdf file (see GraphViz library)
 function drawNetwork(pb::Manhattan, name::String = "graph")
-  stdin, proc = open(`neato -n2 -Tpdf -o Outputs/$name.pdf`, "w")
+  stdin, proc = open(`neato -n2 -Tpdf -o ../outputs/$name.pdf`, "w")
   write(stdin, "digraph  citygraph {\n")
   for i in vertices(pb.network)
     write(stdin, "$i [\"pos\"=\"$(pb.positions[i].x),$(pb.positions[i].y)!\"]\n")

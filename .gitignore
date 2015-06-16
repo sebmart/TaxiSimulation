@@ -1,6 +1,6 @@
-Cities/Saved/*
 *.pdf
-Cities/Manhattan/Construction/*.jld
-Cities/Manhattan/Construction/*.osm
+*.jld
+*.osm
 todo.md
 *.DS_Store
+!src/cities/manhattan/manhattan.jld
