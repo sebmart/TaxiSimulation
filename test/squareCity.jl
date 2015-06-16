@@ -15,7 +15,6 @@ printSolution(sol,verbose=2)
 width, nTime, nTaxis, nCusts = 5, 50, 3, 10;
 city = SquareCity(width);
 generateProblem!(city, nTaxis, nTime, nCusts);sol = simpleOpt(city);
-sol2 = intervalBinOpt(city);
 
 sol1 = simpleOpt(city);
 sol2 = intervalBinOpt(city);

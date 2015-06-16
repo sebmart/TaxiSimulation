@@ -150,7 +150,12 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
   tx = getValue(x)
   ty = getValue(y)
 
-  return simpleOpt_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
+  rev = getObjectiveValue(m)
+
+  println("Final revenue = $(-rev) dollars")
+
+
+  return simpleOpt_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), rev)
 end
 
 
