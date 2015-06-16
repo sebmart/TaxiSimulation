@@ -14,23 +14,23 @@ using Gurobi
 using Base.Collections
 
 #types
-export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment
-export TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution
+export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
+       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution
 
 #Cities
-export Manhattan, Metropolis, SquareCity
-export generateCustomers!, generateTaxis!, generateProblem!
+export Manhattan, Metropolis, SquareCity,
+       generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
 export fullOpt, simpleOpt, intervalBinOpt
 
 #Offline heuristics
-export localOpt, offlineAssignment, offlineAssignmentQuick, randomAssignment
+export localOpt, offlineAssignment, offlineAssignmentQuick, randomAssignment,
+       randomDescent
 
 #Tools
-export printSolution, shortestPaths!, shortestPaths
-export fixSolution!, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile
-export copySolution
+export printSolution, shortestPaths!, shortestPaths, fixSolution!, saveTaxiPb,
+       loadTaxiPb, drawNetwork, dotFile, copySolution
 
 
 
