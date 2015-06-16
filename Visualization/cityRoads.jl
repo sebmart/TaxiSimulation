@@ -36,7 +36,7 @@ function generateNodeCoordinates(m::Manhattan, bounds::Tuple{Float64,Float64,Flo
 	nodeCoordinates = []
 	for pos = 1:length(m.positions)
 		c = m.positions[pos]
-		nodeC = Coordinates(scale * (c.x - minX) + 300, scale * (c.y - minY) + 300)
+		nodeC = Coordinates(scale * (c.x - minX) + 500, - scale * (c.y - minY) + 900)
 		push!(nodeCoordinates, nodeC)
 	end
 	return nodeCoordinates
@@ -50,7 +50,7 @@ function generateNodes(radius::Float64, nc::Vector{Any})
 		node = CircleShape()
 		set_radius(node, radius)
 		set_fillcolor(node, SFML.black)
-		set_position(node, Vector2f(nc[i].x, nc[i].y))
+		set_position(node, Vector2f(nc[i].x - radius, nc[i].y - radius))
 		push!(nodes, node)
 	end
 	return nodes
@@ -72,21 +72,26 @@ for edge in edges(man.network)
 	end
 end
 
-function generateRoads(m::Manhattan, nc::Vector{Any})
+function generateRoads(m::Manhattan, nc::Vector{Any}, min::Float64, max::Float64)
 	roads = Line[]
 	for edge in edges(m.network)
 		startNode = src(edge)
 		endNode = dst(edge)
 		s = Vector2f(nc[startNode].x, nc[startNode].y)
 		e = Vector2f(nc[endNode].x, nc[endNode].y)
-		road = Line(s, e, 1)
-		set_fillcolor(road, SFML.black)
+		road = Line(s, e, 1.0)
+
+		score = m.distances[src(edge), dst(edge)] / m.roadTime[src(edge), dst(edge)]
+		difscore = max - min
+		r = 255 * (score - max) / (- 1 * difscore)
+		g = 255 * (score - min) / (difscore)
+		set_fillcolor(road, SFML.Color(Int(floor(r)), Int(floor(g)), 0))
 		push!(roads, road)
 	end
 	return roads
 end
 
-roads = generateRoads(man, nodeCoordinates)
+roads = generateRoads(man, nodeCoordinates, minscore, maxscore)
 
 # Creates the window for the visualization
 window = RenderWindow("Taxi", 1200, 1200)
@@ -135,42 +140,42 @@ while isopen(window)
 		# Move down
 		move(view, Vector2f(0, 2))
 	end
-	# Zoom out
+	# Zoom in
 	if is_key_pressed(KeyCode.Z)
-		zoom(view, 0.5)
-		#set_size(view, Vector2f(1800, 1800))
+		zoom(view, 0.99)
 	end
 	# Zoom in
 	if is_key_pressed(KeyCode.X)
-		zoom(view, 10.0)
-		# set_size(view, Vector2f(100, 100))
+		zoom(view, 1/0.99)
 	end
-	#reset
+	#rotate clockwise
+	if is_key_pressed(KeyCode.A)
+		rotate(view, - 0.5)
+	end
+	#rotate counterclockwise
+	if is_key_pressed(KeyCode.S)
+		rotate(view, 0.5)
+	end
+	#reset zoom
 	if is_key_pressed(KeyCode.C)
 		zoom(view, 1.0)
-		set_size(view, Vector2f(1200, 1200))
 		view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 	end
-
+	#reset rotation
+	if is_key_pressed(KeyCode.D)
+		set_rotation(view, 0)
+	end
 	set_view(window, view)
-
-	# t = get_elapsed_time(clock) |> as_seconds
-	
-	# set_string(text, "Timestep: "*string(convert(Int64, floor(t/period + 1))))
-	# set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
 	# Draws the objects
 	clear(window, SFML.white)
 	
 	for i = 1:length(roads)
-	# for i = 1:1
 		draw(window, roads[i])
 	end
 	for i = 1:length(nodes)
-	# for i = 1:1
 		draw(window, nodes[i])
 	end
-	# draw(window, text)
-	
+
 	display(window)
 end
