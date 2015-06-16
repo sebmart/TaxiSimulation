@@ -5,7 +5,7 @@
 #----------------------------------------
 
 
-function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.))
+function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
 
   taxi = pb.taxis
   cust = pb.custs
@@ -24,7 +24,7 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver= GurobiSolver(TimeLimit=150, MIPFocus=1, Method=1, Presolve=0))
+  m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, Presolve=0))
 
   # =====================================================
   # Decision variables
