@@ -48,10 +48,10 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
     for k=1:nTaxis, c=1:nCusts
       setValue(y[k,c],0)
     end
-    for c in [1:nCusts][init2.notTaken], t=cust[c].tmin:cust[c].tmaxt
+    for c in [1:nCusts][init.notTaken], t=cust[c].tmin:cust[c].tmaxt
         setValue(tw[c,t],1)
     end
-    for (k,l) in enumerate(init2.custs)
+    for (k,l) in enumerate(init.custs)
       if length(l) > 0
         setValue(y[k,l[1].id], 1)
         for t=l[1].tInf:l[1].tSup
