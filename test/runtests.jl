@@ -1,9 +1,8 @@
 using TaxiSimulation
-using Base.test
+using Base.Test
 
 tests = [
-    "squareCity",
-
+    "squareCity"
     ]
 testdir = joinpath(Pkg.dir("TaxiSimulation"),"test")
 
