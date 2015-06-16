@@ -12,3 +12,5 @@ for t in tests
     println("running $(tp) ...")
     include(tp)
 end
+
+println("All tests are good!")

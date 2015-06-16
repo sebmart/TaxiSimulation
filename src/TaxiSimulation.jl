@@ -43,6 +43,7 @@ include("tools/tools.jl")
 
 #Solvers
 include("offline/offlineAssignment.jl")
+include("offline/randomAssignment.jl")
 include("offline/randomDescent.jl")
 include("offline/localOpt.jl")
 include("offline/intervalBinOpt.jl")

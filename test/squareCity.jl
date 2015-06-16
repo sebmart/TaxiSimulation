@@ -1,7 +1,7 @@
 
 
 #Try full opt
-width, nTime, nTaxis, nCusts = 3, 20, 2, 4;
+width, nTime, nTaxis, nCusts = 3, 20, 2, 3;
 city = SquareCity(width);
 generateProblem!(city, nTaxis, nTime, nCusts);
 sol = fullOpt(city);
