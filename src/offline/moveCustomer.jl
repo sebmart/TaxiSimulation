@@ -178,10 +178,10 @@ end
 
 #Split a customer list and exchange with another taxi. Returns the best between
 #this solution and the previous one
-function splitAndMove!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, k2::Int)
+function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, k2::Int)
   tt = pb.sp.traveltime
   custs = pb.custs
-  sol2 = copySolution(sol)
+  sol = copySolution(sol2)
 
   #-------------------------
   # UPDATE TAXI B
@@ -189,6 +189,8 @@ function splitAndMove!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, k
 
   #Look for the first place we can insert it in k2
   custsA = sol.custs[k][i:end]
+  #Extract the list to move from k
+  sol.custs[k] = sol.custs[k][1:i-1]
 
   while !isempty(custsA) && (1 + tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig]) > custsA[1].tSup
     sol.notTaken[custsA[1].id] = true
@@ -209,11 +211,6 @@ function splitAndMove!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, k
       end
     end
 
-
-
-    #Extract the list to move from k
-
-    sol.custs[k] = sol.custs[k][1:i-1]
     #Extract the list to move from k2
     custsB = sol.custs[k2][i2:end]
     sol.custs[k2] = sol.custs[k2][1:i2-1]
@@ -337,9 +334,8 @@ function splitAndMove!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, k
   cost = solutionCost(pb, sol.custs)
   if cost <= sol.cost
     sol.cost = cost
+    return sol
   else
-    sol = sol2
+    return sol2
   end
-
-  return sol
 end
