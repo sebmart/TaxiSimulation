@@ -2,10 +2,8 @@
 #-- Try random orders, keep the best one
 #----------------------------------------
 include("offlineAssignment.jl")
-resRandom = (Float64,Float64)[]
 function randomAssignment(pb::TaxiProblem, n::Int)
   initT = time()
-  sp = pb.sp
   order = randomOrder(pb)
   best = offlineAssignmentQuick(pb, order)
   println("Try: 1, $(-best.cost) dollars")

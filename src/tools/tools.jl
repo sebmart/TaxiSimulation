@@ -30,7 +30,7 @@ end
 #Quickly compute the cost using assigned customers
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   cost = 0.0
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   tc = pb.sp.travelcost
   for (k,custs) in enumerate(t)
     pos = pb.taxis[k].initPos
@@ -53,7 +53,7 @@ end
 function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
   nt = trues(length(pb.custs))
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
 
   for k = 1:length(pb.taxis)
     list = sol.custs[k]
@@ -101,6 +101,8 @@ end
 #The rule is to wait near the next customers if the taxi has to wait
 function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
    sp = pb.sp
+   tt = int(sp.traveltime)
+   roadTime = int(pb.roadTime)
    path = Array(Road,pb.nTime)
    endTime = pb.nTime
    endDest = 0
@@ -113,10 +115,10 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
 
      while t != c.timeIn
        prev = sp.previous[pb.custs[c.id].orig,loc]
-       for t2 in (t - pb.roadTime[prev,loc] ):(t-1)
+       for t2 in (t - roadTime[prev,loc] ):(t-1)
          path[t2] = Road(prev,loc)
        end
-       t = t-pb.roadTime[prev,loc]
+       t = t- roadTime[prev,loc]
        loc = prev
      end
 
@@ -129,18 +131,18 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
      else
        #Trajectory from dest to orig of next customer (computed backward)
        loc = endDest
-       t = c.timeOut + sp.traveltime[pb.custs[c.id].dest,endDest]
+       t = c.timeOut + tt[pb.custs[c.id].dest,endDest]
        while t != c.timeOut
          prev = sp.previous[pb.custs[c.id].dest,loc]
-         for t2 in (t -  pb.roadTime[prev,loc] ):(t-1)
+         for t2 in (t - roadTime[prev,loc] ):(t-1)
            path[t2] = Road(prev, loc)
          end
-         t = t - pb.roadTime[prev,loc]
+         t = t - roadTime[prev,loc]
          loc = prev
        end
 
        #Wait before taking the next customer
-       for t = (c.timeOut + sp.traveltime[pb.custs[c.id].dest, endDest] ):(endTime-1)
+       for t = (c.timeOut + tt[pb.custs[c.id].dest, endDest] ):(endTime-1)
          path[t] = Road(endDest,endDest)
        end
      end
@@ -158,18 +160,18 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
      endTime = custs[1].timeIn
      #Trajectory from origin of taxi to origin of first cust
      loc = endDest
-     t = 1 + sp.traveltime[pb.taxis[id_taxi].initPos,endDest]
+     t = 1 + tt[pb.taxis[id_taxi].initPos,endDest]
      while t != 1
        prev = sp.previous[pb.taxis[id_taxi].initPos,loc]
-       for t2 in (t - pb.roadTime[prev, loc] ):(t-1)
+       for t2 in (t - roadTime[prev, loc] ):(t-1)
          path[t2] = Road(prev, loc)
        end
-       t   = t - pb.roadTime[prev, loc]
+       t   = t - roadTime[prev, loc]
        loc = prev
      end
 
      #Wait before taking the next customer
-     for t = (1 + sp.traveltime[pb.taxis[id_taxi].initPos, endDest] ):(endTime-1)
+     for t = (1 + tt[pb.taxis[id_taxi].initPos, endDest] ):(endTime-1)
        path[t] = Road(endDest, endDest)
      end
    end
@@ -224,7 +226,7 @@ randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
 #Return customers that can be taken before other customers
 function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   nCusts = length(cust)
   pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{(Int,Int),1},nCusts)
@@ -250,7 +252,7 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
   for k =1:length(sol.taxis)
     res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
   end
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
 
   for (k,cust) = enumerate(res)
     if length(cust) >= 1
@@ -287,7 +289,7 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     for c in sol.custs[k]
-        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest]))
+        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + int(pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest])))
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end

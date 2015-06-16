@@ -17,7 +17,7 @@ longTrvlCost(trvltime) = trvltime * driveCost/120
 
 type Metropolis <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}

@@ -4,7 +4,7 @@
 
 type SquareCity <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -81,7 +81,7 @@ type SquareCity <: TaxiProblem
     return c
   end
 
-  SquareCity(network::Network, roadTime::SparseMatrixCSC{Int8, Int},
+  SquareCity(network::Network, roadTime::SparseMatrixCSC{Float64, Int},
     roadCost::SparseMatrixCSC{Float64, Int}, custs::Array{Customer,1},
     taxis::Array{Taxi,1}, nTime::Int, waitingCost::Int, sp::ShortPaths) =
      new(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp)

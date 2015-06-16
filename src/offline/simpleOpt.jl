@@ -15,7 +15,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
   nCusts = length(cust)
 
   #short alias
-  tt = sp.traveltime
+  tt = int(sp.traveltime)
   tc = sp.travelcost
 
   #Compute the list of the lists of customers that can be picked-up
