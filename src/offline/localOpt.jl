@@ -4,6 +4,7 @@
 include("moveCustomer.jl")
 
 function localOpt(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = offlineAssignmentQuick(pb))
+  nTaxis = length(pb.nTaxis)
   println("Start, $(-start.cost) dollars")
   sol =  copySolution(start)
   best = sol.cost
