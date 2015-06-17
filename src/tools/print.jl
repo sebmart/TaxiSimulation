@@ -103,3 +103,8 @@ function printLong(s::TaxiSolution)
     end
   end
 end
+
+#Print a City
+function show(io::IO, pb::TaxiProblem)
+    print(io, "Taxi Problem")
+end

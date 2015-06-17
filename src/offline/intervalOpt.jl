@@ -24,7 +24,7 @@ function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(V
 
 
   #Solver : Gurobi (modify parameters)
-  m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, Presolve=0))
+  m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1))
 
   # =====================================================
   # Decision variables
