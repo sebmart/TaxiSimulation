@@ -7,8 +7,8 @@ city = SquareCity(width)
 generateProblem!(city, nTaxis, nTime, nCusts)
 
 cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/offline")
-sol = insertionsDescent(city, 1000)
-sol2 = TaxiSolution(city, sol)
+sol2 = insertionsDescent(city, 1000)
+sol = TaxiSolution(city, sol2)
 
 cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation")
 include("src/visualization/setup.jl")
@@ -34,3 +34,21 @@ sol = load("testsol.jld", "sol")
 using HDF5
 using JLD
 using SFML
+
+
+# Output the graph vizualization to pdf file (see GraphViz library)
+function drawNetwork(pb::TaxiProblem, name::String = "graph")
+  stdin, proc = open(`neato -Tplain -o Outputs/$(name).txt`, "w")
+  to_dot(pb,stdin)
+  close(stdin)
+end
+
+# Write the graph in dot format
+function to_dot(pb::TaxiProblem, stream::IO)
+    write(stream, "digraph  citygraph {\n")
+    for i in vertices(pb.network), j in out_neighbors(pb.network,i)
+      write(stream, "$i -> $j\n")
+    end
+    write(stream, "}\n")
+    return stream
+end

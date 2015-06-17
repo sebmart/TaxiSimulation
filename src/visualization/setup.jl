@@ -1,25 +1,21 @@
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src");
-using TaxiSimulation
-using HDF5
-using JLD
-using SFML
-using LightGraphs
+using SFML, LightGraphs
 
 type customerTime
 		window::Tuple{Int64, Int64}
 		driving::Tuple{Int64, Int64, Int64}
 end
 
+
 function visualize(c::TaxiProblem, s::TaxiSolution)
+	
 	city = c
 	sol = s
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-		cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs")
-	 	stdin, proc = open(`neato -Tplain -o $(name).txt`, "w")
-	 	to_dot(pb,stdin)
-	 	close(stdin)
+	  stdin, proc = open(`neato -Tplain -o Outputs/$(name).txt`, "w")
+	  to_dot(pb,stdin)
+	  close(stdin)
 	end
 
 	# Write the graph in dot format
@@ -33,7 +29,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Create bounds for the graph
-	function generateBounds(nodes::Array{Coordinates,1})
+	function generateBounds(nodes::Array{Any,1})
 		minX = 0; maxX = 0; minY = 0; maxY = 0
 		X = Float64[]
 		Y = Float64[]
@@ -50,13 +46,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the coordinates of the nodes
-	function generateNodeCoordinates(nodes::Array{Coordinates,1}, bounds::Tuple{Float64,Float64,Float64,Float64})
+	function generateNodeCoordinates(nodes::Array{Any,1}, bounds::Tuple{Float64,Float64,Float64,Float64})
 		minX = bounds[1]
 		maxX = bounds[2]
 		minY = bounds[3]
 		maxY = bounds[4]
 		scale = 600 / max(maxX - minX, maxY - minY)
-		nodeCoordinates = Coordinates[]
+		nodeCoordinates = []
 		for pos = 1:length(nodes)
 			c = nodes[pos]
 			nodeC = Coordinates(scale * (c.x - minX) + 300, - scale * (c.y - minY) + 900)
@@ -66,7 +62,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the nodes of the graph
-	function generateNodes(radius::Float64, nodeCoordinates::Vector{Coordinates})
+	function generateNodes(radius::Float64, nodeCoordinates::Vector{Any})
 		nodes = CircleShape[]
 		for i = 1:length(nodeCoordinates)
 			node = CircleShape()
@@ -78,7 +74,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		return nodes
 	end
 
-	function generateScoreBound(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates})
+	function generateScoreBound(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Any})
 		minscore = Inf; maxscore = -Inf; minedge = Inf
 		for edge in edges(city.network)
 			if flag
@@ -104,11 +100,12 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the roads of the graph, using coordinates from GraphViz
-	function generateRoads(city::TaxiProblem, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
+	function generateRoads(city::TaxiProblem, nodeCoordinates::Vector{Any}, min::Float64, max::Float64)
 		roads = Line[]
 		for edge in edges(city.network)
 			startNode = src(edge)
 			endNode = dst(edge)
+			println((startNode, endNode))
 			s = Vector2f(nodeCoordinates[startNode].x, nodeCoordinates[startNode].y)
 			e = Vector2f(nodeCoordinates[endNode].x, nodeCoordinates[endNode].y)
 			
@@ -137,7 +134,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the taxis in the graph
-	function generateTaxis(paths::Array{Array{Pair{Int64,Int64},1},1}, radius::Float64, nodeCoordinates::Vector{Coordinates})
+	function generateTaxis(paths::Array{Array{Pair{Int64,Int64},1},1}, radius::Float64, nodeCoordinates::Vector{Any})
 		taxis = CircleShape[]
 		for i = 1:length(paths)
 			taxi = CircleShape()
@@ -151,7 +148,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the customers in the graphs
-	function generateCustomers(city::TaxiProblem, solution::TaxiSolution, radius::Float64, nodeCoordinates::Vector{Coordinates})
+	function generateCustomers(city::TaxiProblem, solution::TaxiSolution, radius::Float64, nodeCoordinates::Vector{Any})
 		customers = CircleShape[]
 		for i = 1:length(city.custs)
 			customer = CircleShape()
@@ -196,7 +193,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Identifies a location of a given taxi at a given time
 	##### Change to simplify the required inputs
-	function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float32, period::Float64, nodeCoordinates::Vector{Coordinates})
+	function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float32, period::Float64, nodeCoordinates::Vector{Any})
 		timestep = convert(Int64, floor(time/period + 1))
 		s = src(path[timestep]) # edge source
 		d = dst(path[timestep]) # edge destination
@@ -228,7 +225,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 	end
 
-	function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float32, period::Float64, nodeCoordinates::Vector{Coordinates})
+	function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float32, period::Float64, nodeCoordinates::Vector{Any})
 		timestep = convert(Int64, floor(time/period + 1))
 
 		customer = city.custs[id]
@@ -253,7 +250,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 		return (x, y)	
 	end
-
 	flag = false 
 	originalNodes = 0
 
@@ -262,17 +258,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		flag = true
 	catch
 		cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs");
-		GraphViz = Coordinates[]
-		indices = Int64[]
-		drawNetwork(city, "test1")
-		fileExists = false
-		while (!fileExists)
-			sleep(1)
-			fileExists = isfile("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs/test1.txt")
-		end
-		lines = readlines(open ("test1.txt"))
-		rm("test1.txt")
-		# remember to wait for GraphViz to finish updating the testfile
+		GraphViz = []
+		indices = []
+		lines = readlines(open ("test.txt"))
+
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
@@ -412,8 +401,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		display(window)
 	end
 end
-
-
 
 
 
