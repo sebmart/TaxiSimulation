@@ -38,6 +38,6 @@ sol1  = intervalOpt(city, sol2);
 testSolution(city, sol1)
 testSolution(city, sol2)
 testSolution(city, sol3)
-testSolution(city, expandWindows(city,sol4))
+testSolution(city, expandWindows!(city,sol4))
 
 testSolution(city, IntervalSolution(city, TaxiSolution(city, sol1)))
