@@ -6,7 +6,7 @@ using SFML
 using LightGraphs
 
 cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/visualization");
-include("setup.jl")
+include("visualizerSetup.jl")
 
 width, nTime, nTaxis, nCusts = 10, 100, 10, 40
 city = SquareCity(width);
