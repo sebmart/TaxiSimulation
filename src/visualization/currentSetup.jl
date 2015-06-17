@@ -1,9 +1,13 @@
-
-
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Visualization");
-include("selectDefinitions.jl")
-include("selectSquareCity.jl")
+using HDF5
+using JLD
+using LightGraphs
 using SFML
+
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src");
+include("definitions.jl")
+include("cities/manhattan.jl")
+include("cities/metropolis.jl")
+include("cities/squareCity.jl")
 
 # Output the graph vizualization to pdf file (see GraphViz library)
 function drawNetwork(pb::TaxiProblem, name::String = "graph")
@@ -27,10 +31,7 @@ immutable Coordinates
   y::Float64
 end
 
-city = load("testcity.jld", "city")
-sol = load("testsol.jld", "sol")
-
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Outputs");
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs");
 
 GraphViz = []
 indices = []
@@ -274,7 +275,7 @@ customerTimes = generateCustomerTimes(city, sol)
 
 # Identifies a location of a given taxi at a given time
 ##### Change to simplify the required inputs
-function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Int64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float32, period::Float64, nodeCoordinates::Vector{Any})
+function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float32, period::Float64, nodeCoordinates::Vector{Any})
 	timestep = convert(Int64, floor(time/period + 1))
 	s = src(path[timestep]) # edge source
 	d = dst(path[timestep]) # edge destination

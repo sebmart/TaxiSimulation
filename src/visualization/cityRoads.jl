@@ -1,8 +1,12 @@
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Visualization");
-include("selectDefinitions.jl")
-
-include("selectManhattan.jl")
+using HDF5
+using JLD
+using LightGraphs
 using SFML
+
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src");
+include("definitions.jl")
+include("cities/manhattan.jl")
+
 
 man = Manhattan()
 
@@ -27,22 +31,22 @@ end
 
 bounds = (minX, maxX, minY, maxY)
 
-function generateNodeCoordinates(m::Manhattan, bounds::Tuple{Float64,Float64,Float64,Float64})
+function generateNodeCoordinates(nodes::Array{Coordinates,1}, bounds::Tuple{Float64,Float64,Float64,Float64})
 	minX = bounds[1]
 	maxX = bounds[2]
 	minY = bounds[3]
 	maxY = bounds[4]
 	scale = 600 / max(maxX - minX, maxY - minY)
 	nodeCoordinates = []
-	for pos = 1:length(m.positions)
-		c = m.positions[pos]
+	for pos = 1:length(nodes)
+		c = nodes[pos]
 		nodeC = Coordinates(scale * (c.x - minX) + 500, - scale * (c.y - minY) + 900)
 		push!(nodeCoordinates, nodeC)
 	end
 	return nodeCoordinates
 end
 
-nodeCoordinates = generateNodeCoordinates(man, bounds)
+nodeCoordinates = generateNodeCoordinates(man.positions, bounds)
 
 function generateNodes(radius::Float64, nc::Vector{Any})
 	nodes = CircleShape[]
