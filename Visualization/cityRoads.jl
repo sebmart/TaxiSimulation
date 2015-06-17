@@ -60,9 +60,6 @@ nodes = generateNodes(1.0, nodeCoordinates)
 
 minscore = Inf; maxscore = -Inf
 for edge in edges(man.network)
-	if man.roadTime[src(edge), dst(edge)] == 0
-		println(edge)
-	end
 	score = man.distances[src(edge), dst(edge)] / man.roadTime[src(edge), dst(edge)]
 	if score < minscore
 		minscore = score

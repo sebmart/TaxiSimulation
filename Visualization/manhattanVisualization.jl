@@ -79,7 +79,7 @@ function drawManhattan(man::Manhattan)
 			difscore = max - min
 			r = 255 * (score - max) / (- 1 * difscore)
 			g = 255 * (score - min) / (difscore)
-			set_fillcolor(road, SFML.Color(Int(floor(r)), Int(floor(g)), 0))
+			set_fillcolor(road, SFML.Color(int(floor(r)), int(floor(g)), 0))
 			push!(roads, road)
 		end
 		return roads
