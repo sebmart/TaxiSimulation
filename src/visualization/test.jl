@@ -1,40 +1,36 @@
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation");
-Pkg.update()
-Pkg.add("HDFS")
-Pkg.add("LightGraphs")
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src");
 
-include("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/definitions.jl");
-include("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Cities/squareCity.jl")
-include("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Offline/randomDescent.jl");
-width, nTime, nTaxis, nCusts = 6, 100, 3, 20
+using TaxiSimulation
+
+width, nTime, nTaxis, nCusts = 8, 100, 10, 40
 city = SquareCity(width)
 generateProblem!(city, nTaxis, nTime, nCusts)
-sol = randomDescent(city, 1000)
+
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/offline")
+sol = insertionsDescent(city, 1000)
 sol2 = TaxiSolution(city, sol)
-printSolution(sol2)
 
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation")
+include("src/visualization/setup.jl")
+visualize(city, sol2)
+
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/visualization/tests");
 save("testcity.jld", "city", city)
-versioninfo()
-
 save("testsol.jld", "sol", sol2)
 
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/Visualization");
+cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/visualization/tests");
 city = load("testcity.jld", "city")
-
 sol = load("testsol.jld", "sol")
 
-pwd()
+# using GraphViz
+# function drawNetwork(pb::TaxiProblem, name::String = "graph")
+#   stdin, proc = open(`neato -Tpdf -o Outputs/$(name).pdf`, "w")
+#   to_dot(pb,stdin)
+#   close(stdin)
+# end
 
-Pkg.add("GraphViz")
-Pkg.build("GraphViz")
-using GraphViz
-function drawNetwork(pb::TaxiProblem, name::String = "graph")
-  stdin, proc = open(`neato -Tpdf -o Outputs/$(name).pdf`, "w")
-  to_dot(pb,stdin)
-  close(stdin)
-end
+# drawNetwork(city, "test")
 
-drawNetwork(city, "test")
-dotFile(city, "test")
-
-Pkg.build()
+using HDF5
+using JLD
+using SFML
