@@ -29,5 +29,5 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:leng
   end
   println("Final: $(-best.cost) dollars")
 
-  return (best, order)
+  return best
 end
