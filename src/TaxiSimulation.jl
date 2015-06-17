@@ -22,11 +22,10 @@ export Manhattan, Metropolis, SquareCity,
        generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
-export fullOpt, simpleOpt, intervalBinOpt
+export fullOpt, fixedTimeOpt, intervalOpt
 
 #Offline heuristics
-export localOpt, offlineAssignment, offlineAssignmentQuick, randomAssignment,
-       randomDescent
+export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, fixSolution!, saveTaxiPb,
@@ -42,13 +41,12 @@ include("tools/shortestpath.jl")
 include("tools/tools.jl")
 
 #Solvers
-include("offline/offlineAssignment.jl")
-include("offline/randomAssignment.jl")
-include("offline/randomDescent.jl")
-include("offline/localOpt.jl")
-include("offline/intervalBinOpt.jl")
+include("offline/randomInsertions.jl")
+include("offline/insertionsDescent.jl")
+include("offline/localDescent.jl")
 include("offline/fullOpt.jl")
-include("offline/simpleOpt.jl")
+include("offline/fixedTimeOpt.jl")
+include("offline/intervalOpt.jl")
 
 include("cities/squareCity.jl")
 include("cities/metropolis.jl")

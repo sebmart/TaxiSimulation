@@ -5,7 +5,7 @@
 #----------------------------------------
 
 
-function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
 
   taxi = pb.taxis
   cust = pb.custs
@@ -206,5 +206,5 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
   return IntervalSolution(custs, notTaken, rev)
 end
 
-intervalBinOpt(pb::TaxiProblem, init::TaxiSolution; timeLimit = 100) =
-    intervalBinOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)
+intervalOpt(pb::TaxiProblem, init::TaxiSolution; timeLimit = 100) =
+    intervalOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)

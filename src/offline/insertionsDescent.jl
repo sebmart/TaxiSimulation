@@ -1,10 +1,10 @@
 #----------------------------------------
 #-- Random "gradient descent"
 #----------------------------------------
-include("offlineAssignment.jl")
-function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)])
+include("orderedInsertions.jl")
+function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)])
   order = start
-  best = offlineAssignmentQuick(pb, order)
+  best = orderedInsertions(pb, order)
   println("Try: 1, $(-best.cost) dollars")
 
   for trys in 2:n
@@ -17,7 +17,7 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
 
     order[i], order[j] = order[j], order[i]
 
-    sol = offlineAssignmentQuick(pb, order)
+    sol = orderedInsertions(pb, order)
     if sol.cost <= best.cost
       if sol.cost < best.cost
         println("====Try: $(trys), $(-sol.cost) dollars")
@@ -31,6 +31,3 @@ function randomDescentOrder(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:len
 
   return (best, order)
 end
-
-randomDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)]) =
-  randomDescentOrder(pb,n,start)[1]

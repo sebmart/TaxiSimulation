@@ -1,14 +1,14 @@
 #----------------------------------------
 #-- Try random orders, keep the best one
 #----------------------------------------
-include("offlineAssignment.jl")
-function randomAssignment(pb::TaxiProblem, n::Int)
+include("orderedInsertions.jl")
+function randomInsertions(pb::TaxiProblem, n::Int)
   initT = time()
   order = randomOrder(pb)
-  best = offlineAssignmentQuick(pb, order)
+  best = orderedInsertions(pb, order)
   println("Try: 1, $(-best.cost) dollars")
   for trys in 2:n
-    sol = offlineAssignmentQuick(pb, order)
+    sol = orderedInsertions(pb, order)
 
     if sol.cost < best.cost
       println("Try: $trys, $(-sol.cost) dollars")
@@ -18,5 +18,5 @@ function randomAssignment(pb::TaxiProblem, n::Int)
     order = randomOrder(pb)
   end
   println("Final: $(-best.cost) dollars")
-  return TaxiSolution(pb, best)
+  return best
 end
