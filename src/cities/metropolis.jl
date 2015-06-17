@@ -17,7 +17,7 @@ longTrvlCost(trvltime) = trvltime * driveCost/120
 
 type Metropolis <: TaxiProblem
   network::Network
-  roadTime::SparseMatrixCSC{Int, Int}
+  roadTime::SparseMatrixCSC{Float64, Int}
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
@@ -225,7 +225,7 @@ function generateCustomers!(sim::Metropolis, demand::Float64)
         dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
         orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
       end
-      pathTime = city.sp.traveltime[orig,dest]
+      pathTime = sim.sp.traveltime[orig,dest]
 
       if pathTime + i <= sim.nTime
         price = (hourFare(tCurrent)/120)*pathTime

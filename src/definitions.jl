@@ -63,12 +63,12 @@ immutable TaxiSolution
 end
 
 immutable ShortPaths
-  traveltime::Array{Int8,2}
+  traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
 end
 
-ShortPaths() = ShortPaths( Array(Int8, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
+ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 
 #Represent an assigned customer (not fixed time-windows)

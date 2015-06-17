@@ -3,7 +3,7 @@
 #----------------------------------------
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
 
   sp = pb.sp
 
@@ -15,7 +15,7 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
   nCusts = length(cust)
 
   #short alias
-  tt = sp.traveltime
+  tt = int(sp.traveltime)
   tc = sp.travelcost
 
   #Compute the list of the lists of customers that can be picked-up
@@ -150,13 +150,18 @@ function simpleOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions
   tx = getValue(x)
   ty = getValue(y)
 
-  return simpleOpt_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), getObjectiveValue(m))
+  rev = getObjectiveValue(m)
+
+  println("Final revenue = $(-rev) dollars")
+
+
+  return fixedTime_solution( pb, pCusts, nextCusts, getValue(x), getValue(y), rev)
 end
 
 
 #Gives return the solution in the right form given the solution of the optimisation problem
 
-function simpleOpt_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
+function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
   chain = [(0,0) for i in 1:nCusts]

@@ -19,7 +19,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
   mintaxi = 0
   position = 0
   #We need the shortestPaths
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   tc = pb.sp.travelcost
 
   #We test the new customer for each taxi
@@ -152,7 +152,7 @@ function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
   list = sol.custs[k]
   c = list[i].id
   deleteat!(list, i)
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   tc = pb.sp.travelcost
   custs = pb.custs
 
@@ -179,7 +179,7 @@ end
 #Split a customer list and exchange with another taxi. Returns the best between
 #this solution and the previous one
 function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, k2::Int)
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   custs = pb.custs
   sol = copySolution(sol2)
 

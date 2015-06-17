@@ -14,23 +14,22 @@ using Gurobi
 using Base.Collections
 
 #types
-export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment
-export TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution
+export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
+       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution
 
 #Cities
-export Manhattan, Metropolis, SquareCity
-export generateCustomers!, generateTaxis!, generateProblem!
+export Manhattan, Metropolis, SquareCity,
+       generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
-export fullOpt, simpleOpt, intervalBinOpt
+export fullOpt, fixedTimeOpt, intervalOpt
 
 #Offline heuristics
-export localOpt, offlineAssignment, offlineAssignmentQuick, randomAssignment
+export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
-export printSolution, shortestPaths!, shortestPaths
-export fixSolution!, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile
-export copySolution
+export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
+       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!
 
 
 
@@ -42,12 +41,12 @@ include("tools/shortestpath.jl")
 include("tools/tools.jl")
 
 #Solvers
-include("offline/offlineAssignment.jl")
-include("offline/randomDescent.jl")
-include("offline/localOpt.jl")
-include("offline/intervalBinOpt.jl")
+include("offline/randomInsertions.jl")
+include("offline/insertionsDescent.jl")
+include("offline/localDescent.jl")
 include("offline/fullOpt.jl")
-include("offline/simpleOpt.jl")
+include("offline/fixedTimeOpt.jl")
+include("offline/intervalOpt.jl")
 
 include("cities/squareCity.jl")
 include("cities/metropolis.jl")

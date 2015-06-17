@@ -5,7 +5,7 @@
 #----------------------------------------
 
 
-function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
 
   taxi = pb.taxis
   cust = pb.custs
@@ -15,7 +15,7 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
   nCusts = length(cust)
 
   #short alias
-  tt = pb.sp.traveltime
+  tt = int(pb.sp.traveltime)
   tc = pb.sp.travelcost
 
   #Compute the list of the lists of customers that can be taken
@@ -48,10 +48,10 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
     for k=1:nTaxis, c=1:nCusts
       setValue(y[k,c],0)
     end
-    for c in [1:nCusts][init2.notTaken], t=cust[c].tmin:cust[c].tmaxt
+    for c in [1:nCusts][init.notTaken], t=cust[c].tmin:cust[c].tmaxt
         setValue(tw[c,t],1)
     end
-    for (k,l) in enumerate(init2.custs)
+    for (k,l) in enumerate(init.custs)
       if length(l) > 0
         setValue(y[k,l[1].id], 1)
         for t=l[1].tInf:l[1].tSup
@@ -202,6 +202,9 @@ function intervalBinOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolutio
     end
   end
   rev = solutionCost(pb, custs)
-  println("Final revenue = $(-rev)")
+  println("Final revenue = $(-rev) dollars")
   return IntervalSolution(custs, notTaken, rev)
 end
+
+intervalOpt(pb::TaxiProblem, init::TaxiSolution; timeLimit = 100) =
+    intervalOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)

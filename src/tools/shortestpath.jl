@@ -4,11 +4,11 @@ function shortestPaths!(pb::TaxiProblem)
 end
 
 
-function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Int, Int},
+function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
                                    roadCost::SparseMatrixCSC{Float64, Int})
 
   nLocs  = length( vertices(n))
-  pathTime = Array(Int, (nLocs,nLocs))
+  pathTime = Array(Float64, (nLocs,nLocs))
   pathCost = Array(Float64, (nLocs,nLocs))
   previous = Array(Int, (nLocs,nLocs))
 
@@ -23,7 +23,7 @@ end
 
 #Compute the table of the next locations on the shortest paths
 #next[i, j] = location after i when going to j
-function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Int, Int})
+function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Float64, Int})
   nLocs = size(sp.previous,1)
   next = Array(Int, (nLocs,nLocs))
   for i in 1:nLocs, j in 1:nLocs
@@ -50,12 +50,12 @@ end
 function custom_dijkstra(
     g::AbstractGraph,
     src::Int,
-    edge_dists::AbstractArray{Int, 2},
+    edge_dists::AbstractArray{Float64, 2},
     edge_costs::AbstractArray{Float64,2})
 
 
     nvg = nv(g)
-    dists = fill(typemax(Int), nvg)
+    dists = fill(typemax(Float64), nvg)
     costs = fill(typemax(Float64), nvg)
     parents = zeros(Int, nvg)
     visited = falses(nvg)
@@ -67,8 +67,8 @@ function custom_dijkstra(
     while !isempty(H)
         u = heappop!(H)
         for v in out_neighbors(g,u)
-            if dists[u] == typemax(Int)
-                alt = typemax(Int)
+            if dists[u] == typemax(Float64)
+                alt = typemax(Float64)
                 alt2 = typemax(Float64)
             else
                 alt = dists[u] + edge_dists[u,v]
