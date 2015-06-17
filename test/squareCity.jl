@@ -35,9 +35,9 @@ sol1  = intervalOpt(city, sol2);
 @test sol1.cost <= sol3.cost
 @test sol1.cost <= sol4.cost
 
-fixSolution!(city, sol1)
-fixSolution!(city, sol2)
-fixSolution!(city, sol3)
-fixSolution!(city, sol4)
+testSolution(city, sol1)
+testSolution(city, sol2)
+testSolution(city, sol3)
+testSolution(city, expandWindows(city,sol4))
 
-fixSolution!(city, IntervalSolution(city, TaxiSolution(city, sol1)))
+testSolution(city, IntervalSolution(city, TaxiSolution(city, sol1)))

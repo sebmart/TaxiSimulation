@@ -50,7 +50,7 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
 end
 
 #test interval solution, if it is indeed feasible
-function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
+function testSolution(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
   nt = trues(length(pb.custs))
   tt = int(pb.sp.traveltime)
@@ -64,7 +64,8 @@ function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
           nt[list[1].id] = false
       else
           error("Customer $(list[1].id) picked-up twice")
-      end    end
+      end
+    end
     for i = 2:(length(list))
       list[i].tInf = max(list[i].tInf, list[i-1].tInf+
       tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
@@ -87,13 +88,42 @@ function fixSolution!(pb::TaxiProblem, sol::IntervalSolution)
     end
   end
   if sol.notTaken != nt
-    println("NotTaken was not correct: fixed")
-    sol.notTaken = nt
+    error("NotTaken is not correct")
   end
   cost = solutionCost(pb,sol.custs)
-  if sol.cost != cost
-    println("Cost was not correct: fixed")
-    sol.cost = cost
+  if abs(sol.cost - cost) > 1e-5
+      error("Cost is not correct (1e-5 precision)")
+  end
+end
+
+
+#expand the time windows of an interval solution
+function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
+  custs = pb.custs
+  tt = int(pb.sp.traveltime)
+
+  for k = 1:length(pb.taxis)
+    list = sol.custs[k]
+    if length(list) >= 1
+      list[1].tInf = max(custs[list[1].id].tmin, 1+tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+      list[end].tSup = custs[list[end].id].tmaxt
+    end
+    for i = 2:(length(list))
+      list[i].tInf = max(list[i].tInf, list[i-1].tInf+
+      tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
+      tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
+    end
+    for i = (length(list) - 1):(-1):1
+      list[i].tSup = min(list[i].tSup, list[i+1].tSup-
+      tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
+      tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
+    end
+    #quick check..
+    for c in list
+      if c.tInf > c.tSup
+        error("Solution Infeasible for taxi $k")
+      end
+    end
   end
 end
 

@@ -28,8 +28,8 @@ export fullOpt, fixedTimeOpt, intervalOpt
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
-export printSolution, shortestPaths!, shortestPaths, fixSolution!, saveTaxiPb,
-       loadTaxiPb, drawNetwork, dotFile, copySolution
+export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
+       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!
 
 
 
