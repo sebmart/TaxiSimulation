@@ -15,7 +15,7 @@ using Base.Collections
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
-       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution
+       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution, Coordinates
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
