@@ -314,7 +314,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	restart(clock)
 	period = 1.0
 	newperiod = period
-	x = 0
+	timestep = 0
 
 	text = RenderText()
 	set_color(text, SFML.black)
@@ -355,21 +355,17 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			zoom(view, 1.0)
 			view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 		end
-		if is_key_pressed(KeyCode.R)
-			restart(clock)
-		end
-		set_view(window, view)
-
-		
 		if is_key_pressed(KeyCode.Q)
-			period = max(period - 0.01, 0.001)
+			period = max(period - 0.01, 0.01)
 		end
 		if is_key_pressed(KeyCode.W)
-			period = period + 0.001
-		end
-		if is_key_pressed(KeyCode.E)
 			period = 1.0
 		end
+		if is_key_pressed(KeyCode.E)
+			restart(clock)
+		end
+
+		set_view(window, view)
 
 		t = 1.0 * (get_elapsed_time(clock) |> as_seconds)
 
