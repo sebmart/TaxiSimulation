@@ -5,7 +5,7 @@ using JLD
 using SFML
 using LightGraphs
 
-width, nTime, nTaxis, nCusts = 10, 100, 10, 40
+width, nTime, nTaxis, nCusts = 20, 200, 20, 80
 city = SquareCity(width);
 generateProblem!(city, nTaxis, nTime, nCusts)
 presol = insertionsDescent(city, 500);
@@ -13,4 +13,4 @@ sol = TaxiSolution(city, presol);
 
 cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src/visualization");
 include("visualizerSetup.jl")
-visualize(city, sol)
+visualize(city, sol, false)

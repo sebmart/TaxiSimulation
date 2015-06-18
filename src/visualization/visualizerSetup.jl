@@ -10,9 +10,10 @@ type customerTime
 		driving::Tuple{Int64, Int64, Int64}
 end
 
-function visualize(c::TaxiProblem, s::TaxiSolution)
+function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 	city = c
 	sol = s
+	repeat = r
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
@@ -119,9 +120,25 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 			score = distance / city.roadTime[src(edge), dst(edge)]
 			difscore = max - min
-			r = 255 * (score - max) / (- 1 * difscore)
-			g = 255 * (score - min) / (difscore)
-			set_fillcolor(road, SFML.Color(Int(floor(r)), Int(floor(g)), 0))
+			avg = (max + min)/2
+	        if score < min
+	                r = 128.0
+	                g = 0.0
+	                b = 0.0
+	        elseif score < (max + min)/2
+	                r = 255.0
+	                g = 255.0 * 2 * (score - min) / (difscore)
+	                b = 0.0
+	        elseif score < max
+	                r = 255.0 * 2 * (score - max) / (- 1 * difscore)
+	                g = 255.0
+	                b = 0.0
+	        else
+	                r = 0.0
+	                g = 128.0
+	                b = 0.0
+	        end
+			set_fillcolor(road, SFML.Color(Int(floor(r)), Int(floor(g)), Int(floor(b))))
 			push!(roads, road)
 		end
 		return roads
@@ -312,7 +329,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	clock = Clock()
 	restart(clock)
-	period = 1.0
+	period = 1.00
 	newperiod = period
 	timestep = 0
 
@@ -362,14 +379,20 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			period = 1.0
 		end
 		if is_key_pressed(KeyCode.E)
+			period = period + 0.01
+		end
+		if is_key_pressed(KeyCode.R)
 			restart(clock)
 		end
-
 		set_view(window, view)
 
 		t = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+		if repeat
+			set_string(text, "Timestep: " * string(convert(Int64, floor(t/period + 1))) * " Repeat: ON")
+		else
+			set_string(text, "Timestep: " * string(convert(Int64, floor(t/period + 1))) * " Repeat: OFF")
+		end
 
-		set_string(text, "Timestep: "*string(convert(Int64, floor(t/period + 1))))
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
 		if (t < length(paths[1]) * period && !flag)
@@ -396,7 +419,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 					set_position(customers[i], Vector2f(customerloc[1] - customerRadius, customerloc[2] - customerRadius))
 				end
 			end
+		elseif (t > length(paths[1]) * period && !flag &&repeat)
+			restart(clock)
 		end
+
 		
 		# Draws the objects
 		clear(window, SFML.white)
