@@ -397,7 +397,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
-		if (!flag)
+		if !flag
 			if (t < length(paths[1]) * period)
 				for i = 1:length(taxis)
 					taxiloc = findTaxiLocation(city.roadTime, paths[i], t, period, nodeCoordinates)
