@@ -261,7 +261,7 @@ function customersCompatibility(pb::TaxiProblem)
   pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
   for i=1:nCusts
-    nextCusts[i] = (Int,Int)[]
+    nextCusts[i] = Tuple{Int,Int}[]
   end
 
   for (i,c1) in enumerate(cust)
