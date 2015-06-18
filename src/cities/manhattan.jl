@@ -34,6 +34,9 @@ type Manhattan <: TaxiProblem
     if sp
         c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
     end
+    c.custs = Customer[]
+    c.taxis = Taxi[]
+    c.nTime = 0
     return c
   end
 end

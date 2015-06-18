@@ -105,6 +105,6 @@ function printLong(s::TaxiSolution)
 end
 
 #Print a City
-function show(io::IO, pb::TaxiProblem)
+function Base.show(io::IO, pb::TaxiProblem)
     print(io, "Taxi Problem")
 end
