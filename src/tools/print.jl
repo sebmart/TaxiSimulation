@@ -11,7 +11,7 @@ function printSolution(s::TaxiSolution, io::IO = STDOUT; verbose=1)
     printLong(s, io)
   end
 
-  nt = [1:length(s.notTaken)][s.notTaken]
+  nt = collect(1:length(s.notTaken))[s.notTaken]
   if length(nt) != 0
     println(io, "=== NOT TAKEN")
     println(io, "==========================")

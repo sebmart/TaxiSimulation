@@ -62,7 +62,7 @@ function custom_dijkstra(
     H = Int[]
     dists[src] = 0
     costs[src] = 0.0
-    sizehint(H, nvg)
+    sizehint!(H, nvg)
     heappush!(H, src)
     while !isempty(H)
         u = heappop!(H)
