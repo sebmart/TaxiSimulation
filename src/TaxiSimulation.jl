@@ -46,7 +46,7 @@ include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
 include("offline/fullOpt.jl")
-# include("offline/fixedTimeOpt.jl")
+include("offline/fixedTimeOpt.jl")
 include("offline/intervalOpt.jl")
 
 include("cities/squareCity.jl")

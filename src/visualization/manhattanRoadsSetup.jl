@@ -1,5 +1,4 @@
 function drawManhattan(man::Manhattan)
-	using SFML
 	minX = Inf; maxX = -Inf; minY = Inf; maxY = -Inf
 
 	for i = 1:length(man.positions)
@@ -77,9 +76,25 @@ function drawManhattan(man::Manhattan)
 
 			score = m.distances[src(edge), dst(edge)] / m.roadTime[src(edge), dst(edge)]
 			difscore = max - min
-			r = 255 * (score - max) / (- 1 * difscore)
-			g = 255 * (score - min) / (difscore)
-			set_fillcolor(road, SFML.Color(int(floor(r)), int(floor(g)), 0))
+			avg = (max + min)/2
+	        if score < min
+	                r = 128.0
+	                g = 0.0
+	                b = 0.0
+	        elseif score < (max + min)/2
+	                r = 255.0
+	                g = 255.0 * 2 * (score - min) / (difscore)
+	                b = 0.0
+	        elseif score < max
+	                r = 255.0 * 2 * (score - max) / (- 1 * difscore)
+	                g = 255.0
+	                b = 0.0
+	        else
+	                r = 0.0
+	                g = 128.0
+	                b = 0.0
+	        end
+			set_fillcolor(road, SFML.Color(int(floor(r)), int(floor(g)), int(floor(b))))
 			push!(roads, road)
 		end
 		return roads

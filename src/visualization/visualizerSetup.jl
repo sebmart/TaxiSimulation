@@ -105,19 +105,23 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 	end
 
 	# Creates the roads of the graph, using coordinates from GraphViz
-	function generateRoads(city::TaxiProblem, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
+	function generateRoads(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
 		roads = Line[]
 		for edge in edges(city.network)
 			startNode = src(edge)
 			endNode = dst(edge)
 			s = Vector2f(nodeCoordinates[startNode].x, nodeCoordinates[startNode].y)
 			e = Vector2f(nodeCoordinates[endNode].x, nodeCoordinates[endNode].y)
-			
 			road = Line(s, e, 1.0)
-			xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
-			ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
-			distance = sqrt(xdif * xdif + ydif * ydif)
 
+			distance = 0
+			if flag
+				distance = city.distances[src(edge), dst(edge)]
+			else
+				xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
+				ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
+				distance = sqrt(xdif * xdif + ydif * ydif)
+			end
 			score = distance / city.roadTime[src(edge), dst(edge)]
 			difscore = max - min
 			avg = (max + min)/2
@@ -289,7 +293,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 		end
 		lines = readlines(open ("test1.txt"))
 		rm("test1.txt")
-		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
@@ -312,7 +315,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 	nodeRadius = max(minEdge / 10, 1.0)
 	nodes = generateNodes(nodeRadius, nodeCoordinates)
 	scoreBound = generateScoreBound(city, flag, nodeCoordinates)
-	roads = generateRoads(city, nodeCoordinates, scoreBound[1], scoreBound[2])
+	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
 	if !flag
 		paths = generateTaxiPaths(sol)
 		taxiRadius = 1.5 * nodeRadius
@@ -330,7 +333,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 	clock = Clock()
 	restart(clock)
 	period = 1.00
-	newperiod = period
 	timestep = 0
 
 	text = RenderText()
@@ -395,33 +397,36 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
-		if (t < length(paths[1]) * period && !flag)
-			for i = 1:length(taxis)
-				taxiloc = findTaxiLocation(city.roadTime, paths[i], t, period, nodeCoordinates)
-				set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
-			end
-			for i = 1:length(customers)
-				customerloc = findCustomerLocation(i, customerTimes, city, sol, t, period, nodeCoordinates)
-				if customerloc[1] < 0
-					timestep = - 1 * customerloc[1]
-					if timestep == customerTimes[i].driving[2]
-						posX = nodeCoordinates[city.custs[i].dest].x
-						posY = nodeCoordinates[city.custs[i].dest].y
-						set_position(customers[i], Vector2f(posX - customerRadius, posY - customerRadius))
-					else
-						taxi = customerTimes[i].driving[3]
-						pos = get_position(taxis[taxi])
-						set_position(customers[i], Vector2f(pos.x + taxiRadius - customerRadius, pos.y + taxiRadius - customerRadius))
-					end
-				elseif customerloc[1] == 0
-					set_position(customers[i], Vector2f(0, 0))
-				else
-					set_position(customers[i], Vector2f(customerloc[1] - customerRadius, customerloc[2] - customerRadius))
+		if (!flag)
+			if (t < length(paths[1]) * period)
+				for i = 1:length(taxis)
+					taxiloc = findTaxiLocation(city.roadTime, paths[i], t, period, nodeCoordinates)
+					set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
 				end
+				for i = 1:length(customers)
+					customerloc = findCustomerLocation(i, customerTimes, city, sol, t, period, nodeCoordinates)
+					if customerloc[1] < 0
+						timestep = - 1 * customerloc[1]
+						if timestep == customerTimes[i].driving[2]
+							posX = nodeCoordinates[city.custs[i].dest].x
+							posY = nodeCoordinates[city.custs[i].dest].y
+							set_position(customers[i], Vector2f(posX - customerRadius, posY - customerRadius))
+						else
+							taxi = customerTimes[i].driving[3]
+							pos = get_position(taxis[taxi])
+							set_position(customers[i], Vector2f(pos.x + taxiRadius - customerRadius, pos.y + taxiRadius - customerRadius))
+						end
+					elseif customerloc[1] == 0
+						set_position(customers[i], Vector2f(0, 0))
+					else
+						set_position(customers[i], Vector2f(customerloc[1] - customerRadius, customerloc[2] - customerRadius))
+					end
+				end
+			elseif (t > length(paths[1]) * period && !flag &&repeat)
+				restart(clock)
 			end
-		elseif (t > length(paths[1]) * period && !flag &&repeat)
-			restart(clock)
 		end
+		
 
 		
 		# Draws the objects
