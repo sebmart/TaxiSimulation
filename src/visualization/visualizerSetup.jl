@@ -344,6 +344,12 @@ function visualize(c::TaxiProblem, s::TaxiSolution, r::Bool)
 			if get_type(event) == EventType.CLOSED
 				close(window)
 			end
+			if is_key_pressed(KeyCode.ESCAPE)
+				close(window)
+			end
+			if get_type(event) == EventType.RESIZED
+				set_size(view, Vector2f(get_size(window).x, get_size(window).y))
+			end
 		end
 		if is_key_pressed(KeyCode.LEFT)
 			move(view, Vector2f(-2, 0))
