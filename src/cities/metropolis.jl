@@ -241,7 +241,7 @@ function generateCustomers!(sim::Metropolis, demand::Float64)
       end
     end
     #First, get the number of customers to generate
-    tCurrent += Second(30)
+    tCurrent += Dates.Second(30)
   end
 end
 

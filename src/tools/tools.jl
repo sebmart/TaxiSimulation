@@ -267,7 +267,7 @@ function customersCompatibility(pb::TaxiProblem)
   for (i,c1) in enumerate(cust)
     pCusts[i]= filter(c2->c2 != i && cust[c2].tmin +
     tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
-    [1:nCusts])
+    collect(1:nCusts))
     for (id,j) in enumerate(pCusts[i])
       push!(nextCusts[j], (i,id))
     end
