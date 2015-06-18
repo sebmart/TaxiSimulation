@@ -104,7 +104,7 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
   end
 end
 
-function Base.show(io::IO, sol::TaxiSolution) = printShort(sol, io)
+Base.show(io::IO, sol::TaxiSolution) = printShort(sol, io)
 
 #Print a City
 function Base.show(io::IO, pb::TaxiProblem)
