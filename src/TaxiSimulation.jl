@@ -15,7 +15,8 @@ using Base.Collections
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
-       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution, Coordinates
+       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution,
+       Coordinates
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
@@ -45,7 +46,7 @@ include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
 include("offline/fullOpt.jl")
-# include("offline/fixedTimeOpt.jl")
+include("offline/fixedTimeOpt.jl")
 include("offline/intervalOpt.jl")
 
 include("cities/squareCity.jl")

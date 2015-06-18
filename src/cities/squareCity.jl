@@ -77,7 +77,9 @@ type SquareCity <: TaxiProblem
 
     #We compute the shortest paths from everywhere to everywhere (takes time)
     c.sp =  shortestPaths(c.network, c.roadTime, c.roadCost)
-
+    c.custs = Customer[]
+    c.taxis = Taxi[]
+    c.nTime = 0
     return c
   end
 

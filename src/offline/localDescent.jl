@@ -3,7 +3,8 @@
 #--------------------------------------------------------------
 include("moveCustomer.jl")
 
-function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = offlineAssignmentQuick(pb))
+function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb))
+  expandWindows!(pb, start)
   nTaxis = length(pb.taxis)
   println("Start, $(-start.cost) dollars")
   sol =  copySolution(start)
