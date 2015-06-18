@@ -13,6 +13,4 @@ sol = TaxiSolution(city, presol);
 
 cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/");
 include("src/visualization/visualize.jl");
-
 visualize(city, sol)
-
