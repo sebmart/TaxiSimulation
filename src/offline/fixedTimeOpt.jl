@@ -161,7 +161,7 @@ end
 
 #Gives return the solution in the right form given the solution of the optimisation problem
 
-function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{ Vector{ (Int,Int)}}, x, y, cost::Float64)
+function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, nextCusts::Vector{Tuple{Int,Int}}, x, y, cost::Float64)
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
   chain = [(0,0) for i in 1:nCusts]
