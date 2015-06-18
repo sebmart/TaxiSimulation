@@ -196,7 +196,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Identifies a location of a given taxi at a given time
 	##### Change to simplify the required inputs
-	function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float32, period::Float64, nodeCoordinates::Vector{Coordinates})
+	function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
 		timestep = convert(Int64, floor(time/period + 1))
 		s = src(path[timestep]) # edge source
 		d = dst(path[timestep]) # edge destination
@@ -228,7 +228,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 	end
 
-	function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float32, period::Float64, nodeCoordinates::Vector{Coordinates})
+	function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
 		timestep = convert(Int64, floor(time/period + 1))
 
 		customer = city.custs[id]
@@ -313,6 +313,8 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	clock = Clock()
 	restart(clock)
 	period = 1.0
+	newperiod = period
+	x = 0
 
 	text = RenderText()
 	set_color(text, SFML.black)
@@ -353,11 +355,24 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			zoom(view, 1.0)
 			view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 		end
-
+		if is_key_pressed(KeyCode.R)
+			restart(clock)
+		end
 		set_view(window, view)
 
-		t = get_elapsed_time(clock) |> as_seconds
 		
+		if is_key_pressed(KeyCode.Q)
+			period = max(period - 0.01, 0.001)
+		end
+		if is_key_pressed(KeyCode.W)
+			period = period + 0.001
+		end
+		if is_key_pressed(KeyCode.E)
+			period = 1.0
+		end
+
+		t = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+
 		set_string(text, "Timestep: "*string(convert(Int64, floor(t/period + 1))))
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
