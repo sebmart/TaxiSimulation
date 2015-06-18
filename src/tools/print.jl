@@ -2,7 +2,7 @@
 #-- Print a solution
 #----------------------------------------
 
-function printSolution(s::TaxiSolution, io::Io = STDOUT; verbose=1)
+function printSolution(s::TaxiSolution, io::IO = STDOUT; verbose=1)
   if verbose == 0
     printShort(s, io)
   elseif verbose == 1
@@ -31,7 +31,7 @@ function printSolution(s::TaxiSolution, io::Io = STDOUT; verbose=1)
 
 end
 
-function printShort(s::TaxiSolution, io::Io = STDOUT)
+function printShort(s::TaxiSolution, io::IO = STDOUT)
   for (k,tax) in enumerate(s.taxis)
     println(io, "=== TAXI $k")
     println(io, "==========================")
@@ -42,7 +42,7 @@ function printShort(s::TaxiSolution, io::Io = STDOUT)
 end
 
 #Print a solution in a reduced way, with factored taxi movements and customers
-function printMedium(s::TaxiSolution, io::Io = STDOUT)
+function printMedium(s::TaxiSolution, io::IO = STDOUT)
   for (k,tax) in enumerate(s.taxis)
     println(io, "\n=== TAXI $k")
     println(io, "==========================")
@@ -79,7 +79,7 @@ function printMedium(s::TaxiSolution, io::Io = STDOUT)
 end
 
 #Longer print, timestep by timestep
-function printLong(s::TaxiSolution, io::Io = STDOUT)
+function printLong(s::TaxiSolution, io::IO = STDOUT)
   for (k,tax) in enumerate(s.taxis)
     println(io, "=== TAXI $k")
     println(io, "==========================")
