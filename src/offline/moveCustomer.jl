@@ -322,7 +322,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
   #-------------------------
   # INSERT other customers (can be made more efficient)
   #-------------------------
-  freeCusts = [1: length(custs)][sol.notTaken]
+  freeCusts = collect(1: length(custs))[sol.notTaken]
   order = randomOrder( length(freeCusts))
   #For each free customer
   for i in 1:length(freeCusts)

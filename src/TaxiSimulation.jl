@@ -4,14 +4,8 @@
 
 module TaxiSimulation
 
-using HDF5
-using JLD
-using LightGraphs
-using Dates
-using Distributions
-using JuMP
-using Gurobi
-using Base.Collections
+using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
+      SFML
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
@@ -32,6 +26,8 @@ export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
        loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!
 
+#Visualization
+export visualize
 
 
 include("definitions.jl")
@@ -52,5 +48,7 @@ include("offline/intervalOpt.jl")
 include("cities/squareCity.jl")
 include("cities/metropolis.jl")
 include("cities/manhattan.jl")
+
+include("visualization/visualize.jl")
 
 end

@@ -244,7 +244,7 @@ end
 
 #returns a random order on the customers
 function randomOrder(n::Int)
-  order = [1:n]
+  order = collect(1:n)
   for i = n:-1:2
     j = rand(1:i)
     order[i], order[j] = order[j], order[i]
@@ -259,15 +259,15 @@ function customersCompatibility(pb::TaxiProblem)
   tt = int(pb.sp.traveltime)
   nCusts = length(cust)
   pCusts = Array( Array{Int,1}, nCusts)
-  nextCusts = Array( Array{(Int,Int),1},nCusts)
+  nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
   for i=1:nCusts
-    nextCusts[i] = (Int,Int)[]
+    nextCusts[i] = Tuple{Int,Int}[]
   end
 
   for (i,c1) in enumerate(cust)
     pCusts[i]= filter(c2->c2 != i && cust[c2].tmin +
     tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
-    [1:nCusts])
+    collect(1:nCusts))
     for (id,j) in enumerate(pCusts[i])
       push!(nextCusts[j], (i,id))
     end

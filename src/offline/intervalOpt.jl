@@ -148,7 +148,7 @@ function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(V
   first = [0 for i in 1:nTaxis]
   custs = [AssignedCustomer[] for k in 1:nTaxis]
 
-  intervals = Array((Int,Int),nCusts)
+  intervals = Array(Tuple{Int,Int},nCusts)
   for c = 1:nCusts
     minT = 0
     for t=cust[c].tmin : cust[c].tmaxt
