@@ -244,7 +244,7 @@ end
 
 #returns a random order on the customers
 function randomOrder(n::Int)
-  order = [1:n]
+  order = collect(1:n)
   for i = n:-1:2
     j = rand(1:i)
     order[i], order[j] = order[j], order[i]
