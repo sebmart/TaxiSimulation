@@ -1,10 +1,3 @@
-cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src");
-using TaxiSimulation
-using HDF5
-using JLD
-using SFML
-using LightGraphs
-
 type customerTime
 		window::Tuple{Int64, Int64}
 		driving::Tuple{Int64, Int64, Int64}
@@ -16,8 +9,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-		cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs")
-	 	stdin, proc = open(`neato -Tplain -o $(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -111,7 +103,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			endNode = dst(edge)
 			s = Vector2f(nodeCoordinates[startNode].x, nodeCoordinates[startNode].y)
 			e = Vector2f(nodeCoordinates[endNode].x, nodeCoordinates[endNode].y)
-			
+
 			road = Line(s, e, 1.0)
 			xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
 			ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
@@ -166,7 +158,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				set_outlinecolor(customer, SFML.green)
 			else
 				set_outlinecolor(customer, SFML.blue)
-			end	
+			end
 			push!(customers, customer)
 		end
 		return customers
@@ -178,7 +170,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			min = city.custs[i].tmin
 			maxt = city.custs[i].tmaxt
 			first = (min, max)
-			second = 
+			second =
 			time = customerTime((min, maxt), (0, 0, 0))
 			push!(customerTimes, time)
 		end
@@ -190,7 +182,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				tout = assignment.timeOut
 				customerTimes[customer].driving = (tin, tout, i)
 			end
-		end 
+		end
 		return customerTimes
 	end
 
@@ -212,19 +204,19 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			if timestep == 1
 				totaltime = period * totalTimesteps
 				slope = time / totaltime
-			else 
+			else
 				currentTimestep = timestep
 				while(currentTimestep > 0 && (src(path[currentTimestep]) == s &&
-					dst(path[currentTimestep]) == d)) 
+					dst(path[currentTimestep]) == d))
 					currentTimestep -= 1
 				end
-				starttime = currentTimestep * period 
+				starttime = currentTimestep * period
 				totaltime = period * totalTimesteps
 				slope = (time - starttime) / totaltime
 			end
 			newx = sx + slope * (dx - sx)
 			newy = sy + slope * (dy - sy)
-			return (newx, newy) 
+			return (newx, newy)
 		end
 	end
 
@@ -251,32 +243,31 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				y = - 1 * timestep
 			end
 		end
-		return (x, y)	
+		return (x, y)
 	end
 
-	flag = false 
+	flag = false
 	originalNodes = 0
 
 	try
 		originalNodes = city.positions
 		flag = true
 	catch
-		cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs");
 		GraphViz = Coordinates[]
 		indices = Int64[]
 		drawNetwork(city, "test1")
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			fileExists = isfile("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/outputs/test1.txt")
+			fileExists = isfile("outputs/test1.txt")
 		end
-		lines = readlines(open ("test1.txt"))
-		rm("test1.txt")
+		lines = readlines(open ("outputs/test1.txt"))
+		rm("outputs/test1.txt")
 		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
-			nodeC = Coordinates(float(split(lines[index])[3]), float(split(lines[index])[4])) 
+			nodeC = Coordinates(float(split(lines[index])[3]), float(split(lines[index])[4]))
 			push!(GraphViz, nodeC)
 			index += 1
 		end
@@ -357,7 +348,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		set_view(window, view)
 
 		t = get_elapsed_time(clock) |> as_seconds
-		
+
 		set_string(text, "Timestep: "*string(convert(Int64, floor(t/period + 1))))
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
@@ -386,7 +377,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				end
 			end
 		end
-		
+
 		# Draws the objects
 		clear(window, SFML.white)
 		if !flag
@@ -412,8 +403,3 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		display(window)
 	end
 end
-
-
-
-
-
