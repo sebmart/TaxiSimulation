@@ -327,6 +327,8 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
 
 end
 
+TaxiSolution() = TaxiSolution(TaxiActions[],trues(0),0.0)
+
 IntervalSolution(pb::TaxiProblem) =
 IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
 trues(length(pb.custs)), -pb.nTime * length(pb.taxis) * pb.waitingCost)
