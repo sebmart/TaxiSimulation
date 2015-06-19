@@ -104,7 +104,19 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
   end
 end
 
-Base.show(io::IO, sol::TaxiSolution) = printShort(sol, io)
+function Base.show(io::IO, sol::TaxiSolution)
+    nt= count(i->i, sol.notTaken)
+    println(io, "TaxiSolution")
+    println(io, "Revenue : $(-sol.cost) dollars")
+    println(io, "$nt customers not served. ")
+end
+
+function Base.show(io::IO, sol::IntervalSolution)
+    nt= count(i->i, sol.notTaken)
+    println(io, "TaxiSolution")
+    println(io, "Revenue : $(-sol.cost) dollars")
+    println(io, "$nt customers not served. ")
+end
 
 #Print a City
 function Base.show(io::IO, pb::TaxiProblem)
