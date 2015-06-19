@@ -2,10 +2,10 @@
 #-- Random "gradient descent"
 #----------------------------------------
 include("orderedInsertions.jl")
-function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:length(pb.custs)])
+function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = collect(1:length(pb.custs)))
   order = start
   best = orderedInsertions(pb, order)
-  println("Try: 1, $(-best.cost) dollars")
+  println("Try: 1, $(-best.cost) dollars\n")
 
   for trys in 2:n
     #We do only on transposition from the best costn
@@ -20,14 +20,14 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = [1:leng
     sol = orderedInsertions(pb, order)
     if sol.cost <= best.cost
       if sol.cost < best.cost
-        println("====Try: $(trys), $(-sol.cost) dollars")
+        print("\r====Try: $(trys), $(-sol.cost) dollars            ")
       end
       best = sol
       order[i], order[j] = order[j], order[i]
     end
     order[i], order[j] = order[j], order[i]
   end
-  println("Final: $(-best.cost) dollars")
+  print("\rFinal: $(-best.cost) dollars             \n")
 
   return best
 end

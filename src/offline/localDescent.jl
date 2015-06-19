@@ -20,13 +20,13 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
     i = rand(1:length(sol.custs[k]))
     sol = splitAndMove!(pb, sol, k, i, k2)
     if sol.cost < best
-        if trys - lastTry > 1000
-            println("====Try: $(trys), $(-sol.cost) dollars")
+        if trys - lastTry > maxTry
+            print("\r====Try: $(trys), $(-sol.cost) dollars                  ")
             lastTry = trys
         end
       best = sol.cost
     end
   end
-  println("====Final: $(-sol.cost) dollars")
+  print("\r====Final: $(-sol.cost) dollars              \n")
   return sol
 end
