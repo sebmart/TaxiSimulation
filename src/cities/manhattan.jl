@@ -25,7 +25,6 @@ type Manhattan <: TaxiProblem
   tEnd::DateTime
   function Manhattan(;sp=false)
     c = new()
-    cd("/Users/bzeng/Dropbox (MIT)/7\ Coding/UROP/taxi-simulation/src")
     data = load("cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]

@@ -113,7 +113,7 @@ end
 
 function Base.show(io::IO, sol::IntervalSolution)
     nt= count(i->i, sol.notTaken)
-    println(io, "TaxiSolution")
+    println(io, "IntervalSolution")
     println(io, "Revenue : $(-sol.cost) dollars")
     println(io, "$nt customers not served. ")
 end

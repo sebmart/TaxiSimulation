@@ -30,7 +30,7 @@ end
 #Quickly compute the cost using assigned customers
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   cost = 0.0
-  tt = int(pb.sp.traveltime)
+  tt = round(Int,pb.sp.traveltime)
   tc = pb.sp.travelcost
   for (k,custs) in enumerate(t)
     pos = pb.taxis[k].initPos
@@ -53,7 +53,7 @@ end
 function testSolution(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
   nt = trues(length(pb.custs))
-  tt = int(pb.sp.traveltime)
+  tt = round(Int, pb.sp.traveltime)
 
   for k = 1:length(pb.taxis)
     list = sol.custs[k]
@@ -100,7 +100,7 @@ end
 #expand the time windows of an interval solution
 function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
-  tt = int(pb.sp.traveltime)
+  tt = round(Int,pb.sp.traveltime)
 
   for k = 1:length(pb.taxis)
     list = sol.custs[k]
@@ -131,8 +131,8 @@ end
 #The rule is to wait near the next customers if the taxi has to wait
 function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
    sp = pb.sp
-   tt = int(sp.traveltime)
-   roadTime = int(pb.roadTime)
+   tt = round(Int,sp.traveltime)
+   roadTime = round(Int,pb.roadTime)
    path = Array(Road,pb.nTime)
    endTime = pb.nTime
    endDest = 0
@@ -256,7 +256,7 @@ randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
 #Return customers that can be taken before other customers
 function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
-  tt = int(pb.sp.traveltime)
+  tt = round(Int,pb.sp.traveltime)
   nCusts = length(cust)
   pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
@@ -282,7 +282,7 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
   for k =1:length(sol.taxis)
     res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
   end
-  tt = int(pb.sp.traveltime)
+  tt = round(Int,pb.sp.traveltime)
 
   for (k,cust) = enumerate(res)
     if length(cust) >= 1
