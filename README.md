@@ -22,3 +22,6 @@ Time:
 -	W - reset time period
 -	E - increase time period
 -	R - reset time
+
+Escape:
+-	⌘ W or Esc
