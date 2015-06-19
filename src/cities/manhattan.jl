@@ -25,7 +25,7 @@ type Manhattan <: TaxiProblem
   tEnd::DateTime
   function Manhattan(;sp=false)
     c = new()
-    data = load("cities/manhattan/manhattan.jld")
+    data = load("manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
     c.roadTime  = data["timings"]
