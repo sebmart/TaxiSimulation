@@ -9,7 +9,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -279,10 +279,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			fileExists = isfile("outputs/test1.txt")
+			fileExists = isfile("$(path)/outputs/test1.txt")
 		end
-		lines = readlines(open ("outputs/test1.txt"))
-		rm("outputs/test1.txt")
+		lines = readlines(open ("$(path)/outputs/test1.txt"))
+		rm("$(path)/outputs/test1.txt")
 		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
@@ -416,7 +416,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				end
 			end
 		end
-		
+
 		# Draws the objects
 		clear(window, SFML.white)
 		if !flag
