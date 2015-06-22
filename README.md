@@ -6,6 +6,8 @@ To use the taxi-simulation tools, start Julia in the directory "src" or clone th
 using TaxiSimulation
 ```
 
+## Workflow
+Master is the main branch, working under Julia 0.4. Never push to master before running the tests
 
 
 ## Visualization controls:
