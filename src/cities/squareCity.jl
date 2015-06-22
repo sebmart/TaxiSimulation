@@ -8,9 +8,10 @@ type SquareCity <: TaxiProblem
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
-  nTime::Int
+  nTime::Float64
   waitingCost::Float64
   sp::ShortPaths
+  discreteTime::Bool
 
 #--------------
 #Specific attributes
@@ -80,18 +81,11 @@ type SquareCity <: TaxiProblem
     c.custs = Customer[]
     c.taxis = Taxi[]
     c.nTime = 0
+    c.discreteTime = false
     return c
   end
-
-  SquareCity(network::Network, roadTime::SparseMatrixCSC{Float64, Int},
-    roadCost::SparseMatrixCSC{Float64, Int}, custs::Array{Customer,1},
-    taxis::Array{Taxi,1}, nTime::Int, waitingCost::Int, sp::ShortPaths) =
-     new(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp)
 end
 
-#Copy the object
-clone(c::SquareCity) = SquareCity(c.network, c.roadTime, c.roadCost, c.custs,
- c.taxis, c.nTime, c.waitingCost, c.sp)
 
 
 function generateTaxis!(city::SquareCity, nTaxis::Int)
@@ -144,7 +138,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
   city.custs = customers
 end
 
-function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Int, nCusts = -1)
+function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts = -1)
   city.nTime = nTime
   generateTaxis!(city, nTaxis)
   generateCustomers!(city, nCusts)

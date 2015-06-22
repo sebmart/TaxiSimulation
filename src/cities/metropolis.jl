@@ -21,9 +21,11 @@ type Metropolis <: TaxiProblem
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
-  nTime::Int
+  nTime::Float64
   waitingCost::Float64
   sp::ShortPaths
+  discreteTime::Bool
+
 #--------------
 #Specific attributes
   width::Int
@@ -118,15 +120,10 @@ type Metropolis <: TaxiProblem
     c.custs = Customer[]
     c.taxis = Taxi[]
     c.nTime = 0
+    c.discreteTime = false
     return c
   end
-
-  Metropolis(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp,width,subWidth,nSub,tStart,tEnd) =
-   new(network,roadTime,roadCost,custs,taxis,nTime,waitingCost,sp,width,subWidth,nSub,tStart,tEnd)
 end
-
-clone(m::Metropolis) =
-  Metropolis(m.network,m.roadTime,m.roadCost,m.custs,m.taxis,m.nTime,m.waitingCost,m.sp,m.width,m.subWidth,m.nSub,m.tStart,m.tEnd)
 
 # Add a square-city to the graph
 function addSquare(n::Network,roadTime::SparseMatrixCSC{Float64, Int},

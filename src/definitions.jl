@@ -31,11 +31,13 @@ end
 #---- network::Network (graph of city)
 #---- roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
 #---- roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
+#---- sp::ShortPaths Shortest paths (time, cost and structure)
+#----
 #---- custs::Array{Customer,1} (customers)
 #---- taxis::Array{Taxi,1} (taxis)
 #---- nTime::Int number of timesteps
 #---- waitingCost::Float64 cost of waiting
-#---- sp::ShortPaths Shortest paths (time, cost and structure)
+#---- discreteTime::Bool if time is discrete
 
 abstract TaxiProblem
 
