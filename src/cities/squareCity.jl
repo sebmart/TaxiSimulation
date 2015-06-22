@@ -124,19 +124,21 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     oI, oJ = locToCoord(orig)
     dI, dJ = locToCoord(dest)
-    pathlength = abs(oI-dI) + abs(oJ-dJ)
 
-    clienttime = 4*pathlength
-    maxWaiting = rand(1:10)
+    clienttime = round(Int,city.sp.traveltime[orig,dest])
 
-    price = (20+5*rand())*pathlength
-    tmaxt = rand(1:max(1, city.nTime - clienttime))
-    tmax  = min(city.nTime, tmaxt + clienttime)
-    tmin = max(1, tmaxt - maxWaiting)
+    if clienttime > city.nTime
+        error("simulation too short to generate customer")
+    end
 
-    maxBooking = rand(1:80)
+    maxWaiting =
 
-    tcall = max(1,tmin-maxBooking)
+    price = (5+rand())*clienttime
+    tmaxt = rand(1:city.nTime - clienttime)
+    tmax  = tmaxt + clienttime
+    tmin = max(1, tmaxt - rand(1:10))
+
+    tcall = max(1,tmin-rand(1:80))
 
     customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
   end

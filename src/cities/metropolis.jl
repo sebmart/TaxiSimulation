@@ -228,12 +228,12 @@ function generateCustomers!(sim::Metropolis, demand::Float64)
         dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
         orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
       end
-      pathTime = sim.sp.traveltime[orig,dest]
+      pathTime = round(Int, sim.sp.traveltime[orig,dest])
 
       if pathTime + i <= sim.nTime
         price = (hourFare(tCurrent)/120)*pathTime
         tmin  = i
-        tmaxt = min(sim.nTime, i + rand(1:10))
+        tmaxt = min(sim.nTime - pathTime, i + rand(1:10))
         tmax  = min(sim.nTime, tmaxt + pathTime)
         tcall = max(1, tmin - rand(1:120))
         push!(sim.custs,
