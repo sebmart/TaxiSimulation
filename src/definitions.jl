@@ -50,10 +50,10 @@ immutable CustomerAssignment
 end
 
 #Represent the actions of a taxi during a simulation
-#at each time, the road on which the taxi is, and the __ordered__ list of its
+#the ordered list of roads taken by taxi, and the __ordered__ list of its
 #taken customers
 immutable TaxiActions
-  path::Vector{Edge}
+  path::Vector{ Tuple{ Float64, Edge}} #roads in order : (time, road)
   custs::Vector{ CustomerAssignment} #customer in order: (id, pickup, dropoff)
 end
 
