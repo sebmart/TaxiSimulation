@@ -13,10 +13,10 @@ immutable Customer
   id::Int
   orig::Int
   dest::Int
-  tcall::Int
-  tmin::Int
-  tmaxt::Int
-  tmax::Int
+  tcall::Float64
+  tmin::Float64
+  tmaxt::Float64
+  tmax::Float64
   price::Float64
 end
 
@@ -45,8 +45,8 @@ abstract TaxiProblem
 #taxi == 0 <=> unassigned
 immutable CustomerAssignment
   id::Int
-  timeIn::Int
-  timeOut::Int
+  timeIn::Float64
+  timeOut::Float64
 end
 
 #Represent the actions of a taxi during a simulation
@@ -76,8 +76,8 @@ ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(I
 #Represent an assigned customer (not fixed time-windows)
 type AssignedCustomer
   id::Int
-  tInf::Int
-  tSup::Int
+  tInf::Float64
+  tSup::Float64
 end
 
 #represent a time-window solution
