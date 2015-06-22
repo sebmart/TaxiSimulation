@@ -36,7 +36,7 @@ type Metropolis <: TaxiProblem
   function Metropolis(width::Int, nSub::Int)
     c = new()
     c.width = width
-    c.subWidth = int( floor(width/2))
+    c.subWidth = round(Int, floor(width/2))
     c.nSub = nSub
     c.waitingCost = waitCost/120
 

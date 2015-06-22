@@ -241,7 +241,6 @@ function to_dot(pb::TaxiProblem, stream::IO)
     return stream
 end
 
-
 #returns a random order on the customers
 function randomOrder(n::Int)
   order = collect(1:n)
