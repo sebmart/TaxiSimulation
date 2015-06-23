@@ -123,20 +123,24 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     oI, oJ = locToCoord(orig)
     dI, dJ = locToCoord(dest)
 
-    clienttime = round(Int,city.sp.traveltime[orig,dest])
+    clienttime = city.sp.traveltime[orig,dest]
 
     if clienttime > city.nTime
         error("simulation too short to generate customer")
     end
 
-    maxWaiting =
-
     price = (5+rand())*clienttime
-    tmaxt = rand(1:city.nTime - clienttime)
-    tmax  = tmaxt + clienttime
-    tmin = max(1, tmaxt - rand(1:10))
-
-    tcall = max(1,tmin-rand(1:80))
+    if city.discreteTime
+      tmaxt = rand(1:(city.nTime - clienttime))
+      tmax  = tmaxt + clienttime
+      tmin = max(1, tmaxt - rand(1:10))
+      tcall = max(1,tmin-rand(1:80))
+    else
+      tmaxt = rand()*(city.nTime - clienttime)
+      tmax  = tmaxt + clienttime
+      tmin = max(0.0, tmaxt - (EPS+10*rand()))
+      tcall = max(0.0,tmin-(EPS + 80*rand()))
+    end
 
     customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
   end
