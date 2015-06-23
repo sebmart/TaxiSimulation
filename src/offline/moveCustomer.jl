@@ -287,7 +287,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
       #Update the windows of custsB
       if isempty(sol.custs[k])
         custsB[1].tInf = max(custs[custsB[1].id].tmin,
-         1 + tt[pb.taxis[k].initPos, custs[custsB[1].id].orig])
+         tt[pb.taxis[k].initPos, custs[custsB[1].id].orig])
       else
          custsB[1].tInf = max(custs[custsB[1].id].tmin,
           sol.custs[k][end].tInf + tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
