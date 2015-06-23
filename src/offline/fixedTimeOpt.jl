@@ -4,18 +4,20 @@
 
 #The MILP formulation, needs the previous computation of the shortest paths
 function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+  if !pb.discreteTime
+    error("fixedTimeOpt needs a city with discrete times")
+  end
 
   sp = pb.sp
-
   taxi = pb.taxis
   cust = pb.custs
-  nTime = pb.nTime
+  nTime = round(Int,pb.nTime)
 
   nTaxis = length(taxi)
   nCusts = length(cust)
 
   #short alias
-  tt = int(sp.traveltime)
+  tt = round(sp.traveltime)
   tc = sp.travelcost
 
   #Compute the list of the lists of customers that can be picked-up
@@ -197,7 +199,7 @@ function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, x, y, 
     custs = CustomerAssignment[]
     c, t = first[k]
     while c != 0
-      push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
+      push!( custs, CustomerAssignment(c,t-1,t-1+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
       c,t  = chain[c]
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)

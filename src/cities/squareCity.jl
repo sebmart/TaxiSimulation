@@ -90,8 +90,6 @@ type SquareCity <: TaxiProblem
   end
 end
 
-
-
 function generateTaxis!(city::SquareCity, nTaxis::Int)
   #List of the taxis
   #Random initial locations
