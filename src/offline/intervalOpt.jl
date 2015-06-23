@@ -19,7 +19,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
   taxi = pb.taxis
   cust = pb.custs
-  nTime = pb.nTime + 1
+  nTime = pb.nTime
 
   nTaxis = length(taxi)
   nCusts = length(cust)
@@ -206,7 +206,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     if first[k] != 0
       tempC = first[k]
       while tempC != 0
-        push!(custs[k], AssignedCustomer(tempC, intervals[tempC][1]-1, intervals[tempC][2]-1))
+        push!(custs[k], AssignedCustomer(tempC, intervals[tempC][1], intervals[tempC][2]))
         tempC = chain[tempC]
       end
     end
