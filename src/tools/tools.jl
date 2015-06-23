@@ -256,7 +256,7 @@ randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
 #Return customers that can be taken before other customers
 function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
-  tt = round(Int,pb.sp.traveltime)
+  tt = pb.sp.traveltime
   nCusts = length(cust)
   pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
@@ -282,11 +282,11 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
   for k =1:length(sol.taxis)
     res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
   end
-  tt = round(Int,pb.sp.traveltime)
+  tt = pb.sp.traveltime
 
   for (k,cust) = enumerate(res)
     if length(cust) >= 1
-      cust[1].tInf = max(cust[1].tInf, 1+tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
+      cust[1].tInf = max(cust[1].tInf, tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
       nt[cust[1].id] = false
     end
     for i = 2:(length(cust))
@@ -319,7 +319,7 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     for c in sol.custs[k]
-        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + int(pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest])))
+        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest]))
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end
