@@ -141,8 +141,8 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
   end
-
   city.custs = customers
+  return
 end
 
 function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts = -1)

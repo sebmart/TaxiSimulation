@@ -195,9 +195,9 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
        loc = prev
      end
      #To make sure that the times are the same:
-     path[end] = (max(0.0,c.timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]), path[end][2])
+     path[end] = (max(0.0,custs[1].timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]), path[end][2])
      #Wait before moving to the next customer
-     if EPS < c.timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]
+     if EPS < custs[1].timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]
         push!(path, (0.0, Road(pb.taxis[id_taxi].initPos,pb.taxis[id_taxi].initPos)))
      else
        path[end] = (0.0,path[end][2])

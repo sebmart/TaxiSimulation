@@ -251,7 +251,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
   # Initialisation
   # =====================================================
 
-  if length(init.taxis) == length(pb.taxis)
+  if length(init.custs) == length(pb.taxis)
     for c=1:nCusts, c0 =1:length(pCusts[c])
       setValue(x[c,c0],0)
     end
@@ -377,12 +377,12 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     notTaken = trues(nCusts)
     for k= 1:nTaxis
       if first[k] > 0
-        notTakenMask[first[k]] = false
+        notTaken[first[k]] = false
       end
     end
     for c= 1:nCusts
       if chain[c] > 0
-        notTakenMask[chain[c]] = false
+        notTaken[chain[c]] = false
       end
     end
 
