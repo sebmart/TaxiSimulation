@@ -36,7 +36,7 @@ function printShort(s::TaxiSolution, io::IO = STDOUT)
     println(io, "=== TAXI $k")
     println(io, "==========================")
     for c in tax.custs
-      @printf(io, "Takes customer %i at time %.2f", c.id, c.timeIn)
+      @printf(io, "Takes customer %i at time %.2f\n", c.id, c.timeIn)
     end
   end
 end
@@ -59,14 +59,14 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
         @printf(io, "%i=>%i (until the end) \n\n", src(road), dst(road))
       end
 
-      if idc <= length(tax.custs) && tax.custs[idc].timeOut >= t
-        @printf(io, "Drops customer %i off at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeOut)
+      if idc <= length(tax.custs) && tax.custs[idc].timeOut <= t
+        @printf(io, "\nDrops customer %i off at time %.2f",tax.custs[idc].id, tax.custs[idc].timeOut)
         moves = false
         idc += 1
       end
 
-      if idc <= length(tax.custs) && (tax.custs[idc].timeIn >= t)
-        @printf(io, "Picks customer %i up at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeIn)
+      if idc <= length(tax.custs) && (tax.custs[idc].timeIn <= t)
+        @printf(io, "\nPicks customer %i up at time %.2f",tax.custs[idc].id, tax.custs[idc].timeIn)
         moves = false
       end
     end

@@ -121,7 +121,6 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
       tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
     end
     #quick check..
-    println(list)
     for c in list
       if c.tInf > c.tSup
         error("Solution Infeasible for taxi $k")
