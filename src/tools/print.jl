@@ -36,7 +36,7 @@ function printShort(s::TaxiSolution, io::IO = STDOUT)
     println(io, "=== TAXI $k")
     println(io, "==========================")
     for c in tax.custs
-      println(io, "Takes customer $(c.id) at time $(c.timeIn)")
+      @printf(io, "Takes customer %i at time $.2f", c.id, c.timeIn)
     end
   end
 end
@@ -47,34 +47,29 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
     println(io, "\n=== TAXI $k")
     println(io, "==========================")
     idc = 1
-    count = 0
-    road = tax.path[1]
     moves = false
-    for t in 1:length(tax.path)
+    for (i,(t,road)) in enumerate(tax.path)
       if !moves
         print(io, "\nMoves: ")
         moves = true
       end
-      if tax.path[t] == road
-        count += 1
+      if i < length(tax.path)
+        @printf(io, "%i=>%i ($.2f) - \n", src(road), dst(road), taxi.path[i+1][1] - t)
       else
-        print(io, "$(src(road))=>$(dst(road)) ($count) - ")
-        count = 1
-        road = tax.path[t]
+        @printf(io, "%i=>%i (until the end) \n\n", src(road), dst(road))
       end
 
-      if idc <= length(tax.custs) &&(tax.custs[idc].timeOut == t)
-        print(io, "\nDrops customer $(tax.custs[idc].id) off at time $t")
+      if idc <= length(tax.custs) && tax.custs[idc].timeOut >= t
+        @printf(io, "\nDrops customer %i off at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeOut)
         moves = false
         idc += 1
       end
 
-      if idc <= length(tax.custs) && (tax.custs[idc].timeIn == t)
-        print(io, "\n Picks customer $(tax.custs[idc].id) up at time $t")
+      if idc <= length(tax.custs) && (tax.custs[idc].timeIn >= t)
+        @printf(io, "\nPicks customer %i up at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeIn)
         moves = false
       end
     end
-    print("$(src(road))=>$(dst(road)) ($count) \n")
   end
 end
 
@@ -84,21 +79,21 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
     println(io, "=== TAXI $k")
     println(io, "==========================")
     idc = 1
-    for t in 1:length(tax.path)
+    for (t, road) in tax.path
       println(io, "== time $t")
-      if idc <= length(tax.custs) && (tax.custs[idc].timeOut == t)
-        println(io, "Drops customer $(tax.custs[idc].id) off at location $(src(tax.path[t]))")
+      if idc <= length(tax.custs) && (tax.custs[idc].timeOut >= t)
+        println(io, "Drops customer $(tax.custs[idc].id) off at location $(src(road))")
         idc += 1
       end
 
       if idc <= length(tax.custs) && (tax.custs[idc].timeIn == t)
-        println(io, "Picks customer $(tax.custs[idc].id) up at location $(src(tax.path[t]))")
+        println(io, "Picks customer $(tax.custs[idc].id) up at location $(src(road))")
       end
 
-      if src(tax.path[t]) == dst(tax.path[t])
-        println(io, "Waits at location $(dst(tax.path[t]))")
+      if src(road) == dst(road)
+        println(io, "Waits at location $(dst(road))")
       else
-        println(io, "Moves from location $(src(tax.path[t])) to location $(dst(tax.path[t]))")
+        println(io, "Moves from location $(src(road)) to location $(dst(road))")
       end
     end
   end
@@ -127,6 +122,7 @@ function Base.show(io::IO, pb::TaxiProblem)
     if pb.nTime == 0
         println(io, "No simulation created yet")
     else
-        println(io, "Simulation with $(length(pb.custs)) customers and $(length(pb.taxis)) taxis for $(pb.nTime) timesteps")
+        @printf(io, "Simulation with %i customers and %i taxis for $.2f units of time\n",
+            length(pb.custs), length(pb.taxis), pb.nTime)
     end
 end
