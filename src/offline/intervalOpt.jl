@@ -15,7 +15,7 @@ function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(V
   nCusts = length(cust)
 
   #short alias
-  tt = int(pb.sp.traveltime)
+  tt = round(Int,pb.sp.traveltime)
   tc = pb.sp.travelcost
 
   #Compute the list of the lists of customers that can be taken

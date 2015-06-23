@@ -27,8 +27,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
     initPos = pb.taxis[k].initPos
     #First Case: taking customer before all the others
     if 1 + tt[initPos, c.orig] <= c.tmaxt
-      if length(custs) == 0 && #if no customer at all
-        1 + tt[initPos, c.orig] + tt[c.orig,c.dest] <= pb.nTime
+      if length(custs) == 0 #if no customer at all
         cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
             (tt[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
         if cost < mincost
@@ -61,10 +60,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
     if length(custs) > 0
       cLast = cDesc[custs[end].id]
       if custs[end].tInf + tt[cLast.orig, cLast.dest] +
-        tt[cLast.dest, c.orig] <= c.tmaxt &&
-        custs[end].tInf + tt[cLast.orig, cLast.dest] +
-        tt[cLast.dest, c.orig] + tt[c.orig,c.dest] <= pb.nTime
-
+        tt[cLast.dest, c.orig] <= c.tmaxt
         cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
           (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
         if cost < mincost
@@ -110,7 +106,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
     if i == 1
       tmin = max(1 + tt[t.initPos, c.orig], c.tmin)
       if length(custs) == 0
-        push!( custs, AssignedCustomer(c.id, tmin, min(c.tmaxt, pb.nTime - tt[c.orig,c.dest])))
+        push!( custs, AssignedCustomer(c.id, tmin, c.tmaxt))
       else
         tmaxt = min(c.tmaxt,custs[1].tSup - tt[c.orig,c.dest] -
          tt[c.dest,cDesc[custs[1].id].orig])
@@ -121,7 +117,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
       tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
       tt[cDesc[custs[i-1].id].dest, c.orig])
       if i > length(custs) #If inserted in last position
-        push!(custs, AssignedCustomer(c.id, tmin, min(c.tmaxt, pb.nTime - tt[c.orig,c.dest])))
+        push!(custs, AssignedCustomer(c.id, tmin, c.tmaxt))
       else
         tmaxt = min(c.tmaxt,custs[i].tSup - tt[c.orig,c.dest] -
           tt[c.dest,cDesc[custs[i].id].orig])
