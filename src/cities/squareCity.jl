@@ -109,7 +109,6 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     nCusts = 2*int(ceil(city.nTime * length(city.taxis) /(2*2.5*city.width*1.5)))
   end
 
-
   customers = Array(Customer,nCusts)
   for c in 1:nCusts
     orig = rand(1:nLocs)

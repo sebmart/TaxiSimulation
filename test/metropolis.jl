@@ -7,4 +7,4 @@ city = Metropolis(width, nSub);
 generateProblem!(city, nTaxis, demand, tStart, tEnd);
 sol = localDescent(city, 100, insertionsDescent(city,15))
 
-testSolution(sol)
+testSolution(city,sol)
