@@ -2,6 +2,7 @@ using TaxiSimulation
 using Base.Test
 
 tests = [
+    "shortestPathTests",
     "squareCity",
     "metropolis"
     ]

@@ -47,25 +47,39 @@ end
 #TEMPORARY FIX
 #Dijkstra algorithm
 
+# define appropriate comparators for heap entries
+< (e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
+Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
+
 function custom_dijkstra(
     g::AbstractGraph,
     src::Int,
     edge_dists::AbstractArray{Float64, 2},
-    edge_costs::AbstractArray{Float64,2})
+    edge_costs::AbstractArray{Float64, 2})
 
-
+    # find number of vertices
     nvg = nv(g)
+    # initialize return types
     dists = fill(typemax(Float64), nvg)
     costs = fill(typemax(Float64), nvg)
     parents = zeros(Int, nvg)
     visited = falses(nvg)
-    H = Int[]
-    dists[src] = 0
+    # Create mutable binary heap and associated hashmap
+    h = DijkstraEntry{Float64}[]
+    sizehint(h, nvg)
+    H = mutable_binary_minheap(h)
+    hmap = zeros(Int, nvg)
+    dists[src] = 0.0
     costs[src] = 0.0
-    sizehint!(H, nvg)
-    heappush!(H, src)
+    # Add source node to heap
+    ref = push!(H, DijkstraEntry{Float64}(src, dists[src], costs[src]))
+    hmap[src] = ref
+    # As long as all edges have not been explored
     while !isempty(H)
-        u = heappop!(H)
+        # Retrieve closest element to source
+        hentry = pop!(H)
+        u = hentry.vertex
+        # Look at all its neighbors and update relevant distances if necessary
         for v in out_neighbors(g,u)
             if dists[u] == typemax(Float64)
                 alt = typemax(Float64)
@@ -73,20 +87,20 @@ function custom_dijkstra(
             else
                 alt = dists[u] + edge_dists[u,v]
                 alt2 = costs[u] + edge_costs[u,v]
-
             end
-            if !visited[v]
+            if !visited[v]  # If a vertex has never been visited, push it to the heap
                 dists[v] = alt
                 costs[v] = alt2
                 parents[v] = u
                 visited[v] = true
-                heappush!(H, v)
-            else
+                ref = push!(H, DijkstraEntry{Float64}(v, alt, alt2))
+                hmap[v] = ref
+            else            # If a vertex has been visited, decrease its key if distance estimate decreases
                 if alt < dists[v]
                     dists[v] = alt
                     costs[v] = alt2
                     parents[v] = u
-                    heappush!(H, v)
+                    update!(H, hmap[v], DijkstraEntry{Float64}(v, alt, alt2))
                 end
             end
         end
