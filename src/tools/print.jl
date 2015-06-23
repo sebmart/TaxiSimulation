@@ -48,27 +48,30 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
     println(io, "==========================")
     idc = 1
     moves = false
+    picked = false
     for (i,(t,road)) in enumerate(tax.path)
+      if idc <= length(tax.custs) && tax.custs[idc].timeOut <= t + EPS
+        @printf(io, "\nDrops customer %i off at time %.2f",tax.custs[idc].id, tax.custs[idc].timeOut)
+        picked = false
+        moves = false
+        idc += 1
+      end
+      if !picked && idc <= length(tax.custs) && (tax.custs[idc].timeIn <= t + EPS)
+        @printf(io, "\nPicks customer %i up at time %.2f",tax.custs[idc].id, tax.custs[idc].timeIn)
+        picked = true
+        moves = false
+      end
       if !moves
         print(io, "\nMoves: ")
         moves = true
       end
       if i < length(tax.path)
-        @printf(io, "%i=>%i (%.2f) -", src(road), dst(road), tax.path[i+1][1] - t)
+        @printf(io, "%i=>%i (%.2f) - ", src(road), dst(road), tax.path[i+1][1] - t)
       else
-        @printf(io, "%i=>%i (until the end) \n\n", src(road), dst(road))
+        @printf(io, "%i=>%i\n\n", src(road), dst(road))
       end
 
-      if idc <= length(tax.custs) && tax.custs[idc].timeOut <= t
-        @printf(io, "\nDrops customer %i off at time %.2f",tax.custs[idc].id, tax.custs[idc].timeOut)
-        moves = false
-        idc += 1
-      end
 
-      if idc <= length(tax.custs) && (tax.custs[idc].timeIn <= t)
-        @printf(io, "\nPicks customer %i up at time %.2f",tax.custs[idc].id, tax.custs[idc].timeIn)
-        moves = false
-      end
     end
   end
 end
@@ -79,22 +82,21 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
     println(io, "=== TAXI $k")
     println(io, "==========================")
     idc = 1
+    picked = false
     for (t, road) in tax.path
       println(io, "== time $t")
-      if idc <= length(tax.custs) && (tax.custs[idc].timeOut >= t)
+      if idc <= length(tax.custs) && (tax.custs[idc].timeOut <= t + EPS)
         println(io, "Drops customer $(tax.custs[idc].id) off at location $(src(road))")
         idc += 1
+        picked = false
       end
 
-      if idc <= length(tax.custs) && (tax.custs[idc].timeIn == t)
+      if !picked && idc <= length(tax.custs) && (tax.custs[idc].timeIn <= t + EPS)
         println(io, "Picks customer $(tax.custs[idc].id) up at location $(src(road))")
+        picked = true
       end
 
-      if src(road) == dst(road)
-        println(io, "Waits at location $(dst(road))")
-      else
-        println(io, "Moves from location $(src(road)) to location $(dst(road))")
-      end
+      println(io, "Moves from location $(src(road)) to location $(dst(road))")
     end
   end
 end

@@ -14,17 +14,12 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
     end
   end
   for (k,t) in enumerate(taxis)
+    totaltime = 0.
     for (i,(time,road)) in enumerate(t.path)
-      if src(road) == dst(road)
-        if i < length(t.path)
-          cost += pb.waitingCost * (t.path[i+1][1] - t)
-        else
-          cost += pb.waitingCost * (pb.nTime - t)
-        end
-      else
-        cost += pb.roadCost[ src(road), dst(road)]
-      end
+      cost += pb.roadCost[ src(road), dst(road)]
+      totaltime += pb.roadTime[ src(road), dst(road)]
     end
+    cost += pb.waitingCost * totaltime
   end
   return cost
 end
@@ -141,11 +136,8 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
    for i in length(custs):-1:1
      c = custs[i]
 
-     #After last customer: stays at the same place
-     if i == length(custs)
-         push!(path, (c.timeOut, Road(pb.custs[c.id].dest,pb.custs[c.id].dest)))
      #Travel from the end of the customer to the beginning of the next, then wait
-     else
+     if i != length(custs)
        #Trajectory from dest to orig of next customer (computed backward)
        loc = endDest
        t = endTime
@@ -157,11 +149,6 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
        end
        #To make sure that the times are the same:
        path[end] = (endTime - tt[pb.custs[c.id].dest, endDest], path[end][2])
-
-       #Wait before going to  the next customer
-       if c.timeOut + EPS < endTime - tt[pb.custs[c.id].dest, endDest]
-          push!(path, (c.timeOut, Road(pb.custs[c.id].dest,pb.custs[c.id].dest)))
-       end
      end
 
      #Trajectory from origin to dest of customer (computed backward)
@@ -180,11 +167,8 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
      endTime = c.timeIn
      endDest = pb.custs[c.id].orig
    end
-   #If no customer : wait
-   if length(custs) == 0
-     push!(path, (0.0, Road(pb.taxis[id_taxi].initPos, pb.taxis[id_taxi].initPos)))
    #Travel from origin of taxi to first customer
-   else
+   if length(custs) != 0
      #Trajectory from origin of taxi to origin of first cust
      loc = pb.custs[custs[1].id].orig
      t = custs[1].timeIn
@@ -196,12 +180,6 @@ function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignmen
      end
      #To make sure that the times are the same:
      path[end] = (max(0.0,custs[1].timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]), path[end][2])
-     #Wait before moving to the next customer
-     if EPS < custs[1].timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]
-        push!(path, (0.0, Road(pb.taxis[id_taxi].initPos,pb.taxis[id_taxi].initPos)))
-     else
-       path[end] = (0.0,path[end][2])
-     end
      #reverse the list
      reverse!(path)
    end
