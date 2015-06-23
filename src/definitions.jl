@@ -72,6 +72,12 @@ end
 
 ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
+# define heap entry data type
+immutable DijkstraEntry{Float64}
+  vertex::Int
+  dist::Float64
+  cost::Float64
+end
 
 #Represent an assigned customer (not fixed time-windows)
 type AssignedCustomer
