@@ -6,7 +6,7 @@ include("moveCustomer.jl")
 
 
 #Only return cost and list of assignment, given problem and order on customers
-function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = [1:length(pb.custs)])
+function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = collect(1:length(pb.custs)))
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
   custs = [CustomerAssignment[] for k in 1:nTaxis]

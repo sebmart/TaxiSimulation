@@ -91,6 +91,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
   if abs(sol.cost - cost) > 1e-5
       error("Cost is not correct (1e-5 precision)")
   end
+  println("all good!")
 end
 
 
