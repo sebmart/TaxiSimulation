@@ -32,11 +32,11 @@ end
 #Quickly compute the cost using assigned customers
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   cost = 0.0
-  tt = round(Int,pb.sp.traveltime)
+  tt = pb.sp.traveltime
   tc = pb.sp.travelcost
   for (k,custs) in enumerate(t)
     pos = pb.taxis[k].initPos
-    time = 1
+    time = 0
     for c in custs
       c1 = pb.custs[c.id]
       cost -= c1.price
@@ -46,7 +46,7 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
       time =  c.tInf + tt[c1.orig,c1.dest]
       pos = c1.dest
     end
-    cost += (pb.nTime - time + 1)*pb.waitingCost
+    cost += (pb.nTime - time)*pb.waitingCost
   end
   return cost
 end
