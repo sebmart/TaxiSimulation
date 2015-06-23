@@ -395,5 +395,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
         end
       end
     end
-    return IntervalSolution(custs,notTaken, getObjectiveValue(m) )
+    s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
+    expandWindows!(pb,s)
+    return s
 end

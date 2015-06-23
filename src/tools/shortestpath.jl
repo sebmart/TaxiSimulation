@@ -66,7 +66,7 @@ function custom_dijkstra(
     visited = falses(nvg)
     # Create mutable binary heap and associated hashmap
     h = DijkstraEntry{Float64}[]
-    sizehint(h, nvg)
+    sizehint!(h, nvg)
     H = mutable_binary_minheap(h)
     hmap = zeros(Int, nvg)
     dists[src] = 0.0

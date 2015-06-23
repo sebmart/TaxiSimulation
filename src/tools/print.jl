@@ -54,19 +54,19 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
         moves = true
       end
       if i < length(tax.path)
-        @printf(io, "%i=>%i (%.2f) - \n", src(road), dst(road), taxi.path[i+1][1] - t)
+        @printf(io, "%i=>%i (%.2f) -", src(road), dst(road), tax.path[i+1][1] - t)
       else
         @printf(io, "%i=>%i (until the end) \n\n", src(road), dst(road))
       end
 
       if idc <= length(tax.custs) && tax.custs[idc].timeOut >= t
-        @printf(io, "\nDrops customer %i off at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeOut)
+        @printf(io, "Drops customer %i off at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeOut)
         moves = false
         idc += 1
       end
 
       if idc <= length(tax.custs) && (tax.custs[idc].timeIn >= t)
-        @printf(io, "\nPicks customer %i up at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeIn)
+        @printf(io, "Picks customer %i up at time %.2f\n",tax.custs[idc].id, tax.custs[idc].timeIn)
         moves = false
       end
     end

@@ -69,7 +69,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
       end
     end
     for i = 2:(length(list))
-      list[i].tInf = max(list[i].tInf, list[i-1].tInf+
+      list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
       tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
       tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
       if nt[list[i].id]
@@ -79,7 +79,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
       end
     end
     for i = (length(list) - 1):(-1):1
-      list[i].tSup = min(list[i].tSup, list[i+1].tSup-
+      list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
       tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
       tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
     end
@@ -111,16 +111,17 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
       list[end].tSup = custs[list[end].id].tmaxt
     end
     for i = 2:(length(list))
-      list[i].tInf = max(list[i].tInf, list[i-1].tInf+
+      list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
       tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
       tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
     end
     for i = (length(list) - 1):(-1):1
-      list[i].tSup = min(list[i].tSup, list[i+1].tSup-
+      list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
       tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
       tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
     end
     #quick check..
+    println(list)
     for c in list
       if c.tInf > c.tSup
         error("Solution Infeasible for taxi $k")
