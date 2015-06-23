@@ -190,7 +190,7 @@ function fullOpt(pb::TaxiProblem)
     for t in 1:nTime, i= vertices(n), j = out[i]
       if tw[k,t,i,j] > 0.9
         for t2 = t:(t+tt[i,j]-1)
-          push!(path, (t-1, Road(i,j))
+          push!(path, (t-1, Road(i,j)))
         end
       end
     end

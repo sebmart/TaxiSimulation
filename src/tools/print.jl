@@ -36,7 +36,7 @@ function printShort(s::TaxiSolution, io::IO = STDOUT)
     println(io, "=== TAXI $k")
     println(io, "==========================")
     for c in tax.custs
-      @printf(io, "Takes customer %i at time $.2f", c.id, c.timeIn)
+      @printf(io, "Takes customer %i at time %.2f", c.id, c.timeIn)
     end
   end
 end
@@ -54,7 +54,7 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
         moves = true
       end
       if i < length(tax.path)
-        @printf(io, "%i=>%i ($.2f) - \n", src(road), dst(road), taxi.path[i+1][1] - t)
+        @printf(io, "%i=>%i (%.2f) - \n", src(road), dst(road), taxi.path[i+1][1] - t)
       else
         @printf(io, "%i=>%i (until the end) \n\n", src(road), dst(road))
       end
@@ -122,7 +122,7 @@ function Base.show(io::IO, pb::TaxiProblem)
     if pb.nTime == 0
         println(io, "No simulation created yet")
     else
-        @printf(io, "Simulation with %i customers and %i taxis for $.2f units of time\n",
+        @printf(io, "Simulation with %i customers and %i taxis for %.2f units of time\n",
             length(pb.custs), length(pb.taxis), pb.nTime)
     end
 end
