@@ -113,7 +113,6 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     nCusts = 2*int(ceil(city.nTime * length(city.taxis) /(2*2.5*city.width*1.5)))
   end
 
-
   customers = Array(Customer,nCusts)
   for c in 1:nCusts
     orig = rand(1:nLocs)
@@ -130,8 +129,6 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     if clienttime > city.nTime
         error("simulation too short to generate customer")
     end
-
-    maxWaiting =
 
     price = (5+rand())*clienttime
     tmaxt = rand(1:city.nTime - clienttime)
