@@ -312,3 +312,5 @@ IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
 trues(length(pb.custs)), -pb.nTime * length(pb.taxis) * pb.waitingCost)
 
 copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)
+
+toInt(x::Float64) = round(Int,x)

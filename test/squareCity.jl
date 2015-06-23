@@ -1,4 +1,4 @@
-
+#discrete
 #Try full opt
 width, nTime, nTaxis, nCusts = 3, 20, 2, 3;
 city = SquareCity(width);
