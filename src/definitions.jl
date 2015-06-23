@@ -86,3 +86,6 @@ type IntervalSolution
   notTaken::BitVector
   cost::Float64
 end
+
+#time epsilon for float comparisons
+EPS = 1e-5
