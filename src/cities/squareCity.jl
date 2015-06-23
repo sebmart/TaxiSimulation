@@ -13,12 +13,12 @@ type SquareCity <: TaxiProblem
   sp::ShortPaths
   discreteTime::Bool
 
-#--------------
+#-----------------------------------------
 #Specific attributes
   width::Int
 
   #constructor that only create the graph
-  function SquareCity(width::Int)
+  function SquareCity(width::Int; discreteTime = false)
     c = new()
     #automatically select the number of customers
     c.waitingCost = 0.25
@@ -45,7 +45,11 @@ type SquareCity <: TaxiProblem
 
     #return travel time to take one link
     function traveltime()
-      return rand(1:4)
+      if discreteTime
+        return rand(1:4)
+      else
+        return 1+3*rand()
+      end
     end
     function travelcost(trvltime)
       trvltime * (1 + rand())/4

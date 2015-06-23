@@ -7,7 +7,6 @@ using TaxiSimulation
 ```
 
 
-
 ## Visualization controls:
 View:
 -	Z - zoom in
