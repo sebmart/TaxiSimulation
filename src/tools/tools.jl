@@ -14,14 +14,16 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
     end
   end
   for (k,t) in enumerate(taxis)
-    previousRoad = Road(0,0)
-    for r in t.path
-      if src(r) == dst(r)
-        cost += pb.waitingCost
-      elseif r != previousRoad
-        cost += pb.roadCost[ src(r), dst(r)] #cost of taking the road
+    for (i,(time,road)) in enumerate(t.path)
+      if src(road) == dst(road)
+        if i < length(t.path)
+          cost += pb.waitingCost * (t.path[i+1][1] - t)
+        else
+          cost += pb.waitingCost * (pb.nTime - t)
+        end
+      else
+        cost += pb.roadCost[ src(road), dst(road)]
       end
-      previousRoad = r
     end
   end
   return cost
