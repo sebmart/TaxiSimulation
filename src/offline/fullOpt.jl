@@ -3,6 +3,9 @@
 #----------------------------------------
 
 function fullOpt(pb::TaxiProblem)
+  if !pb.discreteTime
+    error("fixedTimeOpt needs a city with discrete times")
+  end
 
   taxi = pb.taxis
   cust = pb.custs
@@ -12,7 +15,7 @@ function fullOpt(pb::TaxiProblem)
   nTaxis = length(taxi)
   nCusts = length(cust)
   tc = copy(pb.roadCost)
-  tt = int(pb.roadTime)
+  tt = round(Int,pb.roadTime)
 
   for i in vertices(n)
     tt[i,i] = 1
@@ -170,7 +173,7 @@ function fullOpt(pb::TaxiProblem)
     end
     if (t1, t2) != (0,0)
 
-      push!(sol_c[k], CustomerAssignment(c,t1,t2))
+      push!(sol_c[k], CustomerAssignment(c,t1-1,t2-1))
 
       notTaken[c] = false
     end
@@ -187,7 +190,7 @@ function fullOpt(pb::TaxiProblem)
     for t in 1:nTime, i= vertices(n), j = out[i]
       if tw[k,t,i,j] > 0.9
         for t2 = t:(t+tt[i,j]-1)
-          path[t2] = Road(i,j)
+          push!(path, (t-1, Road(i,j))
         end
       end
     end
