@@ -45,7 +45,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
   #Taxi k takes customer c, as a first customer
   @defVar(m, y[k=1:nTaxis,c=1:nCusts], Bin)
   #Time window timesteps
-  @defVar(m, tw[c=1:nCusts, t=cust[c].tmin : cust[c].tmaxt],  Bin)
+  @defVar(m, tw[c=1:nCusts, t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)],  Bin)
 
   # =====================================================
   # Initialisation
@@ -58,20 +58,20 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     for k=1:nTaxis, c=1:nCusts
       setValue(y[k,c],0)
     end
-    for c in [1:nCusts][init.notTaken], t=cust[c].tmin:cust[c].tmaxt
+    for c in [1:nCusts][init.notTaken], t=toInt(cust[c].tmin):toInt(cust[c].tmaxt)
         setValue(tw[c,t],1)
     end
     for (k,l) in enumerate(init.custs)
       if length(l) > 0
         setValue(y[k,l[1].id], 1)
-        for t=l[1].tInf:l[1].tSup
+        for t=toInt(l[1].tInf):toInt(l[1].tSup)
             setValue(tw[l[1].id,t],1)
         end
       end
       for i= 2:length(l)
         setValue(
         x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
-        for t=l[i].tInf:l[i].tSup
+        for t=toInt(l[i].tInf):toInt(l[i].tSup)
             setValue(tw[l[i].id,t],1)
         end
       end
@@ -134,18 +134,18 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
   #Time window not empty (if taken)
   @addConstraint(m, c5[c=1:nCusts],
-   sum{tw[c,t], t= (cust[c].tmin) :(cust[c].tmaxt)} >= 1)
+   sum{tw[c,t], t= toInt(cust[c].tmin) : toInt(cust[c].tmaxt)} >= 1)
 
   #Compatibility rules
-  @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c]), t=cust[c].tmin : cust[c].tmaxt],
-   sum{tw[pCusts[c][c0],t2], t2= (cust[pCusts[c][c0]].tmin) : min(cust[pCusts[c][c0]].tmaxt,
+  @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c]), t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)],
+   sum{tw[pCusts[c][c0],t2], t2= toInt(cust[pCusts[c][c0]].tmin) : toInt(min(cust[pCusts[c][c0]].tmaxt,
     t - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
-   tt[cust[pCusts[c][c0]].dest, cust[c].orig])} >= tw[c, t] + x[c,c0] - 1)
+   tt[cust[pCusts[c][c0]].dest, cust[c].orig]))} >= tw[c, t] + x[c,c0] - 1)
 
 
   #First move constraint
   @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts,
-   t=cust[c].tmin : min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig])],
+   t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig]))],
   tw[c,t] <= 1 - y[k, c])
 
   status = solve(m)
@@ -161,14 +161,14 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
   intervals = Array(Tuple{Int,Int},nCusts)
   for c = 1:nCusts
     minT = 0
-    for t=cust[c].tmin : cust[c].tmaxt
+    for t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)
       if ttw[c,t] >0.9
         minT = t
         break
       end
     end
     maxT = 0
-    for t=cust[c].tmaxt : -1 : cust[c].tmin
+    for t=toInt(cust[c].tmaxt) : -1 : toInt(cust[c].tmin)
       if ttw[c,t] >0.9
         maxT = t
         break
@@ -206,7 +206,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     if first[k] != 0
       tempC = first[k]
       while tempC != 0
-        push!(custs[k], AssignedCustomer(tempC, intervals[tempC][1]-1, intervals[tempC][2]-1))
+        push!(custs[k], AssignedCustomer(tempC, intervals[tempC][1], intervals[tempC][2]))
         tempC = chain[tempC]
       end
     end

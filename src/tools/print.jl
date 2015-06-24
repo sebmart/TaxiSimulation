@@ -70,8 +70,9 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
       else
         @printf(io, "%i=>%i\n\n", src(road), dst(road))
       end
-
-
+    end
+    if idc <= length(tax.custs)
+      @printf(io, "\nDrops customer %i off at time %.2f",tax.custs[idc].id, tax.custs[idc].timeOut)
     end
   end
 end

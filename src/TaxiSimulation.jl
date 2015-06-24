@@ -5,7 +5,7 @@
 module TaxiSimulation
 
 using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-      SFML, DataStructures
+      SFML, DataStructures, Base.Dates
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
@@ -17,7 +17,7 @@ export Manhattan, Metropolis, SquareCity,
        generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
-export fullOpt, fixedTimeOpt, intervalOpt
+export fullOpt, fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent

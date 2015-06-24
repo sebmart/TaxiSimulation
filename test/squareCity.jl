@@ -1,7 +1,6 @@
-
 #Try full opt
-width, nTime, nTaxis, nCusts = 3, 20, 2, 3;
-city = SquareCity(width);
+width, nTime, nTaxis, nCusts = 3, 20., 2, 3;
+city = SquareCity(width, discreteTime=true);
 generateProblem!(city, nTaxis, nTime, nCusts);
 sol = fullOpt(city);
 
@@ -11,14 +10,16 @@ printSolution(sol,verbose=1)
 printSolution(sol,verbose=2)
 
 #try simple opt
-width, nTime, nTaxis, nCusts = 5, 50, 3, 10;
-city = SquareCity(width);
+width, nTime, nTaxis, nCusts = 5, 50., 3, 10;
+city = SquareCity(width, discreteTime=true);
 generateProblem!(city, nTaxis, nTime, nCusts);
 
 sol1 = fixedTimeOpt(city);
 sol2 = intervalOpt(city);
+sol3 = intervalOptContinuous(city);
 
 @test_approx_eq_eps sol1.cost sol2.cost 1e-5
+@test_approx_eq_eps sol2.cost sol3.cost 1e-5
 
 
 #Try interval opt and heuristics

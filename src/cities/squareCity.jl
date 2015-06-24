@@ -85,7 +85,7 @@ type SquareCity <: TaxiProblem
     c.custs = Customer[]
     c.taxis = Taxi[]
     c.nTime = 0
-    c.discreteTime = false
+    c.discreteTime = discreteTime
     return c
   end
 end
@@ -128,21 +128,21 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     price = (5+rand())*clienttime
     if city.discreteTime
-      tmaxt = rand(1:(city.nTime - clienttime))
+      tmaxt = rand(0:(city.nTime - clienttime))
       tmax  = tmaxt + clienttime
-      tmin = max(1, tmaxt - rand(1:10))
-      tcall = max(1,tmin-rand(1:80))
+      tmin = max(0, tmaxt - rand(1:10))
+      tcall = max(0,tmin - rand(1:80))
     else
       tmaxt = rand()*(city.nTime - clienttime)
       tmax  = tmaxt + clienttime
       tmin = max(0.0, tmaxt - (EPS+10*rand()))
-      tcall = max(0.0,tmin-(EPS + 80*rand()))
+      tcall = max(0.0,tmin- (EPS + 80*rand()))
     end
 
     customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
   end
   city.custs = customers
-  return
+  return city
 end
 
 function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts = -1)
