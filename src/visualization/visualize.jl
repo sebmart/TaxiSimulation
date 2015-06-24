@@ -9,7 +9,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o $path/outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -212,7 +212,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		pos = 0
 		if (0 <= time && time < solution.taxis[id].path[1][1])
 			pos = src(solution.taxis[id].path[1][2])
-			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y) 
+			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
 		elseif last[1] + city.roadTime[src(last[2]), dst(last[2])] <= time
 			pos = dst(last[2])
 			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
@@ -239,7 +239,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				newy = sy + slope * (dy - sy)
 				return (newx, newy)
 			end
-		end	
+		end
 	end
 
 	# Identifies a location of a given customer at a given time
@@ -307,10 +307,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			fileExists = isfile("outputs/test1.txt")
+			fileExists = isfile("$(path)/outputs/test1.txt")
 		end
-		lines = readlines(open ("outputs/test1.txt"))
-		rm("outputs/test1.txt")
+		lines = readlines(open ("$(path)/outputs/test1.txt"))
+		rm("$(path)/outputs/test1.txt")
 		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
@@ -351,7 +351,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		customerRadius = 2.0 * nodeRadius
 		customers = generateCustomers(city, sol, customerRadius, nodeCoordinates)
 		customerTimes = generateCustomerTimes(city, sol)
-		# println(customerTimes)	
+		# println(customerTimes)
 	end
 
 	window = RenderWindow("Taxi Visualization", 1200, 1200)
@@ -427,7 +427,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
 		set_view(window, view)
-		
+
 		if reverse
 			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0)
 		elseif !reverse
