@@ -24,8 +24,6 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
   #before each customer
   pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
-
-
   #Solver : Gurobi (modify parameters)
   m = Model( solver= GurobiSolver( TimeLimit=150,MIPFocus=1))
 

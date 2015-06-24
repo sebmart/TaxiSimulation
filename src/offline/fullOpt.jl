@@ -186,12 +186,10 @@ function fullOpt(pb::TaxiProblem)
   actions = Array(TaxiActions, nTaxis)
 
   for k in 1:nTaxis
-    path = Array(Road, nTime)
+    path = Tuple{Float64,Road}[]
     for t in 0:nTime, i= vertices(n), j = out[i]
-      if tw[k,t,i,j] > 0.9
-        for t2 = t:(t+tt[i,j]-1)
-          push!(path, (t, Road(i,j)))
-        end
+      if tw[k,t,i,j] > 0.9 && i!=j
+        push!(path, (t, Road(i,j)))
       end
     end
     actions[k] = TaxiActions(path, sol_c[k])

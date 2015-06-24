@@ -136,7 +136,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
       tmaxt = rand()*(city.nTime - clienttime)
       tmax  = tmaxt + clienttime
       tmin = max(0.0, tmaxt - (EPS+10*rand()))
-      tcall = max(0.0,tmin-(EPS + 80*rand()))
+      tcall = max(0.0,tmin- (EPS + 80*rand()))
     end
 
     customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
