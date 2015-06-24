@@ -360,15 +360,25 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 
 	clock = Clock()
+	clock2 = Clock()
 	restart(clock)
+
 	# Scales the time by a factor of period - 1.0 is default
-	period = 1.0
+	period = 0.5
+	reverse = false
+
+	t = 0
+	anchorT = 0.0
+	anchorTime = 0.0
+	cachedTime = 0.0
 
 	text = RenderText()
 	set_color(text, SFML.black)
 	set_charactersize(text, 25)
 
 	while isopen(window)
+		time = 0
+
 		while pollevent(window, event)
 			if get_type(event) == EventType.CLOSED
 				close(window)
@@ -381,16 +391,16 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			end
 		end
 		if is_key_pressed(KeyCode.LEFT)
-			move(view, Vector2f(-2, 0))
+			move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
-			move(view, Vector2f(2, 0))
+			move(view, Vector2f(4 * get_size(view).x / 1200, 0))
 		end
 		if is_key_pressed(KeyCode.UP)
-			move(view, Vector2f(0, -2))
+			move(view, Vector2f(0, -4 * get_size(view).x / 1200))
 		end
 		if is_key_pressed(KeyCode.DOWN)
-			move(view, Vector2f(0, 2))
+			move(view, Vector2f(0, 4 * get_size(view).x / 1200))
 		end
 		if is_key_pressed(KeyCode.Z)
 			zoom(view, 0.99)
@@ -409,23 +419,56 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			zoom(view, 1.0)
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
+		set_view(window, view)
+
+		
+		if reverse
+			time = max(1.0 * ((get_elapsed_time(clock) |> as_seconds) - 2 * (get_elapsed_time(clock2) |> as_seconds)), 0)
+		else
+			time = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+		end
+
 		if is_key_pressed(KeyCode.Q)
-			period = max(period - 0.01, 0.01)
+			# period = max(period - 0.01, 0.0)
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
+			period = 0.5 ^ (0.05) * period
 		end
 		if is_key_pressed(KeyCode.W)
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
 			period = 1.0
 		end
 		if is_key_pressed(KeyCode.E)
-			period = period + 0.01
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
+			period = 2 ^ (0.05) * period
+		end
+		if is_key_pressed(KeyCode.F)
+			restart(clock2)
+			if reverse
+				reverse = !reverse
+				cachedTime = time
+				restart(clock)
+			else
+				reverse = !reverse
+				restart(clock2)
+			end
 		end
 		if is_key_pressed(KeyCode.R)
+			anchorT = 0.0
+			anchorTime = 0.0
 			restart(clock)
 		end
-		set_view(window, view)
 
-		t = 1.0 * (get_elapsed_time(clock) |> as_seconds) / period
+		t = anchorT + (time - anchorTime) / period
+
 		if !flag
-			set_string(text, "Time: " * string(convert(Int, floor(t))))
+			if reverse
+				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: On")
+			else
+				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: Off")
+			end
 		end
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
