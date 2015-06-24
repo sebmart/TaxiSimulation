@@ -388,7 +388,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			if get_type(event) == EventType.KEY_PRESSED
 				if get_key(event).key_code == KeyCode.F
 					reverse = !reverse
-					println(reverse)
 					cachedTime = time
 					restart(clock2)
 					restart(clock)
@@ -454,7 +453,9 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			anchorT = 0.0
 			anchorTime = 0.0
 			reverse = false
+			cachedTime = 0
 			restart(clock)
+			restart(clock2)
 		end
 
 		t = anchorT + (time - anchorTime) / period
