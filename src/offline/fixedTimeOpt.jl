@@ -133,7 +133,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
   #time to go from its origin to the customer origin
 
   @addConstraint(m, c5[k=1:nTaxis, c=1:nCusts,
-  t=toInt(cust[c].tmin):toInt(min(cust[c].tmaxt,tt[taxi[k].initPos, cust[c].orig]))],
+  t=toInt(cust[c].tmin):toInt(min(cust[c].tmaxt,tt[taxi[k].initPos, cust[c].orig]-1))],
   y[k,c,t] == 0)
 
   #Each customer must have the time to be dropped before the end

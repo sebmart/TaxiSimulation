@@ -11,12 +11,12 @@ function randomInsertions(pb::TaxiProblem, n::Int)
     sol = orderedInsertions(pb, order)
 
     if sol.cost < best.cost
-      println("Try: $trys, $(-sol.cost) dollars")
+      print("\r====Try: $(trys), $(-sol.cost) dollars                  ")
       best = sol
     end
 
     order = randomOrder(pb)
   end
-  println("Final: $(-best.cost) dollars")
+  print("\r====Final: $(-best.cost) dollars              \n")
   return best
 end

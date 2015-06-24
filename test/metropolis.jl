@@ -16,5 +16,5 @@ tStart, tEnd = now(), now() + Dates.Hour(1);
 city = Metropolis(width, nSub, discreteTime=true);
 generateProblem!(city, nTaxis, demand, tStart, tEnd);
 sol1 = intervalOptDiscrete(city)
-sol2 = intervalOptContinuous(city)
+sol2 = intervalOptContinuous(city, sol1)
 @test_approx_eq_eps sol1.cost sol2.cost 1e-5

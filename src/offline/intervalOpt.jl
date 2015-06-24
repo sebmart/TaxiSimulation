@@ -270,11 +270,10 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
         setValue(i[l[1].id],l[1].tInf)
         setValue(s[l[1].id],l[1].tSup)
       end
-      for i= 2:length(l)
-        setValue(
-        x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
-        setValue(i[l[i].id],l[i].tInf)
-        setValue(s[l[i].id],l[i].tSup)
+      for j= 2:length(l)
+        setValue(x[l[j].id, findfirst(pCusts[l[j].id], l[j-1].id)], 1)
+        setValue(i[l[j].id],l[j].tInf)
+        setValue(s[l[j].id],l[j].tSup)
       end
     end
   end
