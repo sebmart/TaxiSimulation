@@ -364,10 +364,11 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	restart(clock)
 
 	# Scales the time by a factor of period - 1.0 is default
-	period = 0.5
+	period = 1.0
 	reverse = false
 
 	t = 0
+	time = 0
 	anchorT = 0.0
 	anchorTime = 0.0
 	cachedTime = 0.0
@@ -377,18 +378,25 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	set_charactersize(text, 25)
 
 	while isopen(window)
-		time = 0
-
 		while pollevent(window, event)
 			if get_type(event) == EventType.CLOSED
-				close(window)
-			end
-			if is_key_pressed(KeyCode.ESCAPE)
 				close(window)
 			end
 			if get_type(event) == EventType.RESIZED
 				set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 			end
+			if get_type(event) == EventType.KEY_PRESSED
+				if get_key(event).key_code == KeyCode.F
+					reverse = !reverse
+					println(reverse)
+					cachedTime = time
+					restart(clock2)
+					restart(clock)
+				end
+			end
+		end
+		if is_key_pressed(KeyCode.ESCAPE)
+			close(window)
 		end
 		if is_key_pressed(KeyCode.LEFT)
 			move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
@@ -420,16 +428,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
 		set_view(window, view)
-
 		
 		if reverse
-			time = max(1.0 * ((get_elapsed_time(clock) |> as_seconds) - 2 * (get_elapsed_time(clock2) |> as_seconds)), 0)
-		else
-			time = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0)
+		elseif !reverse
+			time = cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds)
 		end
 
 		if is_key_pressed(KeyCode.Q)
-			# period = max(period - 0.01, 0.0)
 			anchorT = anchorT + (time - anchorTime) / period
 			anchorTime = time
 			period = 0.5 ^ (0.05) * period
@@ -444,20 +450,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			anchorTime = time
 			period = 2 ^ (0.05) * period
 		end
-		if is_key_pressed(KeyCode.F)
-			restart(clock2)
-			if reverse
-				reverse = !reverse
-				cachedTime = time
-				restart(clock)
-			else
-				reverse = !reverse
-				restart(clock2)
-			end
-		end
 		if is_key_pressed(KeyCode.R)
 			anchorT = 0.0
 			anchorTime = 0.0
+			reverse = false
 			restart(clock)
 		end
 
