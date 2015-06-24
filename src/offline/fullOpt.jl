@@ -11,7 +11,7 @@ function fullOpt(pb::TaxiProblem)
   cust = pb.custs
   n    = pb.network
 
-  nTime = pb.nTime
+  nTime = toInt(pb.nTime)
   nTaxis = length(taxi)
   nCusts = length(cust)
   tc = copy(pb.roadCost)
@@ -33,15 +33,15 @@ function fullOpt(pb::TaxiProblem)
   # Decision variables
   # =====================================================
   @defVar(m, w[k=1:nTaxis,
-               t=1:nTime,
+               t=0:nTime,
                i= vertices(n),
                j= out[i]], Bin)
   @defVar(m, x[k=1:nTaxis,
                c=1:nCusts,
-               t=cust[c].tmin : cust[c].tmax], Bin)
+               t=toInt(cust[c].tmin) : toInt(cust[c].tmax)], Bin)
   @defVar(m, y[k=1:nTaxis,
                c=1:nCusts,
-               t=cust[c].tmin : cust[c].tmax], Bin)
+               t=toInt(cust[c].tmin) : toInt(cust[c].tmax)], Bin)
 
   # =====================================================
   # Objective
@@ -55,7 +55,7 @@ function fullOpt(pb::TaxiProblem)
   #Costs of taxi path
   @defExpr(roadcost, sum{tc[i,j]*w[k,t,i,j],
                          k=1:nTaxis,
-                         t=1:nTime,
+                         t=0:nTime,
                          i= vertices(n),
                          j= out[i]})
 
@@ -63,13 +63,13 @@ function fullOpt(pb::TaxiProblem)
   @defExpr(clientInside, sum{x[k,c,t] - y[k,c,t],
                          k=1:nTaxis,
                          c=1:nCusts,
-                         t=cust[c].tmin:cust[c].tmax})
+                         t=toInt(cust[c].tmin):toInt(cust[c].tmax)})
 
    #Penalizing time with client waiting
    @defExpr(clientWaiting, sum{ 1- x[k,c,t],
                           k=1:nTaxis,
                           c=1:nCusts,
-                          t=cust[c].tmin:cust[c].tmaxt})
+                          t=toInt(cust[c].tmin):toInt(cust[c].tmaxt)})
   @setObjective(m, Min, roadcost - customersIncome + 0.01 * clientInside + 0.001 * clientWaiting)
 
 
@@ -79,17 +79,17 @@ function fullOpt(pb::TaxiProblem)
 
 
   #Travel time after one link, only one link at the same time
-  @addConstraint(m, cTaxi1[k=1:nTaxis, t=1:nTime, i= vertices(n),
+  @addConstraint(m, cTaxi1[k=1:nTaxis, t=0:nTime, i= vertices(n),
         j = out[i], tbis= (t+1):min(( t + tt[i,j] -1),nTime)],
                     sum{w[k,tbis,g,h], g= vertices(n), h = out[g]} <= 1 - w[k,t,i,j])
 
   #A taxi has to take a new link immediately after the previous one
-  @addConstraint(m,cTaxi2[k=1:nTaxis, t=1:nTime, i= vertices(n),
+  @addConstraint(m,cTaxi2[k=1:nTaxis, t=0:nTime, i= vertices(n),
         j = out[i]], sum{ w[k, t+tt[i,j], j, g], g in out[j];
       t + tt[i,j] <= nTime} + (((t+tt[i,j]) <= nTime)?0:1) >= w[k,t,i,j])
 
   #Only one move at the same time
-  @addConstraint(m,cTaxi3[k=1:nTaxis, t=1:nTime],
+  @addConstraint(m,cTaxi3[k=1:nTaxis, t=0:nTime],
                    sum{w[k,t,i,j], i= vertices(n), j = out[i]} <= 1)
 
   #Original taxi positions
@@ -102,52 +102,52 @@ function fullOpt(pb::TaxiProblem)
   # =====================================================
 
   #Variables are increasing in time
-  @addConstraint(m,cCust1[k=1:nTaxis, c=1:nCusts, t=cust[c].tmin:(cust[c].tmax-1)],
+  @addConstraint(m,cCust1[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmin):toInt(cust[c].tmax-1)],
                    x[k,c,t] <= x[k,c,t+1])
 
-  @addConstraint(m,cCust2[k=1:nTaxis, c=1:nCusts, t=cust[c].tmin:(cust[c].tmax-1)],
+  @addConstraint(m,cCust2[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmin):toInt(cust[c].tmax-1)],
                    y[k,c,t] <= y[k,c,t+1])
 
   #A customer is taken before being dropped
-  @addConstraint(m,cCust3[k=1:nTaxis, c=1:nCusts, t=cust[c].tmin:cust[c].tmax],
+  @addConstraint(m,cCust3[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmin):toInt(cust[c].tmax)],
                    y[k,c,t] <= x[k,c,t])
 
   #A customer is either taken and dropped or neither
   @addConstraint(m,cCust4[k=1:nTaxis, c=1:nCusts],
-                   x[k,c,cust[c].tmax] == y[k,c,cust[c].tmax])
+                   x[k,c,toInt(cust[c].tmax)] == y[k,c,toInt(cust[c].tmax)])
 
   #A customer cannot be taken twice
   @addConstraint(m,cCust5[c=1:nCusts],
-                   sum{x[k,c,cust[c].tmax], k=1:nTaxis}<= 1)
+                   sum{x[k,c,toInt(cust[c].tmax)], k=1:nTaxis}<= 1)
 
   #A customer can only be taken before the max departure time
-  @addConstraint(m,cCust6[k=1:nTaxis, c=1:nCusts, t=cust[c].tmaxt:(cust[c].tmax - 1)],
+  @addConstraint(m,cCust6[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmaxt):toInt(cust[c].tmax - 1)],
                    x[k,c,t] == x[k,c,t+1])
 
   #A taxi cannot have 2 customers at the same time
-  @addConstraint(m,cCust7[k=1:nTaxis, t=1:nTime],
-        sum{x[k,c,t] - y[k,c,t], c=1:nCusts; cust[c].tmin <= t <= cust[c].tmax} <= 1)
+  @addConstraint(m,cCust7[k=1:nTaxis, t=0:nTime],
+        sum{x[k,c,t] - y[k,c,t], c=1:nCusts; toInt(cust[c].tmin) <= t <= toInt(cust[c].tmax)} <= 1)
 
   # =====================================================
   # Constraints : CUSTOMERS AND PATH
   # =====================================================
 
   #Taking a customer at the right place
-  @addConstraint(m,cTaxCust1[k=1:nTaxis, c=1:nCusts, t=(cust[c].tmin+1):(cust[c].tmax)],
+  @addConstraint(m,cTaxCust1[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmin+1):toInt(cust[c].tmax)],
         sum{w[k,t,cust[c].orig,j], j in out[cust[c].orig]} >= x[k,c,t] - x[k,c,t-1])
 
   #Special case : if customer taken immediately
   @addConstraint(m,cTaxCust2[k=1:nTaxis, c=1:nCusts],
-      sum{w[k,cust[c].tmin,cust[c].orig, j], j in out[cust[c].orig]} >= x[k,c,cust[c].tmin])
+      sum{w[k,toInt(cust[c].tmin),cust[c].orig, j], j in out[cust[c].orig]} >= x[k,c,toInt(cust[c].tmin)])
 
   #Dropping a customer at the right place
-  @addConstraint(m,cTaxCust3[k=1:nTaxis, c=1:nCusts, t=(cust[c].tmin + 1):(cust[c].tmax)],
+  @addConstraint(m,cTaxCust3[k=1:nTaxis, c=1:nCusts, t=toInt(cust[c].tmin + 1):toInt(cust[c].tmax)],
             sum{w[k,t,cust[c].dest,j], j in out[cust[c].dest]} >= y[k,c,t] - y[k,c,t-1])
 
   #Special case : if customer dropped immediately
   @addConstraint(m,cTaxCust4[k=1:nTaxis, c=1:nCusts],
-            sum{w[k, cust[c].tmin,cust[c].dest,j], j in out[cust[c].dest]}
-             >= y[k,c,cust[c].tmin])
+            sum{w[k, toInt(cust[c].tmin), cust[c].dest,j], j in out[cust[c].dest]}
+             >= y[k,c, toInt(cust[c].tmin)])
 
   status = solve(m)
 
@@ -160,10 +160,10 @@ function fullOpt(pb::TaxiProblem)
 
   for c in 1:nCusts, k in 1:nTaxis
     t1, t2 = 0, 0
-    if tx[k,c, cust[c].tmin] > 0.9
+    if tx[k,c, toInt(cust[c].tmin)] > 0.9
       t1 = cust[c].tmin
     end
-    for t in cust[c].tmin : cust[c].tmax - 1
+    for t in toInt(cust[c].tmin) : toInt(cust[c].tmax - 1)
       if tx[k,c,t+1] - tx[k,c,t]  > 0.9
         t1 = t+1
       end
@@ -173,7 +173,7 @@ function fullOpt(pb::TaxiProblem)
     end
     if (t1, t2) != (0,0)
 
-      push!(sol_c[k], CustomerAssignment(c,t1-1,t2-1))
+      push!(sol_c[k], CustomerAssignment(c,t1,t2))
 
       notTaken[c] = false
     end
@@ -187,10 +187,10 @@ function fullOpt(pb::TaxiProblem)
 
   for k in 1:nTaxis
     path = Array(Road, nTime)
-    for t in 1:nTime, i= vertices(n), j = out[i]
+    for t in 0:nTime, i= vertices(n), j = out[i]
       if tw[k,t,i,j] > 0.9
         for t2 = t:(t+tt[i,j]-1)
-          push!(path, (t-1, Road(i,j)))
+          push!(path, (t, Road(i,j)))
         end
       end
     end

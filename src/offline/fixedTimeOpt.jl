@@ -17,7 +17,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
   nCusts = length(cust)
 
   #short alias
-  tt = toInt(sp.traveltime)
+  tt = round(Int,sp.traveltime)
   tc = sp.travelcost
 
   #Compute the list of the lists of customers that can be picked-up

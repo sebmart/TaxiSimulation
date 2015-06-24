@@ -17,7 +17,7 @@ export Manhattan, Metropolis, SquareCity,
        generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
-export fullOpt, fixedTimeOpt, intervalOpt
+export fullOpt, fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
