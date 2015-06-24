@@ -212,8 +212,10 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     end
   end
   rev = solutionCost(pb, custs)
+  s = IntervalSolution(custs, notTaken, rev)
+  expandWindows!(pb,s)
   println("Final revenue = $(-rev) dollars")
-  return IntervalSolution(custs, notTaken, rev)
+  return s
 end
 
 function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
