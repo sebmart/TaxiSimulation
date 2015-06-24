@@ -1,6 +1,6 @@
 type customerTime
-		window::Tuple{Int64, Int64}
-		driving::Tuple{Int64, Int64, Int64}
+		window::Tuple{Float64, Float64}
+		driving::Tuple{Float64, Float64, Int64}
 end
 
 function visualize(c::TaxiProblem, s::TaxiSolution)
@@ -9,7 +9,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -149,13 +149,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Creates the taxis in the graph
-	function generateTaxis(paths::Array{Array{Pair{Int64,Int64},1},1}, radius::Float64, nodeCoordinates::Vector{Coordinates})
+	function generateTaxis(solution::TaxiSolution, radius::Float64, nodeCoordinates::Vector{Coordinates})
 		taxis = CircleShape[]
-		for i = 1:length(paths)
+		for i = 1:length(solution.taxis)
 			taxi = CircleShape()
 			set_radius(taxi, radius)
 			set_fillcolor(taxi, SFML.red)
-			taxiPos = src(paths[i][1])
+			taxiPos = src(solution.taxis[i].path[1][2])
 			set_position(taxi, Vector2f(nodeCoordinates[taxiPos].x - radius, nodeCoordinates[taxiPos].y - radius))
 			push!(taxis, taxi)
 		end
@@ -207,64 +207,92 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	# Identifies a location of a given taxi at a given time
-	##### Change to simplify the required inputs
-	function findTaxiLocation(roadTime::Base.SparseMatrix.SparseMatrixCSC{Float64,Int64}, path::Array{Pair{Int64,Int64},1}, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
-		timestep = convert(Int64, floor(time/period + 1))
-		s = src(path[timestep]) # edge source
-		d = dst(path[timestep]) # edge destination
-		totalTimesteps = roadTime[s, d]
-		if s == d
-			return (nodeCoordinates[s].x, nodeCoordinates[s].y)
+	function findTaxiLocation(city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
+		last = solution.taxis[id].path[length(solution.taxis[id].path)]
+		pos = 0
+		if (0 <= time && time < solution.taxis[id].path[1][1])
+			pos = src(solution.taxis[id].path[1][2])
+			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y) 
+		elseif last[1] + city.roadTime[src(last[2]), dst(last[2])] <= time
+			pos = dst(last[2])
+			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
 		else
-			sx = nodeCoordinates[s].x
-			sy = nodeCoordinates[s].y
-			dx = nodeCoordinates[d].x
-			dy = nodeCoordinates[d].y
-			slope = 0
-			if timestep == 1
-				totaltime = period * totalTimesteps
-				slope = time / totaltime
-			else
-				currentTimestep = timestep
-				while(currentTimestep > 0 && (src(path[currentTimestep]) == s &&
-					dst(path[currentTimestep]) == d))
-					currentTimestep -= 1
+			index = length(solution.taxis[id].path)
+			for i = 1:length(solution.taxis[id].path) - 1
+				if solution.taxis[id].path[i][1] <= time && time < solution.taxis[id].path[i + 1][1]
+					index = i
+					break
 				end
-				starttime = currentTimestep * period
-				totaltime = period * totalTimesteps
-				slope = (time - starttime) / totaltime
 			end
-			newx = sx + slope * (dx - sx)
-			newy = sy + slope * (dy - sy)
-			return (newx, newy)
-		end
+			mid = solution.taxis[id].path[index]
+			s = src(mid[2])
+			d = dst(mid[2])
+			if mid[1] + city.roadTime[s, d] <= time
+				return (nodeCoordinates[d].x, nodeCoordinates[d].y)
+			else
+				sx = nodeCoordinates[s].x
+				sy = nodeCoordinates[s].y
+				dx = nodeCoordinates[d].x
+				dy = nodeCoordinates[d].y
+				slope = (time - mid[1]) / city.roadTime[s, d]
+				newx = sx + slope * (dx - sx)
+				newy = sy + slope * (dy - sy)
+				return (newx, newy)
+			end
+		end	
 	end
 
-	function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
-		timestep = convert(Int64, floor(time/period + 1))
+	# Identifies a location of a given customer at a given time
+	# function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
+	# 	timestep = convert(Int64, floor(time/period + 1))
 
+	# 	customer = city.custs[id]
+	# 	timestepsWindow = custTime[id].window
+	# 	timestepsDriving = custTime[id].driving
+
+	# 	x = 0
+	# 	y = 0
+	# 	if sol.notTaken[id]
+	# 		if (timestepsWindow[1] <= timestep) && (timestep <= timestepsWindow[2])
+	# 			x = nodeCoordinates[customer.orig].x
+	# 			y = nodeCoordinates[customer.orig].y
+	# 		end
+	# 	else
+	# 		if (timestepsWindow[1] <= timestep) && (timestep < timestepsDriving[1])
+	# 			x = nodeCoordinates[customer.orig].x
+	# 			y = nodeCoordinates[customer.orig].y
+	# 		elseif (timestepsDriving[1] <= timestep <= timestepsDriving[2])
+	# 			x = - 1 * timestep
+	# 			y = - 1 * timestep
+	# 		end
+	# 	end
+	# 	return (x, y)
+	# end
+
+	function findCustomerLocation(custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
 		customer = city.custs[id]
-		timestepsWindow = custTime[id].window
-		timestepsDriving = custTime[id].driving
+		timeWindow = custTime[id].window
+		timeDriving = custTime[id].driving
 
 		x = 0
 		y = 0
 		if sol.notTaken[id]
-			if (timestepsWindow[1] <= timestep) && (timestep <= timestepsWindow[2])
+			if (timeWindow[1] <= time) && (time <= timeWindow[2])
 				x = nodeCoordinates[customer.orig].x
 				y = nodeCoordinates[customer.orig].y
 			end
 		else
-			if (timestepsWindow[1] <= timestep) && (timestep < timestepsDriving[1])
+			if (timeWindow[1] <= time) && (time < timeDriving[1])
 				x = nodeCoordinates[customer.orig].x
 				y = nodeCoordinates[customer.orig].y
-			elseif (timestepsDriving[1] <= timestep <= timestepsDriving[2])
-				x = - 1 * timestep
-				y = - 1 * timestep
+			elseif (timeDriving[1] <= time <= timeDriving[2])
+				x = - 1 * time
+				y = - 1 * time
 			end
 		end
 		return (x, y)
 	end
+
 
 	flag = false
 	originalNodes = 0
@@ -279,10 +307,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			fileExists = isfile("$(path)/outputs/test1.txt")
+			fileExists = isfile("outputs/test1.txt")
 		end
-		lines = readlines(open ("$(path)/outputs/test1.txt"))
-		rm("$(path)/outputs/test1.txt")
+		lines = readlines(open ("outputs/test1.txt"))
+		rm("outputs/test1.txt")
 		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
@@ -301,19 +329,29 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	bounds = generateBounds(originalNodes)
+	# println(bounds)
 	nodeCoordinates = generateNodeCoordinates(originalNodes, bounds)
+	# println(nodeCoordinates)
 	minEdge = generateScoreBound(city, flag, nodeCoordinates)[3]
+	# println(minEdge)
 	nodeRadius = max(minEdge / 10, 1.0)
+	# println(nodeRadius)
 	nodes = generateNodes(nodeRadius, nodeCoordinates)
+	# println(nodes)
 	scoreBound = generateScoreBound(city, flag, nodeCoordinates)
+	# println(scoreBound)
 	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
+	# println(roads)
 	if !flag
-		paths = generateTaxiPaths(sol)
+		# paths = generateTaxiPaths(sol)
 		taxiRadius = 1.5 * nodeRadius
-		taxis = generateTaxis(paths, taxiRadius, nodeCoordinates)
+		# println(taxiRadius)
+		taxis = generateTaxis(sol, taxiRadius, nodeCoordinates)
+		# println(taxis)
 		customerRadius = 2.0 * nodeRadius
 		customers = generateCustomers(city, sol, customerRadius, nodeCoordinates)
 		customerTimes = generateCustomerTimes(city, sol)
+		# println(customerTimes)	
 	end
 
 	window = RenderWindow("Taxi Visualization", 1200, 1200)
@@ -322,8 +360,18 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 
 	clock = Clock()
+	clock2 = Clock()
 	restart(clock)
+
+	# Scales the time by a factor of period - 1.0 is default
 	period = 1.0
+	reverse = false
+
+	t = 0
+	time = 0
+	anchorT = 0.0
+	anchorTime = 0.0
+	cachedTime = 0.0
 
 	text = RenderText()
 	set_color(text, SFML.black)
@@ -334,24 +382,32 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			if get_type(event) == EventType.CLOSED
 				close(window)
 			end
-			if is_key_pressed(KeyCode.ESCAPE)
-				close(window)
-			end
 			if get_type(event) == EventType.RESIZED
 				set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 			end
+			if get_type(event) == EventType.KEY_PRESSED
+				if get_key(event).key_code == KeyCode.F
+					reverse = !reverse
+					cachedTime = time
+					restart(clock2)
+					restart(clock)
+				end
+			end
+		end
+		if is_key_pressed(KeyCode.ESCAPE)
+			close(window)
 		end
 		if is_key_pressed(KeyCode.LEFT)
-			move(view, Vector2f(-2, 0))
+			move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
-			move(view, Vector2f(2, 0))
+			move(view, Vector2f(4 * get_size(view).x / 1200, 0))
 		end
 		if is_key_pressed(KeyCode.UP)
-			move(view, Vector2f(0, -2))
+			move(view, Vector2f(0, -4 * get_size(view).x / 1200))
 		end
 		if is_key_pressed(KeyCode.DOWN)
-			move(view, Vector2f(0, 2))
+			move(view, Vector2f(0, 4 * get_size(view).x / 1200))
 		end
 		if is_key_pressed(KeyCode.Z)
 			zoom(view, 0.99)
@@ -370,36 +426,60 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			zoom(view, 1.0)
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
+		set_view(window, view)
+		
+		if reverse
+			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0)
+		elseif !reverse
+			time = cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds)
+		end
+
 		if is_key_pressed(KeyCode.Q)
-			period = max(period - 0.01, 0.01)
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
+			period = 0.5 ^ (0.05) * period
 		end
 		if is_key_pressed(KeyCode.W)
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
 			period = 1.0
 		end
 		if is_key_pressed(KeyCode.E)
-			period = period + 0.01
+			anchorT = anchorT + (time - anchorTime) / period
+			anchorTime = time
+			period = 2 ^ (0.05) * period
 		end
 		if is_key_pressed(KeyCode.R)
+			anchorT = 0.0
+			anchorTime = 0.0
+			reverse = false
+			cachedTime = 0
 			restart(clock)
+			restart(clock2)
 		end
-		set_view(window, view)
 
-		t = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+		t = anchorT + (time - anchorTime) / period
 
-		set_string(text, "Timestep: " * string(convert(Int64, floor(t/period + 1))))
+		if !flag
+			if reverse
+				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: On")
+			else
+				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: Off")
+			end
+		end
 		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
 
 		if !flag
-			if (t < length(paths[1]) * period)
+			if (t <= city.nTime)
 				for i = 1:length(taxis)
-					taxiloc = findTaxiLocation(city.roadTime, paths[i], t, period, nodeCoordinates)
+					taxiloc = findTaxiLocation(city, sol, i, t, nodeCoordinates)
 					set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
 				end
 				for i = 1:length(customers)
-					customerloc = findCustomerLocation(i, customerTimes, city, sol, t, period, nodeCoordinates)
+					customerloc = findCustomerLocation(customerTimes, city, sol, i, t, nodeCoordinates)
 					if customerloc[1] < 0
-						timestep = - 1 * customerloc[1]
-						if timestep == customerTimes[i].driving[2]
+						time = - 1 * customerloc[1]
+						if time == customerTimes[i].driving[2]
 							posX = nodeCoordinates[city.custs[i].dest].x
 							posY = nodeCoordinates[city.custs[i].dest].y
 							set_position(customers[i], Vector2f(posX - customerRadius, posY - customerRadius))
