@@ -16,13 +16,13 @@ View:
 -	C - reset zoom
 -	A - rotate counterclockwise
 -	S - rotate clockwise
--	D - reset rotation
 
 Time:
 -	Q - decrease time period
 -	W - reset time period
 -	E - increase time period
 -	R - reset time
+- 	F - reverse time
 
 Escape:
 -	⌘ W or Esc
