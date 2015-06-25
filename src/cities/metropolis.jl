@@ -188,6 +188,7 @@ function generateProblem!(city::Metropolis, nTaxis::Int, demand::Float64,
   end
   generateCustomers!(city, demand)
   generateTaxis!(city, nTaxis)
+  return city
 end
 
 #compute the demand probabilities for a particular time
