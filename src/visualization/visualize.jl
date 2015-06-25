@@ -330,6 +330,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	period = 1.0
 	reverse = false
 	displayText = true
+	zoomScale = 1.0
 
 	t = 0
 	time = 0
@@ -385,9 +386,11 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 		if is_key_pressed(KeyCode.Z)
 			zoom(view, 0.99)
+			zoomScale = zoomScale * 0.99
 		end
 		if is_key_pressed(KeyCode.X)
 			zoom(view, 1/0.99)
+			zoomScale = zoomScale * 1 / 0.99
 		end
 		if is_key_pressed(KeyCode.A)
 			rotate(view, - 0.5)
@@ -398,6 +401,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		if is_key_pressed(KeyCode.C)
 			set_rotation(view, 0)
 			zoom(view, 1.0)
+			zoomScale = 1.0
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
 		set_view(window, view)
@@ -447,7 +451,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 
 		if displayText
-			set_charactersize(text, 25)
+			set_charactersize(text, convert(Int, floor(25 * zoomScale)))
 			set_position(text, Vector2f((get_size(window).x - get_globalbounds(text).width) / 2, (get_size(window).y - get_size(view).y) / 2 + 40))
 		else
 			set_charactersize(text, 0)
