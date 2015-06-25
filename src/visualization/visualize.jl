@@ -331,6 +331,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	reverse = false
 	displayText = true
 	zoomScale = 1.0
+	rotation = 0.0
 
 	t = 0
 	time = 0
@@ -373,16 +374,28 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			close(window)
 		end
 		if is_key_pressed(KeyCode.LEFT)
-			move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
+			# move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
+			radius = 4 * get_size(view).x / 1200
+			angle = (pi / 180) * (180 + rotation)	
+			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
-			move(view, Vector2f(4 * get_size(view).x / 1200, 0))
+			# move(view, Vector2f(4 * get_size(view).x / 1200, 0))
+			radius = 4 * get_size(view).x / 1200
+			angle = (pi / 180) * rotation
+			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.UP)
-			move(view, Vector2f(0, -4 * get_size(view).x / 1200))
+			# move(view, Vector2f(0, -4 * get_size(view).y / 1200))
+			radius = 4 * get_size(view).y / 1200
+			angle = (pi / 180) * (270 + rotation)
+			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.DOWN)
-			move(view, Vector2f(0, 4 * get_size(view).x / 1200))
+			# move(view, Vector2f(0, 4 * get_size(view).y / 1200))
+			radius = 4 * get_size(view).y / 1200
+			angle = (pi / 180) * (90 + rotation)
+			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.Z)
 			zoom(view, 0.99)
@@ -394,13 +407,16 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 		if is_key_pressed(KeyCode.A)
 			rotate(view, - 0.5)
+			rotation = rotation - 0.5
 		end
 		if is_key_pressed(KeyCode.S)
 			rotate(view, 0.5)
+			rotation = rotation + 0.5
 		end
 		if is_key_pressed(KeyCode.C)
 			set_rotation(view, 0)
 			zoom(view, 1.0)
+			rotation = 0.0
 			zoomScale = 1.0
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
@@ -454,7 +470,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			set_charactersize(text, convert(Int, floor(25 * zoomScale)))
 			set_position(text, Vector2f((get_size(window).x - get_globalbounds(text).width) / 2, (get_size(window).y - get_size(view).y) / 2 + 40))
 		else
-			set_charactersize(text, 0)
+			set_string(text, "")
 		end
 
 		if !flag
