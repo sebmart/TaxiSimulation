@@ -16,6 +16,7 @@ View:
 -	C - reset zoom
 -	A - rotate counterclockwise
 -	S - rotate clockwise
+-	Space - toggle time display
 
 Time:
 -	Q - decrease time period
