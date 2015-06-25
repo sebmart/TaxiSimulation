@@ -23,7 +23,7 @@ sol3 = intervalOptContinuous(city);
 
 
 #Try interval opt and heuristics
-width, nTime, nTaxis, nCusts = 8, 200, 10, 60;
+width, nTime, nTaxis, nCusts = 8, 200., 10, 60;
 city = SquareCity(width);
 generateProblem!(city, nTaxis, nTime, nCusts);
 sol2 = randomInsertions(city, 100)

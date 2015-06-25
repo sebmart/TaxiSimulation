@@ -145,7 +145,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
   #First move constraint
   @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts,
-   t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig]))],
+   t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig]-1))],
   tw[c,t] <= 1 - y[k, c])
 
   status = solve(m)
@@ -212,8 +212,10 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     end
   end
   rev = solutionCost(pb, custs)
+  s = IntervalSolution(custs, notTaken, rev)
+  expandWindows!(pb,s)
   println("Final revenue = $(-rev) dollars")
-  return IntervalSolution(custs, notTaken, rev)
+  return s
 end
 
 function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
@@ -268,11 +270,10 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
         setValue(i[l[1].id],l[1].tInf)
         setValue(s[l[1].id],l[1].tSup)
       end
-      for i= 2:length(l)
-        setValue(
-        x[l[i].id, findfirst(pCusts[l[i].id], l[i-1].id)], 1)
-        setValue(i[l[i].id],l[i].tInf)
-        setValue(s[l[i].id],l[i].tSup)
+      for j= 2:length(l)
+        setValue(x[l[j].id, findfirst(pCusts[l[j].id], l[j-1].id)], 1)
+        setValue(i[l[j].id],l[j].tInf)
+        setValue(s[l[j].id],l[j].tSup)
       end
     end
   end
@@ -397,5 +398,6 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
+    println("Final revenue = $(-getObjectiveValue(m)) dollars")
     return s
 end
