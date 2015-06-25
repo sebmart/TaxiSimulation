@@ -29,7 +29,7 @@ export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
 #Visualization
 export visualize
 
-path = string(Pkg.dir("TaxiSimulation"), "/src")
+path = string(Pkg.dir("TaxiSimulation"))
 include("definitions.jl")
 
 #tools
