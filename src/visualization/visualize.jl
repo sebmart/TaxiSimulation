@@ -374,25 +374,21 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			close(window)
 		end
 		if is_key_pressed(KeyCode.LEFT)
-			# move(view, Vector2f(-4 * get_size(view).x / 1200, 0))
 			radius = 4 * get_size(view).x / 1200
 			angle = (pi / 180) * (180 + rotation)	
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
-			# move(view, Vector2f(4 * get_size(view).x / 1200, 0))
 			radius = 4 * get_size(view).x / 1200
 			angle = (pi / 180) * rotation
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.UP)
-			# move(view, Vector2f(0, -4 * get_size(view).y / 1200))
 			radius = 4 * get_size(view).y / 1200
 			angle = (pi / 180) * (270 + rotation)
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.DOWN)
-			# move(view, Vector2f(0, 4 * get_size(view).y / 1200))
 			radius = 4 * get_size(view).y / 1200
 			angle = (pi / 180) * (90 + rotation)
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
