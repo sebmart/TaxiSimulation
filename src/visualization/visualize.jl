@@ -242,33 +242,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end	
 	end
 
-	# Identifies a location of a given customer at a given time
-	# function findCustomerLocation(id::Int64, custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, time::Float64, period::Float64, nodeCoordinates::Vector{Coordinates})
-	# 	timestep = convert(Int64, floor(time/period + 1))
-
-	# 	customer = city.custs[id]
-	# 	timestepsWindow = custTime[id].window
-	# 	timestepsDriving = custTime[id].driving
-
-	# 	x = 0
-	# 	y = 0
-	# 	if sol.notTaken[id]
-	# 		if (timestepsWindow[1] <= timestep) && (timestep <= timestepsWindow[2])
-	# 			x = nodeCoordinates[customer.orig].x
-	# 			y = nodeCoordinates[customer.orig].y
-	# 		end
-	# 	else
-	# 		if (timestepsWindow[1] <= timestep) && (timestep < timestepsDriving[1])
-	# 			x = nodeCoordinates[customer.orig].x
-	# 			y = nodeCoordinates[customer.orig].y
-	# 		elseif (timestepsDriving[1] <= timestep <= timestepsDriving[2])
-	# 			x = - 1 * timestep
-	# 			y = - 1 * timestep
-	# 		end
-	# 	end
-	# 	return (x, y)
-	# end
-
 	function findCustomerLocation(custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
 		customer = city.custs[id]
 		timeWindow = custTime[id].window
@@ -329,29 +302,19 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	end
 
 	bounds = generateBounds(originalNodes)
-	# println(bounds)
 	nodeCoordinates = generateNodeCoordinates(originalNodes, bounds)
-	# println(nodeCoordinates)
 	minEdge = generateScoreBound(city, flag, nodeCoordinates)[3]
-	# println(minEdge)
 	nodeRadius = max(minEdge / 10, 1.0)
-	# println(nodeRadius)
 	nodes = generateNodes(nodeRadius, nodeCoordinates)
-	# println(nodes)
 	scoreBound = generateScoreBound(city, flag, nodeCoordinates)
-	# println(scoreBound)
 	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
-	# println(roads)
 	if !flag
-		# paths = generateTaxiPaths(sol)
 		taxiRadius = 1.5 * nodeRadius
-		# println(taxiRadius)
 		taxis = generateTaxis(sol, taxiRadius, nodeCoordinates)
-		# println(taxis)
+
 		customerRadius = 2.0 * nodeRadius
 		customers = generateCustomers(city, sol, customerRadius, nodeCoordinates)
 		customerTimes = generateCustomerTimes(city, sol)
-		# println(customerTimes)	
 	end
 
 	window = RenderWindow("Taxi Visualization", 1200, 1200)
@@ -366,9 +329,12 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	# Scales the time by a factor of period - 1.0 is default
 	period = 1.0
 	reverse = false
+	displayText = true
 
 	t = 0
 	time = 0
+	timeTrue = 0.0
+	timeFalse = 0.0
 	anchorT = 0.0
 	anchorTime = 0.0
 	cachedTime = 0.0
@@ -376,7 +342,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	text = RenderText()
 	set_color(text, SFML.black)
 	set_charactersize(text, 25)
-
+	
 	while isopen(window)
 		while pollevent(window, event)
 			if get_type(event) == EventType.CLOSED
@@ -388,9 +354,17 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			if get_type(event) == EventType.KEY_PRESSED
 				if get_key(event).key_code == KeyCode.F
 					reverse = !reverse
-					cachedTime = time
+
+					if reverse
+						cachedTime = timeFalse
+					else
+						cachedTime = timeTrue
+					end
+
 					restart(clock2)
 					restart(clock)
+				elseif get_key(event).key_code == KeyCode.SPACE
+					displayText = !displayText
 				end
 			end
 		end
@@ -428,10 +402,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 		set_view(window, view)
 		
+		time = 1.0 * (get_elapsed_time(clock) |> as_seconds)
+
 		if reverse
-			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0)
+			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0) 
+			timeTrue = time
 		elseif !reverse
-			time = cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds)
+			time = (cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds)) 
+			timeFalse = time
 		end
 
 		if is_key_pressed(KeyCode.Q)
@@ -458,16 +436,22 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			restart(clock2)
 		end
 
-		t = anchorT + (time - anchorTime) / period
+		t = max(anchorT + (time - anchorTime) / period, 0)
 
 		if !flag
 			if reverse
-				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: On")
+				set_string(text, "Time: " * string(convert(Int, floor(t))) * " Reverse: On")
 			else
-				set_string(text, "Time: " * string(convert(Int, floor(time))) * " Reverse: Off")
+				set_string(text, "Time: " * string(convert(Int, floor(t))) * " Reverse: Off")
 			end
 		end
-		set_position(text, Vector2f(600.0 - get_globalbounds(text).width / 2, 10.0))
+
+		if displayText
+			set_charactersize(text, 25)
+			set_position(text, Vector2f((get_size(window).x - get_globalbounds(text).width) / 2, (get_size(window).y - get_size(view).y) / 2 + 40))
+		else
+			set_charactersize(text, 0)
+		end
 
 		if !flag
 			if (t <= city.nTime)
