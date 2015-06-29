@@ -70,6 +70,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		return nodes
 	end
 
+	# Finds the minimal and maximal scores (as determied by distance / roadTime)
 	function generateScoreBound(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates})
 		minscore = Inf; maxscore = -Inf; minedge = Inf
 		for edge in edges(city.network)
@@ -79,7 +80,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 				xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
 				ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
 				distance = sqrt(xdif * xdif + ydif * ydif)
-				score = distance/ city.roadTime[src(edge), dst(edge)]
+				score = distance / city.roadTime[src(edge), dst(edge)]
 			end
 			if score < minscore
 				minscore = score
@@ -184,6 +185,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		return customers
 	end
 
+	# Reformats the given customer information into the customerTime type defined above
 	function generateCustomerTimes(city::TaxiProblem, solution::TaxiSolution)
 		customerTimes = customerTime[]
 		for i = 1:length(city.custs)
@@ -242,6 +244,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end	
 	end
 
+	# Identifies a location of a given customer at a given time
 	function findCustomerLocation(custTime::Array{customerTime,1}, city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
 		customer = city.custs[id]
 		timeWindow = custTime[id].window
@@ -266,10 +269,12 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		return (x, y)
 	end
 
-
+	# Flag determines if the given taxi problem has given coordinates or not
 	flag = false
 	originalNodes = 0
 
+	# If the given taxi problem has coordinates, those are used; else, coordinates are
+	# generated with GraphViz
 	try
 		originalNodes = city.positions
 		flag = true
@@ -284,7 +289,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		end
 		lines = readlines(open ("$(path)/outputs/test1.txt"))
 		rm("$(path)/outputs/test1.txt")
-		# remember to wait for GraphViz to finish updating the testfile
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
@@ -301,6 +305,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		originalNodes = GraphVizNodes
 	end
 
+	# Calls the above functions to create the necessary objects for the visualization
 	bounds = generateBounds(originalNodes)
 	nodeCoordinates = generateNodeCoordinates(originalNodes, bounds)
 	minEdge = generateScoreBound(city, flag, nodeCoordinates)[3]
@@ -311,28 +316,28 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	if !flag
 		taxiRadius = 1.5 * nodeRadius
 		taxis = generateTaxis(sol, taxiRadius, nodeCoordinates)
-
 		customerRadius = 2.0 * nodeRadius
 		customers = generateCustomers(city, sol, customerRadius, nodeCoordinates)
 		customerTimes = generateCustomerTimes(city, sol)
 	end
 
+	# Defines the window, an event listener, and view
 	window = RenderWindow("Taxi Visualization", 1200, 1200)
 	set_framerate_limit(window, 60)
 	event = Event()
 	view = View(Vector2f(600, 600), Vector2f(1200, 1200))
 
+	# Clocks used to measure elapsed time
 	clock = Clock()
 	clock2 = Clock()
-	restart(clock)
 
-	# Scales the time by a factor of period - 1.0 is default
+	# Scales the time by a factor of periodd (default is 1.0)
 	period = 1.0
 	reverse = false
-	displayText = true
 	zoomScale = 1.0
 	rotation = 0.0
 
+	# Variables used for time manipulation
 	t = 0
 	time = 0
 	timeTrue = 0.0
@@ -340,12 +345,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	anchorT = 0.0
 	anchorTime = 0.0
 	cachedTime = 0.0
-
-	text = RenderText()
-	set_color(text, SFML.black)
-	set_charactersize(text, 25)
 	
+	# Resets the clocks	
+	restart(clock)
+	restart(clock2)
+
+
 	while isopen(window)
+		# Handles keyboard inputs 
 		while pollevent(window, event)
 			if get_type(event) == EventType.CLOSED
 				close(window)
@@ -356,17 +363,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			if get_type(event) == EventType.KEY_PRESSED
 				if get_key(event).key_code == KeyCode.F
 					reverse = !reverse
-
 					if reverse
 						cachedTime = timeFalse
 					else
 						cachedTime = timeTrue
 					end
-
-					restart(clock2)
 					restart(clock)
-				elseif get_key(event).key_code == KeyCode.SPACE
-					displayText = !displayText
+					restart(clock2)
 				end
 			end
 		end
@@ -416,10 +419,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			zoomScale = 1.0
 			set_size(view, Vector2f(get_size(window).x, get_size(window).y + 49))
 		end
+
 		set_view(window, view)
-		
+
+		# Gets the current time using the clock
 		time = 1.0 * (get_elapsed_time(clock) |> as_seconds)
 
+		# Handles time reversal as needed, caching the current time based on the boolean reverse
 		if reverse
 			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0) 
 			timeTrue = time
@@ -428,6 +434,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			timeFalse = time
 		end
 
+		# Allows for speeding up, resetting, or slowing simulation time periods
 		if is_key_pressed(KeyCode.Q)
 			anchorT = anchorT + (time - anchorTime) / period
 			anchorTime = time
@@ -452,23 +459,20 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			restart(clock2)
 		end
 
+		# Converts the current time to simulation time based on an anchor simulation time
+		# and anchor clock time, as well as the current simulation period
 		t = max(anchorT + (time - anchorTime) / period, 0)
 
+		# Displays the current simulation time and time reversal status in the window title
 		if !flag
 			if reverse
-				set_string(text, "Time: " * string(convert(Int, floor(t))) * " Reverse: On")
+				set_title(window, "Time: " * string(convert(Int, floor(t))) * " Reverse: On")
 			else
-				set_string(text, "Time: " * string(convert(Int, floor(t))) * " Reverse: Off")
+				set_title(window, "Time: " * string(convert(Int, floor(t))) * " Reverse: Off")
 			end
 		end
 
-		if displayText
-			set_charactersize(text, convert(Int, floor(25 * zoomScale)))
-			set_position(text, Vector2f((get_size(window).x - get_globalbounds(text).width) / 2, (get_size(window).y - get_size(view).y) / 2 + 40))
-		else
-			set_string(text, "")
-		end
-
+		# Sets the taxi and customer locations as determined by the above functions and current time
 		if !flag
 			if (t <= city.nTime)
 				for i = 1:length(taxis)
@@ -497,7 +501,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			end
 		end
 
-		# Draws the objects
+		# Draws the objects in the order of customers, roads, nodes, and taxis
 		clear(window, SFML.white)
 		if !flag
 			for i = 1:length(customers)
@@ -518,7 +522,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			end
 		end
 
-		draw(window, text)
 		display(window)
 	end
 end
