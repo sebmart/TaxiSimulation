@@ -9,8 +9,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution, radiusScale = 1.0)
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	# stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
-	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -286,13 +285,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution, radiusScale = 1.0)
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			# fileExists = isfile("$(path)/outputs/test1.txt")
-			fileExists = isfile("outputs/test1.txt")
+			fileExists = isfile("$(path)/outputs/test1.txt")
 		end
-		# lines = readlines(open ("$(path)/outputs/test1.txt"))
-		lines = readlines(open ("outputs/test1.txt"))
-		# rm("$(path)/outputs/test1.txt")
-		rm("outputs/test1.txt")
+		lines = readlines(open ("$(path)/outputs/test1.txt"))
+		rm("$(path)/outputs/test1.txt")
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
