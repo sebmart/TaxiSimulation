@@ -3,7 +3,7 @@ type customerTime
 		driving::Tuple{Float64, Float64, Int64}
 end
 
-function visualize(c::TaxiProblem, s::TaxiSolution, radiusScale = 1.0)
+function visualize(c::TaxiProblem; s = TaxiSolution(), radiusScale = 1.0)
 	city = c
 	sol = s
 
@@ -377,22 +377,22 @@ function visualize(c::TaxiProblem, s::TaxiSolution, radiusScale = 1.0)
 			close(window)
 		end
 		if is_key_pressed(KeyCode.LEFT)
-			radius = 4 * get_size(view).x / 1200
+			radius = 6 * get_size(view).x / 1200
 			angle = (pi / 180) * (180 + rotation)	
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
-			radius = 4 * get_size(view).x / 1200
+			radius = 6 * get_size(view).x / 1200
 			angle = (pi / 180) * rotation
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.UP)
-			radius = 4 * get_size(view).y / 1200
+			radius = 6 * get_size(view).y / 1200
 			angle = (pi / 180) * (270 + rotation)
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.DOWN)
-			radius = 4 * get_size(view).y / 1200
+			radius = 6 * get_size(view).y / 1200
 			angle = (pi / 180) * (90 + rotation)
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
