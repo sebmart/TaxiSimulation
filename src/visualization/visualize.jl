@@ -3,13 +3,14 @@ type customerTime
 		driving::Tuple{Float64, Float64, Int64}
 end
 
-function visualize(c::TaxiProblem, s::TaxiSolution)
+function visualize(c::TaxiProblem, s::TaxiSolution, radiusScale = 1.0)
 	city = c
 	sol = s
 
 	# Output the graph vizualization to pdf file (see GraphViz library)
 	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	stdin, proc = open(`neato -Tplain -o $path/outputs/$(name).txt`, "w")
+	 	# stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
+	 	stdin, proc = open(`neato -Tplain -o outputs/$(name).txt`, "w")
 	 	to_dot(pb,stdin)
 	 	close(stdin)
 	end
@@ -104,8 +105,8 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 			endNode = dst(edge)
 			s = Vector2f(nodeCoordinates[startNode].x, nodeCoordinates[startNode].y)
 			e = Vector2f(nodeCoordinates[endNode].x, nodeCoordinates[endNode].y)
-			road = Line(s, e, 1.0)
-
+			# road = Line(s, e, 1.0)
+			road = Line(s, e, 1.0 * radiusScale)
 			distance = 0
 			if flag
 				distance = city.distances[src(edge), dst(edge)]
@@ -285,10 +286,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 		fileExists = false
 		while (!fileExists)
 			sleep(1)
-			fileExists = isfile("$(path)/outputs/test1.txt")
+			# fileExists = isfile("$(path)/outputs/test1.txt")
+			fileExists = isfile("outputs/test1.txt")
 		end
-		lines = readlines(open ("$(path)/outputs/test1.txt"))
-		rm("$(path)/outputs/test1.txt")
+		# lines = readlines(open ("$(path)/outputs/test1.txt"))
+		lines = readlines(open ("outputs/test1.txt"))
+		# rm("$(path)/outputs/test1.txt")
+		rm("outputs/test1.txt")
 		index = 2
 		while(split(lines[index])[1] == "node")
 			push!(indices, convert(Int64, float(split(lines[index])[2])))
@@ -309,7 +313,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution)
 	bounds = generateBounds(originalNodes)
 	nodeCoordinates = generateNodeCoordinates(originalNodes, bounds)
 	minEdge = generateScoreBound(city, flag, nodeCoordinates)[3]
-	nodeRadius = max(minEdge / 10, 1.0)
+	nodeRadius = max(minEdge / 10, 1.0 * radiusScale)
 	nodes = generateNodes(nodeRadius, nodeCoordinates)
 	scoreBound = generateScoreBound(city, flag, nodeCoordinates)
 	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
