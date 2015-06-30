@@ -61,7 +61,7 @@ end
 Represent the actions of a taxi during a simulation:
 his path and interactions with customers
 """
-immutable TaxiActions
+type TaxiActions
   "roads in order : (time, road)"
   path::Vector{ Tuple{ Float64, Edge}}
   "customer in order: (id, pickup, dropoff)"
@@ -69,14 +69,14 @@ immutable TaxiActions
 end
 
 "Represent the solution of a simulation"
-immutable TaxiSolution
+type TaxiSolution
   taxis::Array{TaxiActions, 1}
   notTaken::BitVector
   cost::Float64
 end
 
 "Contains all the information necessary to have path timings and construction"
-immutable ShortPaths
+type ShortPaths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}

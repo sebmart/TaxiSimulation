@@ -20,7 +20,7 @@ type Manhattan <: TaxiProblem
   tStart::DateTime
   "End time of the simulation"
   tEnd::DateTime
-  
+
   function Manhattan(;sp=false)
     c = new()
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
@@ -40,7 +40,7 @@ type Manhattan <: TaxiProblem
   end
 end
 
-#Output the graph vizualization to pdf file (see GraphViz library)
+"Output the graph vizualization to pdf file (see GraphViz library)"
 function drawNetwork(pb::Manhattan, name::String = "graph")
   stdin, proc = open(`neato -n2 -Tpdf -o $(path)/outputs/$name.pdf`, "w")
   write(stdin, "digraph  citygraph {\n")
@@ -53,3 +53,22 @@ function drawNetwork(pb::Manhattan, name::String = "graph")
   write(stdin, "}\n")
   close(stdin)
 end
+
+#Generate customers and taxis, demand is a parameter correlated to the number of
+# customers
+function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
+     tEnd::DateTime; demand::Float64 = 1.0)
+  city.tStart = tStart
+  city.tEnd   = tEnd
+  city.nTime  = (tEnd-tStart).value/(timeSteptoSecond *1000)
+  if city.nTime < 1
+    error("Time of simulation too small !")
+  end
+  generateCustomers!(city, demand)
+  generateTaxis!(city, nTaxis)
+  return city
+end
+
+# "Generate customers in Manhattan using real customer data"
+# function generateCustomers!(city::SquareCity, tStart::DateTime,
+#      tEnd::DateTime; demand=1.0)
