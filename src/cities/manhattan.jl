@@ -1,12 +1,4 @@
-#----------------------------------------
-#-- Real Manhattan network, from OpenStreetMap data
-#----------------------------------------
-
-immutable Coordinates
-  x::Float64
-  y::Float64
-end
-
+"Manhattan City, contains the real city-graph"
 type Manhattan <: TaxiProblem
   network::Network
   roadTime::SparseMatrixCSC{Float64, Int}
