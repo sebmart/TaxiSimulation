@@ -82,7 +82,6 @@ immutable ShortPaths
   previous::Array{Int,2}
 end
 
-"Empty ShortPath object"
 ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 "Dijkstra Heap entry"

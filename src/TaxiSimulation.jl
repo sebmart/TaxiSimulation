@@ -24,7 +24,8 @@ export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
-       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!
+       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!,
+       custom_dijkstra
 
 #Visualization
 export visualize

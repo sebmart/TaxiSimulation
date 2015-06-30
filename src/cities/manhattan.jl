@@ -12,10 +12,15 @@ type Manhattan <: TaxiProblem
 
   #--------------
   #Specific attributes
+  "Distances between neighbor nodes"
   distances::SparseMatrixCSC{Float64, Int}
+  "ENU position for each node"
   positions::Vector{Coordinates}
+  "Starting time of the simulation"
   tStart::DateTime
+  "End time of the simulation"
   tEnd::DateTime
+  
   function Manhattan(;sp=false)
     c = new()
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
