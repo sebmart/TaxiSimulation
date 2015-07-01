@@ -269,15 +269,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 		return (x, y)
 	end
 
-	# Flag determines if the given taxi problem has given coordinates or not
-	flag = false
+	# Flag determines if we do not want to draw a solution
+	flag = isempty(s.taxis)
 	originalNodes = 0
 
 	# If the given taxi problem has coordinates, those are used; else, coordinates are
 	# generated with GraphViz
 	try
 		originalNodes = city.positions
-		flag = true
 	catch
 		GraphViz = Coordinates[]
 		indices = Int64[]

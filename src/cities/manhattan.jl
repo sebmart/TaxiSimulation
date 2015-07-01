@@ -5,7 +5,7 @@ type Manhattan <: TaxiProblem
   roadCost::SparseMatrixCSC{Float64, Int}
   custs::Array{Customer,1}
   taxis::Array{Taxi,1}
-  nTime::Int
+  nTime::Float64
   waitingCost::Float64
   sp::ShortPaths
   discreteTime::Bool
@@ -41,14 +41,17 @@ type Manhattan <: TaxiProblem
     c.network   = data["network"]
     c.distances = data["distances"]
     c.roadTime  = data["timings"] #temporary
-    c.roadCost  = c.roadTime*driveCost/3600
+    c.roadCost  = c.roadTime*c.driveCost/3600
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
-        c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+      c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+    else
+      c.sp = ShortPaths
     end
+
     c.custs = Customer[]
     c.taxis = Taxi[]
-    c.nTime = 0
+    c.nTime = 0.
     c.discreteTime = false
     return c
   end
@@ -71,11 +74,15 @@ end
 "Generate customers and taxis"
 function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
      tEnd::DateTime; demand::Float64 = 1.0)
+  if isempty(city.sp.traveltime)
+    error("shortest paths have to be computed before generating problem")
+  end
+  if tStart + Second(1) >= tEnd
+    error("Time of simulation too short!")
+  end
   city.tStart = tStart
   city.tEnd   = tEnd
-  if city.nTime < 1
-    error("Time of simulation too small !")
-  end
+
   generateCustomers!(city, demand)
   generateTaxis!(city, nTaxis)
   return city
@@ -92,15 +99,16 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
   df = readtable("$(path)/src/cities/manhattan/customers/$(Date(sim.tStart)).csv")
   sStart = replace(string(sim.tStart), "T", " ")
   sEnd   = replace(string(sim.tEnd), "T", " ")
-  maxTime = Inf
+  maxTime::Float64 = 0.
+  empty!(sim.custs)
   for i in 1:nrow(df)
     if sStart <= df[i, :ptime] <= sEnd && df[i, :pnode] != df[i, :dnode] &&
       rand() <= demand
       tInf = DateTime(df[i, :ptime], "y-m-d H:M:S")
-      tSup = tIn + Minute(rand(1:15))
-      tCall = min(sim.tStart, tIn - Minute(rand(1:60)))
+      tSup = tInf + Minute(rand(1:15))
+      tCall = min(sim.tStart, tInf - Minute(rand(1:60)))
       customer = Customer(
-        length(sim.cust)+1,
+        length(sim.custs)+1,
         df[i,:pnode],
         df[i,:dnode],
         timeToTs(tCall),
@@ -110,12 +118,17 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
         df[i, :price]
       )
       push!(sim.custs, customer)
+      maxTime = max(maxTime,timeToTs(tSup) + sim.sp.traveltime[df[i,:pnode],df[i,:dnode]])
     end
+    sim.nTime = maxTime
   end
+  println("$(length(sim.custs)) NYC customers extracted!")
+
 end
 
 "Generate taxis in Manhattan"
 function generateTaxis!(sim::Manhattan, nTaxis::Int)
+  empty!(sim.taxis)
   sim.taxis = Array(Taxi,nTaxis)
   for k in 1:nTaxis
     sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)))

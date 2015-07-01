@@ -306,6 +306,7 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
 end
 
 TaxiSolution() = TaxiSolution(TaxiActions[],trues(0),0.0)
+ShortPaths() = ShortPaths(Array(Float64,(0,0)), Array(Float64,(0,0)), Array(Int,(0,0)))
 
 IntervalSolution(pb::TaxiProblem) =
 IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
