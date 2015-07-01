@@ -16,18 +16,32 @@ type Manhattan <: TaxiProblem
   distances::SparseMatrixCSC{Float64, Int}
   "ENU position for each node"
   positions::Vector{Coordinates}
-  "Starting time of the simulation"
+  "First pickup of the simulation"
   tStart::DateTime
-  "End time of the simulation"
+  "Last pickup of the simulation"
   tEnd::DateTime
+
+  #--------------
+  #Constant attributes
+  "Cost for the taxi to drive for a hour"
+  driveCost::Float64
+  "Cost for the taxi to wait for a hour"
+  waitCost::Float64
+  "Time step length in seconds"
+  timeSteptoSecond::Int
 
   function Manhattan(;sp=false)
     c = new()
+    #Load the constants
+    c.driveCost = 30.
+    c.waitCost  = 10.
+    c.timeSteptoSecond = 1
+
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
-    c.roadTime  = data["timings"]
-    c.roadCost  = c.roadTime/100 #temporary
+    c.roadTime  = data["timings"] #temporary
+    c.roadCost  = c.roadTime*driveCost/3600
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
         c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
@@ -54,13 +68,11 @@ function drawNetwork(pb::Manhattan, name::String = "graph")
   close(stdin)
 end
 
-#Generate customers and taxis, demand is a parameter correlated to the number of
-# customers
+"Generate customers and taxis"
 function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
      tEnd::DateTime; demand::Float64 = 1.0)
   city.tStart = tStart
   city.tEnd   = tEnd
-  city.nTime  = (tEnd-tStart).value/(timeSteptoSecond *1000)
   if city.nTime < 1
     error("Time of simulation too small !")
   end
@@ -69,6 +81,35 @@ function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
   return city
 end
 
-# "Generate customers in Manhattan using real customer data"
-# function generateCustomers!(city::SquareCity, tStart::DateTime,
-#      tEnd::DateTime; demand=1.0)
+"Generate customers in Manhattan using real customer data"
+function generateCustomers!(sim::Manhattan, demand=1.0)
+  #Transform a real time into timesteps
+  timeToTs(time::DateTime) = (time - sim.tStart).value/(1000*sim.timeSteptoSecond)
+  if Date(sim.tStart) != Date(sim.tEnd)
+    error("Right now, simulations have to be included in a day.")
+  end
+  println("Extracting NYC customers...")
+  df = readtable("$(path)/src/cities/manhattan/customers/$(Date(sim.tStart)).csv")
+  sStart = replace(string(sim.tStart), "T", " ")
+  sEnd   = replace(string(sim.tEnd), "T", " ")
+  maxTime = Inf
+  for i in 1:nrow(df)
+    if sStart <= df[i, :ptime] <= sEnd && df[i, :pnode] != df[i, :dnode] &&
+      rand() <= demand
+      tInf = DateTime(df[i, :ptime], "y-m-d H:M:S")
+      tSup = tIn + Minute(rand(1:15))
+      tCall = min(sim.tStart, tIn - Minute(rand(1:60)))
+      customer = Customer(
+        length(sim.cust)+1,
+        df[i,:pnode],
+        df[i,:dnode],
+        timeToTs(tCall),
+        timeToTs(tInf),
+        timeToTs(tSup),
+        0.,
+        df[i, :price]
+      )
+      push!(sim.custs, customer)
+    end
+  end
+end

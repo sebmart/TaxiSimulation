@@ -5,7 +5,7 @@
 module TaxiSimulation
 
 using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-      SFML, DataStructures, Base.Dates
+      SFML, DataStructures, Base.Dates, DataFrames
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
