@@ -113,3 +113,11 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
     end
   end
 end
+
+"Generate taxis in Manhattan"
+function generateTaxis!(sim::Manhattan, nTaxis::Int)
+  sim.taxis = Array(Taxi,nTaxis)
+  for k in 1:nTaxis
+    sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)))
+  end
+end
