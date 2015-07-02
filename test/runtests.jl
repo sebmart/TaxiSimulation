@@ -4,7 +4,8 @@ using Base.Test
 tests = [
     "shortestPathTests",
     "squareCity",
-    "metropolis"
+    "metropolis",
+    "manhattan"
     ]
 testdir = joinpath(Pkg.dir("TaxiSimulation"),"test")
 
