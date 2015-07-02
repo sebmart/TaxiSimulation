@@ -40,7 +40,7 @@ TaxiProblem: All data needed for simulation
     network::Network (graph of city)
     roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
     roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
-    sp::ShortPaths Shortest paths (time, cost and structure)
+    paths::Path Contain paths information
     custs::Array{Customer,1} (customers)
     taxis::Array{Taxi,1} (taxis)
     nTime::Int number of timesteps
@@ -76,13 +76,17 @@ type TaxiSolution
 end
 
 "Contains all the information necessary to have path timings and construction"
-type ShortPaths
+abstract Paths
+
+type ShortestPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
 end
 
-ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
+type RealPaths <: Paths
+
+end
 
 "Dijkstra Heap entry"
 immutable DijkstraEntry{Float64}

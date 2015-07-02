@@ -41,7 +41,28 @@ end
 
 
 ImmediateAssignment(pb::TaxiProblem) = ImmediateAssignment(InitialData(pb))
-
+#Compute the table of the next locations on the shortest paths
+#next[i, j] = location after i when going to j
+function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Float64, Int})
+  nLocs = size(sp.previous,1)
+  next = Array(Int, (nLocs,nLocs))
+  for i in 1:nLocs, j in 1:nLocs
+    if i == j
+      next[i,i] = i
+    else
+      minTime = Inf
+      mink = 0
+      for n in out_neighbors(n,i)
+        if roadTime(i,n) + sp.traveltime[n,j] < minTime
+          mink = n
+          minTime = roadTime(i,n) + sp.traveltime[n,j]
+        end
+      end
+      next[i,j] = mink
+    end
+  end
+  return next
+end
 
 #Called at each timestep of online simulation
 function update!(ia::ImmediateAssignment, upd::OnlineUpdate)

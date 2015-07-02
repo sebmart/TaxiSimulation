@@ -1,9 +1,9 @@
-#Run an all-pair shortest path using dijkstra, minimizing time and not costs
+
 function shortestPaths!(pb::TaxiProblem)
-    pb.sp = shortestPaths(pb.network, pb.roadTime, pb.roadCost)
+    pb.paths = shortestPaths(pb.network, pb.roadTime, pb.roadCost)
 end
 
-
+"Run an all-pair shortest path using dijkstra, minimizing time and not costs"
 function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
                                    roadCost::SparseMatrixCSC{Float64, Int})
 
@@ -13,36 +13,14 @@ function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
   previous = Array(Int, (nLocs,nLocs))
 
   for i in 1:nLocs
-    parents, dists, costs = custom_dijkstra(n,i, roadTime, roadCost)
+    parents, dists, costs = dijkstraWithCosts(n,i, roadTime, roadCost)
     previous[i,:] = parents
     pathTime[i,:] = dists
     pathCost[i,:] = costs
   end
-  return ShortPaths(pathTime, pathCost, previous)
+  return ShortestPaths(pathTime, pathCost, previous)
 end
 
-#Compute the table of the next locations on the shortest paths
-#next[i, j] = location after i when going to j
-function nextLoc(n::Network, sp::ShortPaths, roadTime::SparseMatrixCSC{Float64, Int})
-  nLocs = size(sp.previous,1)
-  next = Array(Int, (nLocs,nLocs))
-  for i in 1:nLocs, j in 1:nLocs
-    if i == j
-      next[i,i] = i
-    else
-      minTime = Inf
-      mink = 0
-      for n in out_neighbors(n,i)
-        if roadTime(i,n) + sp.traveltime[n,j] < minTime
-          mink = n
-          minTime = roadTime(i,n) + sp.traveltime[n,j]
-        end
-      end
-      next[i,j] = mink
-    end
-  end
-  return next
-end
 
 #TEMPORARY FIX
 #Dijkstra algorithm
@@ -51,7 +29,7 @@ end
 < (e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 
-function custom_dijkstra(
+function dijkstraWithCosts(
     g::AbstractGraph,
     src::Int,
     edge_dists::AbstractArray{Float64, 2},
