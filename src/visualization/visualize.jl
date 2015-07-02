@@ -169,16 +169,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 		for i = 1:length(city.custs)
 			customer = CircleShape()
 			set_radius(customer, radius)
-			set_fillcolor(customer, SFML.white)
 			x = nodeCoordinates[city.custs[i].orig].x
 			y = nodeCoordinates[city.custs[i].orig].y
 			set_position(customer, Vector2f(0, 0))
-
-			set_outline_thickness(customer, radius / 4.0)
 			if solution.notTaken[i]
-				set_outlinecolor(customer, SFML.green)
+				set_fillcolor(customer, SFML.green)
 			else
-				set_outlinecolor(customer, SFML.blue)
+				set_fillcolor(customer, SFML.blue)
 			end
 			push!(customers, customer)
 		end
@@ -502,13 +499,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 		# Draws the objects in the order of customers, roads, nodes, and taxis
 		clear(window, SFML.white)
-		if !flag
-			for i = 1:length(customers)
-				if (get_position(customers[i]).x != 0.0f0) && (get_position(customers[i]).y != 0.0f0)
-					draw(window, customers[i])
-				end
-			end
-		end
 		for i = 1:length(roads)
 			draw(window, roads[i])
 		end
@@ -516,6 +506,11 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 			draw(window, nodes[i])
 		end
 		if !flag
+			for i = 1:length(customers)
+				if (get_position(customers[i]).x != 0.0f0) && (get_position(customers[i]).y != 0.0f0)
+					draw(window, customers[i])
+				end
+			end
 			for i = 1:length(taxis)
 				draw(window, taxis[i])
 			end
