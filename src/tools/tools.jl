@@ -2,33 +2,28 @@
 #-- Useful functions to deal with TaxiProblem and TaxiSolution objects
 #----------------------------------------
 
-#Compute the cost of a solution
-function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1},
-                                       custs::Array{CustomerAssignment, 1})
+"Compute the cost of a solution"
+function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
   cost = 0.
-
-  #price paid by customers
-  for (id,c) in enumerate(custs)
-    if c.taxi != 0
-      cost -= pb.custs[id].price
-    end
-  end
   for (k,t) in enumerate(taxis)
     totaltime = 0.
     for (i,(time,road)) in enumerate(t.path)
       cost += pb.roadCost[ src(road), dst(road)]
       totaltime += pb.roadTime[ src(road), dst(road)]
     end
-    cost += pb.waitingCost * totaltime
+    cost += pb.waitingCost * (pb.nTime - totaltime)
+    for c in t.custs
+      cost -= pb.custs[c.id].price
+    end
   end
   return cost
 end
 
-#Quickly compute the cost using assigned customers
+"compute the cost of a solution just using customers"
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   cost = 0.0
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
+  tt = traveltimes(pb)
+  tc = travelcosts(pb)
   for (k,custs) in enumerate(t)
     pos = pb.taxis[k].initPos
     time = 0
@@ -46,11 +41,11 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
   return cost
 end
 
-#test interval solution, if it is indeed feasible
+"test if interval solution is indeed feasible"
 function testSolution(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
   nt = trues(length(pb.custs))
-  tt = pb.sp.traveltime
+  tt = traveltimes(pb)
 
   for k = 1:length(pb.taxis)
     list = sol.custs[k]
@@ -95,10 +90,10 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
 end
 
 
-#expand the time windows of an interval solution
+"expand the time windows of an interval solution"
 function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
   custs = pb.custs
-  tt = pb.sp.traveltime
+  tt = traveltimes(pb)
 
   for k = 1:length(pb.taxis)
     list = sol.custs[k]
@@ -125,66 +120,37 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
   end
 end
 
-#Reconstruct the complete path of a taxis from their assigned customers (in order)
-#The rule is to wait before going to the next customers if the taxi has to wait
-function taxi_path(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
-   sp = pb.sp
-   tt = sp.traveltime
-   roadTime = pb.roadTime
-   path = Tuple{Float64,Road}[]
-   endTime = pb.nTime
-   endDest = 0
-   for i in length(custs):-1:1
-     c = custs[i]
+"""
+    Reconstruct all of a taxi's actions from its assigned customers
+    The rule is to wait _before_ going to the next customer if the taxi has to wait
+"""
+function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
+  tt = traveltimes(pb)
+  roadTime = pb.roadTime
+  path = Tuple{Float64,Road}[]
 
-     #Travel from the end of the customer to the beginning of the next, then wait
-     if i != length(custs)
-       #Trajectory from dest to orig of next customer (computed backward)
-       loc = endDest
-       t = endTime
-       while loc != pb.custs[c.id].dest
-         prev = sp.previous[pb.custs[c.id].dest,loc]
-         push!(path, (t - roadTime[prev,loc], Road(prev,loc)))
-         t = t - roadTime[prev,loc]
-         loc = prev
-       end
-       #To make sure that the times are the same:
-       path[end] = (endTime - tt[pb.custs[c.id].dest, endDest], path[end][2])
-     end
+  initLoc = pb.taxis[k].initPos
+  for c in custs
+    cust = pb.custs[c.id]
 
-     #Trajectory from origin to dest of customer (computed backward)
-     loc = pb.custs[c.id].dest
-     t = c.timeOut
+    #travels to customer origin
+    p, wait = getPath(pb, initLoc, cust.orig)
+    t = c.timeIn - tt[initLoc, cust.orig] - sum(wait)
+    for i in 1:length(p)
+      push!(path, (t, p[i]))
+      t += roadTime[src(p[i]), dst(p[i])] + wait[i]
+    end
 
-     while loc != pb.custs[c.id].orig
-       prev = sp.previous[pb.custs[c.id].orig,loc]
-       push!(path, (t - roadTime[prev,loc], Road(prev,loc)))
-       t = t- roadTime[prev,loc]
-       loc = prev
-     end
-     #To make sure that the times are the same:
-     path[end] = (c.timeIn, path[end][2])
-
-     endTime = c.timeIn
-     endDest = pb.custs[c.id].orig
+    #travels with customer
+    p, wait = getPath(pb, cust.orig, cust.dest)
+    t = c.timeIn
+    for i in 1:length(p)
+      push!(path, (t, p[i]))
+      t += roadTime[src(p[i]), dst(p[i])] + wait[i]
+    end
+    initLoc = cust.dest
    end
-   #Travel from origin of taxi to first customer
-   if length(custs) != 0
-     #Trajectory from origin of taxi to origin of first cust
-     loc = pb.custs[custs[1].id].orig
-     t = custs[1].timeIn
-     while loc != pb.taxis[id_taxi].initPos
-       prev = sp.previous[pb.taxis[id_taxi].initPos,loc]
-       push!(path, (t - roadTime[prev,loc], Road(prev,loc)))
-       t   = t - roadTime[prev, loc]
-       loc = prev
-     end
-     #To make sure that the times are the same:
-     path[end] = (max(0.0,custs[1].timeIn - tt[pb.taxis[id_taxi].initPos,pb.custs[custs[1].id].orig]), path[end][2])
-     #reverse the list
-     reverse!(path)
-   end
-   return path
+   return TaxiActions(path,cust)
 end
 
 function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)
@@ -196,21 +162,21 @@ function loadTaxiPb(name::String)
   return pb
 end
 
-#Output the graph vizualization to pdf file (see GraphViz library)
+"Output the graph vizualization to pdf file (see GraphViz library)"
 function drawNetwork(pb::TaxiProblem, name::String = "graph")
   stdin, proc = open(`neato -Tpdf -o $(path)/outputs/$(name).pdf`, "w")
   to_dot(pb,stdin)
   close(stdin)
 end
 
-#Output dotfile
+"Write dotfile"
 function dotFile(pb::TaxiProblem, name::String = "graph")
   open("$(path)/outputs/$name.dot","w") do f
     to_dot(pb, f)
   end
 end
 
-#Write the graph in dot format
+"Write the graph in dot format"
 function to_dot(pb::TaxiProblem, stream::IO)
     write(stream, "digraph  citygraph {\n")
     for i in vertices(pb.network), j in out_neighbors(pb.network,i)
@@ -220,7 +186,7 @@ function to_dot(pb::TaxiProblem, stream::IO)
     return stream
 end
 
-#returns a random order on the customers
+"returns a random permutation"
 function randomOrder(n::Int)
   order = collect(1:n)
   for i = n:-1:2
@@ -231,10 +197,10 @@ function randomOrder(n::Int)
 end
 randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
 
-#Return customers that can be taken before other customers
+"Return customers that can be taken before other customers"
 function customersCompatibility(pb::TaxiProblem)
   cust = pb.custs
-  tt = pb.sp.traveltime
+  tt = traveltimes(pb)
   nCusts = length(cust)
   pCusts = Array( Array{Int,1}, nCusts)
   nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
@@ -253,14 +219,14 @@ function customersCompatibility(pb::TaxiProblem)
   return pCusts, nextCusts
 end
 
-#Given a solution, returns the time-windows
+"Given a solution, returns the time-windows"
 function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
   res = Array(Vector{AssignedCustomer}, length(pb.taxis))
   nt = trues(length(pb.custs))
   for k =1:length(sol.taxis)
     res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
   end
-  tt = pb.sp.traveltime
+  tt = traveltimes(pb)
 
   for (k,cust) = enumerate(res)
     if length(cust) >= 1
@@ -287,17 +253,19 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
   return IntervalSolution(res, nt, solutionCost(pb,res))
 end
 
-#Transform Interval solution into regular solution
-#rule: pick up customers as early as possible
+"""
+Transform Interval solution into regular solution
+rule: pick up customers as early as possible
+"""
 function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
 
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
   actions = Array(TaxiActions, nTaxis)
-
+  tt = traveltimes(pb)
   for k in 1:nTaxis
     custs = CustomerAssignment[]
     for c in sol.custs[k]
-        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + pb.sp.traveltime[pb.custs[c.id].orig, pb.custs[c.id].dest]))
+        push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest]))
     end
     actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
   end
@@ -315,3 +283,7 @@ trues(length(pb.custs)), -pb.nTime * length(pb.taxis) * pb.waitingCost)
 copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)
 
 toInt(x::Float64) = round(Int,x)
+
+traveltimes(pb::TaxiProblem) = traveltimes(pb.paths)
+travelcosts(pb::TaxiProblem) = travelcosts(pb.paths)
+getPath(city::TaxiProblem, i::Int, j::Int) = getPath(city, city.paths, i, j)

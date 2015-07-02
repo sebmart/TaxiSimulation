@@ -63,7 +63,7 @@ his path and interactions with customers
 """
 type TaxiActions
   "roads in order : (time, road)"
-  path::Vector{ Tuple{ Float64, Edge}}
+  path::Vector{ Tuple{ Float64, Road}}
   "customer in order: (id, pickup, dropoff)"
   custs::Vector{ CustomerAssignment} #
 end
@@ -85,7 +85,8 @@ type ShortestPaths <: Paths
 end
 
 type RealPaths <: Paths
-
+  traveltime::Array{Float64,2}
+  travelcost::Array{Float64,2}
 end
 
 "Dijkstra Heap entry"

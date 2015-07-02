@@ -40,5 +40,8 @@ testSolution(city, sol2)
 testSolution(city, sol3)
 expandWindows!(city,sol4)
 testSolution(city, sol4)
+ts = TaxiSolution(city, sol1)
 
-testSolution(city, IntervalSolution(city, TaxiSolution(city, sol1)))
+@test_approx_eq_eps sol1.cost solutionCost(city, ts.taxis) 1e-5
+
+testSolution(city, IntervalSolution(city, ts))
