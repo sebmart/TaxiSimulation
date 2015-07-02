@@ -5,7 +5,7 @@
 module TaxiSimulation
 
 using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-      SFML, DataStructures, Base.Dates
+      SFML, DataStructures, Base.Dates, DataFrames
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
@@ -24,7 +24,8 @@ export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
-       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!
+       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!,
+       custom_dijkstra
 
 #Visualization
 export visualize

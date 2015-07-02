@@ -3,68 +3,80 @@
 #--  to represent a taxi problem and its solutions
 #----------------------------------------
 
+"represent the network of the city (oriented graph)"
 typealias Network   DiGraph
+"edge in the city graph (one way of a road)"
 typealias Road      Edge
 
-# Implementations of Networks must have a "graph" element,
-#and "ShortestPath" object, "generateCustomers" and "generateTaxis" methods.
-
+"All data needed to represent a customer"
 immutable Customer
+  "customer id"
   id::Int
+  "Pick-up node in the graph"
   orig::Int
+  "drop-off node in the graph"
   dest::Int
+  "time of call for online simulations"
   tcall::Float64
+  "Earliest time for pickup"
   tmin::Float64
+  "Latest time for pickup"
   tmaxt::Float64
+  "Maximum time for dropoff (most of the time not needed)"
   tmax::Float64
+  "Fare paid by customer for the ride"
   price::Float64
 end
 
+"All data needed to represent a taxi"
 immutable Taxi
   id::Int
   initPos::Int
 end
 
-#------------------------
-#-- TaxiProblem: All data needed for simulation
-#-- has to include:
-#---- network::Network (graph of city)
-#---- roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
-#---- roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
-#---- sp::ShortPaths Shortest paths (time, cost and structure)
-#----
-#---- custs::Array{Customer,1} (customers)
-#---- taxis::Array{Taxi,1} (taxis)
-#---- nTime::Int number of timesteps
-#---- waitingCost::Float64 cost of waiting
-#---- discreteTime::Bool if time is discrete
-
+"""
+TaxiProblem: All data needed for simulation
+  has to include:
+    network::Network (graph of city)
+    roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
+    roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
+    sp::ShortPaths Shortest paths (time, cost and structure)
+    custs::Array{Customer,1} (customers)
+    taxis::Array{Taxi,1} (taxis)
+    nTime::Int number of timesteps
+    waitingCost::Float64 cost of waiting
+    discreteTime::Bool if time is discrete
+"""
 abstract TaxiProblem
 
-#Represent the assignement of a customer
-#taxi == 0 <=> unassigned
+"Represent the assignement of a customer to a taxi"
 immutable CustomerAssignment
+  "id of taxi, 0 if customer is not assigned"
   id::Int
   timeIn::Float64
   timeOut::Float64
 end
 
-#Represent the actions of a taxi during a simulation
-#the ordered list of roads taken by taxi, and the __ordered__ list of its
-#taken customers
-immutable TaxiActions
-  path::Vector{ Tuple{ Float64, Edge}} #roads in order : (time, road)
-  custs::Vector{ CustomerAssignment} #customer in order: (id, pickup, dropoff)
+"""
+Represent the actions of a taxi during a simulation:
+his path and interactions with customers
+"""
+type TaxiActions
+  "roads in order : (time, road)"
+  path::Vector{ Tuple{ Float64, Edge}}
+  "customer in order: (id, pickup, dropoff)"
+  custs::Vector{ CustomerAssignment} #
 end
 
-#Represent the solution of a simulation (paths of taxis, customers, and cost)
-immutable TaxiSolution
+"Represent the solution of a simulation"
+type TaxiSolution
   taxis::Array{TaxiActions, 1}
   notTaken::BitVector
   cost::Float64
 end
 
-immutable ShortPaths
+"Contains all the information necessary to have path timings and construction"
+type ShortPaths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
@@ -72,26 +84,33 @@ end
 
 ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
-# define heap entry data type
+"Dijkstra Heap entry"
 immutable DijkstraEntry{Float64}
   vertex::Int
   dist::Float64
   cost::Float64
 end
 
-#Represent an assigned customer (not fixed time-windows)
+"Represent the pickup time window of a customer"
 type AssignedCustomer
   id::Int
   tInf::Float64
   tSup::Float64
 end
 
-#represent a time-window solution
+"represent a time-window solution (only work with fixed timings)"
 type IntervalSolution
   custs::Vector{Vector{AssignedCustomer}}
   notTaken::BitVector
   cost::Float64
 end
+
+"x and y coordinates, to represent ENU positions"
+immutable Coordinates
+  x::Float64
+  y::Float64
+end
+
 
 #time epsilon for float comparisons
 EPS = 1e-5

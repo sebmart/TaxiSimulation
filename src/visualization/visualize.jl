@@ -3,7 +3,7 @@ type customerTime
 		driving::Tuple{Float64, Float64, Int64}
 end
 
-function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
+function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale::Float64 = 1.0)
 	city = c
 	sol = s
 
@@ -214,7 +214,7 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 		pos = 0
 		if (0 <= time && time < solution.taxis[id].path[1][1])
 			pos = src(solution.taxis[id].path[1][2])
-			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y) 
+			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
 		elseif last[1] + city.roadTime[src(last[2]), dst(last[2])] <= time
 			pos = dst(last[2])
 			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
@@ -241,7 +241,7 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 				newy = sy + slope * (dy - sy)
 				return (newx, newy)
 			end
-		end	
+		end
 	end
 
 	# Identifies a location of a given customer at a given time
@@ -269,15 +269,14 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 		return (x, y)
 	end
 
-	# Flag determines if the given taxi problem has given coordinates or not
-	flag = false
+	# Flag determines if we do not want to draw a solution
+	flag = isempty(s.taxis)
 	originalNodes = 0
 
 	# If the given taxi problem has coordinates, those are used; else, coordinates are
 	# generated with GraphViz
 	try
 		originalNodes = city.positions
-		flag = true
 	catch
 		GraphViz = Coordinates[]
 		indices = Int64[]
@@ -345,14 +344,14 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 	anchorT = 0.0
 	anchorTime = 0.0
 	cachedTime = 0.0
-	
-	# Resets the clocks	
+
+	# Resets the clocks
 	restart(clock)
 	restart(clock2)
 
 
 	while isopen(window)
-		# Handles keyboard inputs 
+		# Handles keyboard inputs
 		while pollevent(window, event)
 			if get_type(event) == EventType.CLOSED
 				close(window)
@@ -378,7 +377,7 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 		end
 		if is_key_pressed(KeyCode.LEFT)
 			radius = 6 * get_size(view).x / 1200
-			angle = (pi / 180) * (180 + rotation)	
+			angle = (pi / 180) * (180 + rotation)
 			move(view, Vector2f(radius * cos(angle), radius * sin(angle)))
 		end
 		if is_key_pressed(KeyCode.RIGHT)
@@ -427,10 +426,10 @@ function visualize(c::TaxiProblem, s = TaxiSolution(); radiusScale = 1.0)
 
 		# Handles time reversal as needed, caching the current time based on the boolean reverse
 		if reverse
-			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0) 
+			time = max(cachedTime - 1.0 * (get_elapsed_time(clock2) |> as_seconds), 0)
 			timeTrue = time
 		elseif !reverse
-			time = (cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds)) 
+			time = (cachedTime + 1.0 * (get_elapsed_time(clock) |> as_seconds))
 			timeFalse = time
 		end
 

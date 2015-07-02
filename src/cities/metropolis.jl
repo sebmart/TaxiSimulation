@@ -4,12 +4,10 @@
 #-- 1time-step = 30s
 #----------------------------------------
 
-#Price paid by customer for an hour's ride
-hourFare(t::DateTime) = 150
-#Cost for a taxi to drive an hour
-const driveCost = 30.
-const waitCost  = 10.
-const timeSteptoSecond = 30
+"Represent the main constant parameters of the city"
+immutable MetropolisParameters
+
+end
 
 type Metropolis <: TaxiProblem
   network::Network
@@ -30,8 +28,25 @@ type Metropolis <: TaxiProblem
   tStart::DateTime
   tEnd::DateTime
 
+#--------------
+#Constant attributes
+  "Cost for the taxi to drive for a hour"
+  driveCost::Float64
+  "Cost for the taxi to wait for a hour"
+  waitCost::Float64
+  "Fare for a hour drive at a given time"
+  hourFare::Function
+  "Time step length in seconds"
+  timeSteptoSecond::Int
+
 
 function Metropolis(width::Int, nSub::Int; discreteTime=false)
+  c = new()
+  #Load the constants
+  c.hourFare = (t::DateTime -> 150)
+  c.driveCost = 30.
+  c.waitCost  = 10.
+  c.timeSteptoSecond = 30
   function cityTrvlTime()
     if discreteTime
       rand(1:4)
@@ -46,8 +61,8 @@ function Metropolis(width::Int, nSub::Int; discreteTime=false)
       5+10*rand()
     end
   end
-  cityTrvlCost(trvltime) = trvltime * driveCost*timeSteptoSecond/3600
-  longTrvlCost(trvltime) = trvltime * driveCost*timeSteptoSecond/3600
+  cityTrvlCost(trvltime) = trvltime * c.driveCost*c.timeSteptoSecond/3600
+  longTrvlCost(trvltime) = trvltime * c.driveCost*c.timeSteptoSecond/3600
 
   # Add a square-city to the graph
   function addSquare(n::Network,roadTime::SparseMatrixCSC{Float64, Int},
@@ -82,13 +97,10 @@ function Metropolis(width::Int, nSub::Int; discreteTime=false)
       roadCost[b, a] = cityTrvlCost(tt)
     end
   end
-
-
-  c = new()
   c.width = width
   c.subWidth = floor(Int, width/2)
   c.nSub = nSub
-  c.waitingCost = waitCost*timeSteptoSecond/3600
+  c.waitingCost = c.waitCost*c.timeSteptoSecond/3600
 
   #-----------------------------------
   #First, we construct the network
@@ -167,6 +179,7 @@ function Metropolis(width::Int, nSub::Int; discreteTime=false)
   c.taxis = Taxi[]
   c.nTime = 0.
   c.discreteTime = discreteTime
+
   return c
 end
 end
@@ -179,9 +192,9 @@ function generateProblem!(city::Metropolis, nTaxis::Int, demand::Float64,
   city.tStart = tStart
   city.tEnd   = tEnd
   if city.discreteTime
-    city.nTime  = floor( (tEnd-tStart).value/(timeSteptoSecond *1000))
+    city.nTime  = floor( (tEnd-tStart).value/(city.timeSteptoSecond *1000))
   else
-    city.nTime  = (tEnd-tStart).value/(timeSteptoSecond *1000)
+    city.nTime  = (tEnd-tStart).value/(city.timeSteptoSecond *1000)
   end
   if city.nTime < 1
     error("Time of simulation too small !")
@@ -220,7 +233,7 @@ function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
   for i = 0:sim.nTime
     meanPerHour, catProb = metroDemand(sim, tCurrent, demand)
 
-    nCusts = rand(Poisson(meanPerHour*timeSteptoSecond/3600))
+    nCusts = rand(Poisson(meanPerHour*sim.timeSteptoSecond/3600))
     for j in 1:nCusts
       category = rand(Categorical(catProb))
       orig, dest = 0, 0
@@ -254,7 +267,7 @@ function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
       pathTime = toInt(sim.sp.traveltime[orig,dest])
 
       if pathTime + i <= sim.nTime
-        price = (hourFare(tCurrent)*timeSteptoSecond/3600)*pathTime
+        price = (sim.hourFare(tCurrent)*sim.timeSteptoSecond/3600)*pathTime
         tmin  = i
         tmaxt = min(sim.nTime - pathTime, i + rand(1:10))
         tmax  = min(sim.nTime, tmaxt + pathTime)
@@ -264,7 +277,7 @@ function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
       end
     end
     #First, get the number of customers to generate
-    tCurrent += Second(timeSteptoSecond)
+    tCurrent += Second(sim.timeSteptoSecond)
   end
 end
 
@@ -308,7 +321,7 @@ function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
       pathTime = sim.sp.traveltime[orig,dest]
 
       if pathTime + t <= sim.nTime
-        price = (hourFare(tCurrent)/120)*pathTime
+        price = (sim.hourFare(tCurrent)/120)*pathTime
         tmin  = t
         tmaxt = min(sim.nTime - pathTime, t + 10*rand())
         tmax  = min(sim.nTime, tmaxt + pathTime)
@@ -319,7 +332,7 @@ function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
     #First, get the number of customers to generate
     tCurrent += Millisecond(toInt(rand(Exponential((3600*1000)/meanPerHour))))
     #value of timeStep
-    t = (tCurrent - sim.tStart).value/(1000*timeSteptoSecond)
+    t = (tCurrent - sim.tStart).value/(1000*sim.timeSteptoSecond)
   end
 end
 
