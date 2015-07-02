@@ -25,8 +25,8 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
   nCusts = length(cust)
 
   #short alias
-  tt = round(Int,pb.sp.traveltime)
-  tc = pb.sp.travelcost
+  tt = round(Int,traveltimes(pb))
+  tc = travelcosts(pb)
 
   #Compute the list of the lists of customers that can be taken
   #before each customer
@@ -226,8 +226,8 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
   nCusts = length(cust)
 
   #short alias
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
+  tt = traveltimes(pb)
+  tc = travelcosts(pb)
 
   #Compute the list of the lists of customers that can be taken
   #before each customer

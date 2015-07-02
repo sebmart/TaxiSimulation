@@ -7,8 +7,6 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
   if !pb.discreteTime
     error("fixedTimeOpt needs a city with discrete times")
   end
-
-  sp = pb.sp
   taxi = pb.taxis
   cust = pb.custs
   nTime = toInt(pb.nTime)
@@ -17,8 +15,8 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
   nCusts = length(cust)
 
   #short alias
-  tt = round(Int,sp.traveltime)
-  tc = sp.travelcost
+  tt = round(Int,traveltimes(pb))
+  tc = travelcosts(pb)
 
   #Compute the list of the lists of customers that can be picked-up
   #before each customer
@@ -166,7 +164,7 @@ function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, x, y, 
 
   chain = [(0,0) for i in 1:nCusts]
   first = [(0,0) for i in 1:nTaxis]
-
+  tt = traveltimes(pb)
   for c =1:nCusts, k = 1:nTaxis, t = toInt(pb.custs[c].tmin) : toInt(pb.custs[c].tmaxt)
     if y[k,c,t] > 0.9
       first[k] = (c,t)
@@ -197,10 +195,10 @@ function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, x, y, 
     custs = CustomerAssignment[]
     c, t = first[k]
     while c != 0
-      push!( custs, CustomerAssignment(c,t,t+pb.sp.traveltime[pb.custs[c].orig,pb.custs[c].dest]))
+      push!( custs, CustomerAssignment(c,t,t+tt[pb.custs[c].orig,pb.custs[c].dest]))
       c,t  = chain[c]
     end
-    actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
+    actions[k] = TaxiActions(pb,k,custs)
   end
 
   return TaxiSolution(actions, notTaken, cost)

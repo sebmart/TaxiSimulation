@@ -75,15 +75,19 @@ type TaxiSolution
   cost::Float64
 end
 
-"Contains all the information necessary to have path timings and construction"
+"""
+Contains all the information necessary to have path timings and construction
+"""
 abstract Paths
 
+"Paths that are just the fastest in time"
 type ShortestPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
 end
 
+"Paths with an extra cost for turning left"
 type RealPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}

@@ -267,7 +267,7 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
     for c in sol.custs[k]
         push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest]))
     end
-    actions[k] = TaxiActions( taxi_path(pb,k,custs), custs)
+    actions[k] = TaxiActions(pb,k,custs)
   end
   return TaxiSolution(actions, sol.notTaken, sol.cost)
 

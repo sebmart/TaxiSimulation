@@ -2,7 +2,7 @@
 #-- Insert a non-taken customer into a time-window solution
 #----------------------------------------
 
-#Take an IntervalSolution and insert a not-taken customer
+"Take an IntervalSolution and insert a not-taken customer"
 function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
 
   #-------------------------
@@ -17,8 +17,8 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
   mintaxi = 0
   position = 0
   #We need the shortestPaths
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
+  tt = traveltimes(pb)
+  tc = travelcosts(pb)
 
   #We test the new customer for each taxi
   for (k,custs) in enumerate(sol.custs)
@@ -141,13 +141,13 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
   return mincost, mintaxi, position
 end
 
-#Take an IntervalSolution and remove a taken customer
+"Take an IntervalSolution and remove a taken customer"
 function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
   list = sol.custs[k]
   c = list[i].id
   deleteat!(list, i)
-  tt = pb.sp.traveltime
-  tc = pb.sp.travelcost
+  tt = traveltimes(pb)
+  tc = travelcosts(pb)
   custs = pb.custs
 
   #-------------------------
@@ -170,10 +170,9 @@ function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
   sol.notTaken[c] = true;
 end
 
-#Split a customer list and exchange with another taxi. Returns the best between
-#this solution and the previous one
+"Split a customer list and exchange with another taxi. Returns the best between this solution and the previous one"
 function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, k2::Int)
-  tt = pb.sp.traveltime
+  tt = traveltimes(pb)
   custs = pb.custs
   sol = copySolution(sol2)
 
