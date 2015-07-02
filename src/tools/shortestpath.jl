@@ -1,4 +1,19 @@
 
+traveltimes(paths::shortestPaths) = paths.traveltime
+travelcosts(paths::shortestPaths) = paths.travelcost
+
+"Return path from i to j: list of Roads and list of times (starting at 0)"
+function getPath(city::TaxiProblem, p::shortestPaths, i::Int, j::Int)
+    path = Road[]
+    lastNode = j
+    while lastNode != i
+        push!(path, Road(p.previous[i,lastNode],lastNode))
+        lastNode = p.previous[i,lastNode]
+    end
+    reverse(path), zeros(Float64, length(path))
+end
+
+"Updates the paths of the city to be the shortest ones in time"
 function shortestPaths!(pb::TaxiProblem)
     pb.paths = shortestPaths(pb.network, pb.roadTime, pb.roadCost)
 end
@@ -29,6 +44,7 @@ end
 < (e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 
+"Run dijkstra while also running costs"
 function dijkstraWithCosts(
     g::AbstractGraph,
     src::Int,
