@@ -21,7 +21,7 @@ roadTime[6,3] = 1.0
 roadTime[6,2] = 5.0
 roadTime[6,5] = 2.0
 roadTime[5,2] = 1.0
-parents, dists, costs = TaxiSimulation.custom_dijkstra(graph, 6, roadTime, roadTime)
+parents, dists, costs = dijkstraWithCosts(graph, 6, roadTime, roadTime)
 # Test parents
 @test parents[6] == 0
 @test parents[5] == 6

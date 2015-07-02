@@ -7,7 +7,7 @@ type Manhattan <: TaxiProblem
   taxis::Array{Taxi,1}
   nTime::Float64
   waitingCost::Float64
-  sp::ShortPaths
+  paths::Paths
   discreteTime::Bool
 
   #--------------
@@ -44,9 +44,9 @@ type Manhattan <: TaxiProblem
     c.roadCost  = c.roadTime*c.driveCost/3600
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
-      c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+      c.paths = shortestPaths(c.network, c.roadTime, c.roadCost)
     else
-      c.sp = ShortPaths
+      c.paths = ShortestPaths()
     end
 
     c.custs = Customer[]
@@ -74,7 +74,7 @@ end
 "Generate customers and taxis"
 function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
      tEnd::DateTime; demand::Float64 = 1.0)
-  if isempty(city.sp.traveltime)
+  if isempty(traveltimes(city))
     error("shortest paths have to be computed before generating problem")
   end
   if tStart + Second(1) >= tEnd
@@ -95,6 +95,7 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
   if Date(sim.tStart) != Date(sim.tEnd)
     error("Right now, simulations have to be included in a day.")
   end
+  tt = traveltimes(city)
   println("Extracting NYC customers...")
   df = readtable("$(path)/src/cities/manhattan/customers/$(Date(sim.tStart)).csv")
   sStart = replace(string(sim.tStart), "T", " ")
@@ -118,7 +119,7 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
         df[i, :price]
       )
       push!(sim.custs, customer)
-      maxTime = max(maxTime,timeToTs(tSup) + sim.sp.traveltime[df[i,:pnode],df[i,:dnode]])
+      maxTime = max(maxTime,timeToTs(tSup) + tt[df[i,:pnode],df[i,:dnode]])
     end
     sim.nTime = maxTime
   end

@@ -1,14 +1,10 @@
-#----------------------------------------
-#-- Elaborate network, depending on parameters
-#-- Represent whole city, with commuting effects
-#-- 1time-step = 30s
-#----------------------------------------
 
-"Represent the main constant parameters of the city"
-immutable MetropolisParameters
-
-end
-
+"""
+Elaborate network, depending on parameters
+- width = main city width
+- nSub  = number of city's suburb (half the city width)
+Represent whole city, with commuting effects
+"""
 type Metropolis <: TaxiProblem
   network::Network
   roadTime::SparseMatrixCSC{Float64, Int}
@@ -17,7 +13,7 @@ type Metropolis <: TaxiProblem
   taxis::Array{Taxi,1}
   nTime::Float64
   waitingCost::Float64
-  sp::ShortPaths
+  paths::ShortestPaths
   discreteTime::Bool
 
 #--------------
@@ -174,7 +170,7 @@ function Metropolis(width::Int, nSub::Int; discreteTime=false)
   end
 
   #We compute the shortest paths from everywhere to everywhere (takes time)
-  c.sp = shortestPaths(c.network, c.roadTime, c.roadCost)
+  c.paths = shortestPaths(c.network, c.roadTime, c.roadCost)
   c.custs = Customer[]
   c.taxis = Taxi[]
   c.nTime = 0.
@@ -230,6 +226,7 @@ end
 function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
   sim.custs = Customer[]
   tCurrent = sim.tStart
+  tt = traveltimes(sim)
   for i = 0:sim.nTime
     meanPerHour, catProb = metroDemand(sim, tCurrent, demand)
 
@@ -264,7 +261,7 @@ function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
         dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
         orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
       end
-      pathTime = toInt(sim.sp.traveltime[orig,dest])
+      pathTime = toInt(tt[orig,dest])
 
       if pathTime + i <= sim.nTime
         price = (sim.hourFare(tCurrent)*sim.timeSteptoSecond/3600)*pathTime
@@ -286,6 +283,7 @@ end
 function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
   sim.custs = Customer[]
   tCurrent = sim.tStart
+  tt = traveltimes(sim)
   t = 0
   while tCurrent < sim.tEnd
     meanPerHour, catProb = metroDemand(sim, tCurrent, demand)
@@ -318,7 +316,7 @@ function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
         dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
         orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
       end
-      pathTime = sim.sp.traveltime[orig,dest]
+      pathTime = tt[orig,dest]
 
       if pathTime + t <= sim.nTime
         price = (sim.hourFare(tCurrent)/120)*pathTime

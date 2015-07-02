@@ -9,8 +9,8 @@ using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
-       TaxiActions, TaxiSolution, ShortPaths, AssignedCustomer, IntervalSolution,
-       Coordinates
+       TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
+       IntervalSolution, Coordinates
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
@@ -25,7 +25,7 @@ export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 #Tools
 export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
        loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!,
-       custom_dijkstra
+       dijkstraWithCosts
 
 #Visualization
 export visualize

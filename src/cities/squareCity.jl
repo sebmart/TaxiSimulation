@@ -10,7 +10,7 @@ type SquareCity <: TaxiProblem
   taxis::Array{Taxi,1}
   nTime::Float64
   waitingCost::Float64
-  sp::ShortPaths
+  paths::ShortestPaths
   discreteTime::Bool
 
 #-----------------------------------------
@@ -81,7 +81,7 @@ type SquareCity <: TaxiProblem
     end
 
     #We compute the shortest paths from everywhere to everywhere (takes time)
-    c.sp =  shortestPaths(c.network, c.roadTime, c.roadCost)
+    c.paths =  shortestPaths(c.network, c.roadTime, c.roadCost)
     c.custs = Customer[]
     c.taxis = Taxi[]
     c.nTime = 0
@@ -100,6 +100,7 @@ end
 function generateCustomers!(city::SquareCity, nCusts = -1)
   #List of the customers.
   #Customers are randomize, but the time and price depend on the path.
+  tt = traveltimes(city)
   function locToCoord(n)
     return (div((n-1),city.width) + 1, ((n-1) % city.width) + 1)
   end
@@ -120,7 +121,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     oI, oJ = locToCoord(orig)
     dI, dJ = locToCoord(dest)
 
-    clienttime = city.sp.traveltime[orig,dest]
+    clienttime = tt[orig,dest]
 
     if clienttime > city.nTime
         error("simulation too short to generate customer")
