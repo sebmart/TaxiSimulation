@@ -286,7 +286,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 			sleep(1)
 			fileExists = isfile("$(path)/outputs/test1.txt")
 		end
-		lines = readlines(open ("$(path)/outputs/test1.txt"))
+		lines = readlines(open("$(path)/outputs/test1.txt"))
 		rm("$(path)/outputs/test1.txt")
 		index = 2
 		while(split(lines[index])[1] == "node")

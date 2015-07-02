@@ -129,7 +129,7 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
   roadTime = pb.roadTime
   path = Tuple{Float64,Road}[]
 
-  initLoc = pb.taxis[k].initPos
+  initLoc = pb.taxis[id_taxi].initPos
   for c in custs
     cust = pb.custs[c.id]
 
@@ -150,7 +150,7 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
     end
     initLoc = cust.dest
    end
-   return TaxiActions(path,cust)
+   return TaxiActions(path,custs)
 end
 
 function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)

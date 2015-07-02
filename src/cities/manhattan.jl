@@ -95,7 +95,7 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
   if Date(sim.tStart) != Date(sim.tEnd)
     error("Right now, simulations have to be included in a day.")
   end
-  tt = traveltimes(city)
+  tt = traveltimes(sim)
   println("Extracting NYC customers...")
   df = readtable("$(path)/src/cities/manhattan/customers/$(Date(sim.tStart)).csv")
   sStart = replace(string(sim.tStart), "T", " ")

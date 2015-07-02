@@ -1,9 +1,9 @@
 
-traveltimes(paths::shortestPaths) = paths.traveltime
-travelcosts(paths::shortestPaths) = paths.travelcost
+traveltimes(paths::ShortestPaths) = paths.traveltime
+travelcosts(paths::ShortestPaths) = paths.travelcost
 
 "Return path from i to j: list of Roads and list of times (starting at 0)"
-function getPath(city::TaxiProblem, p::shortestPaths, i::Int, j::Int)
+function getPath(city::TaxiProblem, p::ShortestPaths, i::Int, j::Int)
     path = Road[]
     lastNode = j
     while lastNode != i
@@ -41,7 +41,7 @@ end
 #Dijkstra algorithm
 
 # define appropriate comparators for heap entries
-< (e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
+<(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 
 "Run dijkstra while also running costs"
