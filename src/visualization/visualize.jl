@@ -174,7 +174,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 			y = nodeCoordinates[city.custs[i].orig].y
 			set_position(customer, Vector2f(0, 0))
 
-			set_outline_thickness(customer, 5)
+			set_outline_thickness(customer, radius / 4.0)
 			if solution.notTaken[i]
 				set_outlinecolor(customer, SFML.green)
 			else
