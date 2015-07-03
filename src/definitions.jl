@@ -91,6 +91,9 @@ end
 type RealPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
+  newNetwork::Network
+  newRoadTime::Array{Float64,2}
+  nodeMapping::Array{Int}
 end
 
 "Dijkstra Heap entry"

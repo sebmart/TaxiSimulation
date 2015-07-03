@@ -36,6 +36,7 @@ include("definitions.jl")
 #tools
 include("tools/print.jl")
 include("tools/shortestpath.jl")
+include("tools/realpath.jl")
 include("tools/tools.jl")
 
 #Solvers
