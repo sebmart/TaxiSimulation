@@ -9,17 +9,18 @@ function getPath(city::TaxiProblem, p::RealPaths, i::Int, j::Int)
   lastNode = p.newDest[i,j]
 
   while p.nodeMapping[lastNode] != i
-    push!(path, Road(p.nodeMapping[p.previous[lastNode]], p.nodeMapping[lastNode]))
+    prev = p.newPrevious[i, lastNode]
+    push!(path, Road(p.nodeMapping[prev], p.nodeMapping[lastNode]))
 
-    temp = newRoadTime[p.previous[lastNode], lastNode] - city.roadTime[p.nodeMapping[p.previous[lastNode]], p.nodeMapping[lastNode]]
+    temp = p.newRoadTime[prev, lastNode] - city.roadTime[p.nodeMapping[prev], p.nodeMapping[lastNode]]
     if abs(temp) > EPS
       push!(wait, temp)
     else
       push!(wait, 0.0)
     end
-    lastNode = p.previous[lastNode]
+    lastNode = prev
   end
-  reverse(path), zeros(Float64, length(path))
+  reverse(path), wait
 end
 
 "Create the paths of the city to be the shortest paths in time with turning penalties"

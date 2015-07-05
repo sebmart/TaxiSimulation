@@ -6,7 +6,7 @@ include("moveCustomer.jl")
 
 
 #Only return cost and list of assignment, given problem and order on customers
-function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = collect(1:length(pb.custs)))
+function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb))
   nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
   custs = [CustomerAssignment[] for k in 1:nTaxis]
@@ -18,3 +18,6 @@ function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = collect(1:lengt
   sol.cost = solutionCost(pb,sol.custs)
   return sol
 end
+
+timeOrderedCustomers(pb::TaxiProblem) =
+sort(collect(1:length(pb.custs)),by = i -> pb.custs[i].tmin)
