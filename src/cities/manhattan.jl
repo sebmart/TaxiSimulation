@@ -28,7 +28,7 @@ type Manhattan <: TaxiProblem
   "Cost for the taxi to wait for a hour"
   waitCost::Float64
   "Time step length in seconds"
-  timeSteptoSecond::Float
+  timeSteptoSecond::Float64
   "Left turn time (in time-steps)"
   turnTime::Float64
   "Left turn cost (in dollars)"
@@ -40,8 +40,8 @@ type Manhattan <: TaxiProblem
     c.driveCost = 30.
     c.waitCost  = 10.
     c.timeSteptoSecond = 1.0
-    c.turnTime = 10/timeSteptoSecond
-    c.turnCost = c.turnTime * timeSteptoSecond * driveCost/3600
+    c.turnTime = 10/c.timeSteptoSecond
+    c.turnCost = c.turnTime * c.timeSteptoSecond * driveCost/3600
 
 
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
@@ -51,9 +51,9 @@ type Manhattan <: TaxiProblem
     c.roadCost  = c.roadTime*c.driveCost/3600
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
-      c.paths = shortestPaths(c.network, c.roadTime, c.roadCost)
+      realPaths!(c)
     else
-      c.paths = ShortestPaths()
+      c.paths = RealPaths()
     end
 
     c.custs = Customer[]

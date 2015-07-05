@@ -95,7 +95,7 @@ type RealPaths <: Paths
   newRoadCost::AbstractArray{Float64,2}
   newPrevious::Array{Int,2}
   newDest::Array{Int,2}
-  nodeMapping::Array{Int}
+  nodeMapping::Vector{Int}
 end
 
 "Dijkstra Heap entry"

@@ -33,7 +33,7 @@ type Metropolis <: TaxiProblem
   "Fare for a hour drive at a given time"
   hourFare::Function
   "Time step length in seconds"
-  timeSteptoSecond::Int
+  timeSteptoSecond::Float64
 
 
 function Metropolis(width::Int, nSub::Int; discreteTime=false)
@@ -42,7 +42,7 @@ function Metropolis(width::Int, nSub::Int; discreteTime=false)
   c.hourFare = (t::DateTime -> 150)
   c.driveCost = 30.
   c.waitCost  = 10.
-  c.timeSteptoSecond = 30
+  c.timeSteptoSecond = 30.
   function cityTrvlTime()
     if discreteTime
       rand(1:4)

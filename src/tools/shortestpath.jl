@@ -36,6 +36,9 @@ function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
   return ShortestPaths(pathTime, pathCost, previous)
 end
 
+ShortestPaths() = ShortestPaths(Array(Float64,(0,0)), Array(Float64,(0,0)), Array(Int,(0,0)))
+
+
 
 #TEMPORARY FIX
 #Dijkstra algorithm

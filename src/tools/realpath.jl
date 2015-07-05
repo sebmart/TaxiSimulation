@@ -133,3 +133,8 @@ function realPaths(n::Network, roadTime::AbstractArray{Float64, 2},
 
   return RealPaths(pathTime, pathCost, newRoadTime, newRoadCost, previous, newDest, nodeMappingRev)
 end
+
+"empty RealPaths object"
+RealPaths() =  RealPaths(Array(Float64,(0,0)), Array(Float64,(0,0)),
+spzeros(Float64,0,0)), spzeros(Float64,0,0)), Array(Int,(0,0)), Array(Int,(0,0)),
+Int[]
