@@ -28,14 +28,21 @@ type Manhattan <: TaxiProblem
   "Cost for the taxi to wait for a hour"
   waitCost::Float64
   "Time step length in seconds"
-  timeSteptoSecond::Int
+  timeSteptoSecond::Float
+  "Left turn time (in time-steps)"
+  turnTime::Float64
+  "Left turn cost (in dollars)"
+  turnCost::Float64
 
   function Manhattan(;sp=false)
     c = new()
-    #Load the constants
+    #Initialize the constants
     c.driveCost = 30.
     c.waitCost  = 10.
-    c.timeSteptoSecond = 1
+    c.timeSteptoSecond = 1.0
+    c.turnTime = 10/timeSteptoSecond
+    c.turnCost = c.turnTime * timeSteptoSecond * driveCost/3600
+
 
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
     c.network   = data["network"]
@@ -130,8 +137,14 @@ end
 "Generate taxis in Manhattan"
 function generateTaxis!(sim::Manhattan, nTaxis::Int)
   empty!(sim.taxis)
-  sim.taxis = Array(Taxi,nTaxis)
+  sim.taxis = Array(Taxi,nTaxis);
   for k in 1:nTaxis
-    sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)))
+    sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)));
   end
+end
+
+"Compute _real_ paths (with left turns)"
+function realPaths!(sim::Manhattan)
+    sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
+                          sim.turnTime, sim.turnCost);
 end
