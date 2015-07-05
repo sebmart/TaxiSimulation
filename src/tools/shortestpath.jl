@@ -28,7 +28,7 @@ function shortestPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
   previous = Array(Int, (nLocs,nLocs))
 
   for i in 1:nLocs
-    parents, dists, costs = dijkstraWithCosts(n,i, roadTime, roadCost)
+    parents, dists, costs = dijkstraWithCosts(n, Int[i], roadTime, roadCost)
     previous[i,:] = parents
     pathTime[i,:] = dists
     pathCost[i,:] = costs
@@ -47,7 +47,7 @@ Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 "Run dijkstra while also running costs"
 function dijkstraWithCosts(
     g::AbstractGraph,
-    src::Int,
+    src::Vector{Int},
     edge_dists::AbstractArray{Float64, 2},
     edge_costs::AbstractArray{Float64, 2})
 
@@ -68,6 +68,7 @@ function dijkstraWithCosts(
     # Add source node to heap
     ref = push!(H, DijkstraEntry{Float64}(src, dists[src], costs[src]))
     hmap[src] = ref
+    visited[src] = true
     # As long as all edges have not been explored
     while !isempty(H)
         # Retrieve closest element to source

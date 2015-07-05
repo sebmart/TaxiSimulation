@@ -91,8 +91,10 @@ end
 type RealPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
-  newNetwork::Network
-  newRoadTime::Array{Float64,2}
+  newRoadTime::AbstractArray{Float64,2}
+  newRoadCost::AbstractArray{Float64,2}
+  newPrevious::Array{Int,2}
+  newDest::Array{Int,2}
   nodeMapping::Array{Int}
 end
 

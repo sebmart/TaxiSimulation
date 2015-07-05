@@ -4,42 +4,42 @@ travelcosts(paths::RealPaths) = paths.travelcost
 
 "Return path from i to j: list of Roads and list of times (starting at 0)"
 function getPath(city::TaxiProblem, p::RealPaths, i::Int, j::Int)
-    # path = Road[]
-    # lastNode = j
-    # while lastNode != i
-    #     push!(path, Road(p.previous[i,lastNode],lastNode))
-    #     lastNode = p.previous[i,lastNode]
-    # end
-    # reverse(path), zeros(Float64, length(path))
-end
+  path = Road[]
+  wait = Float64[]
+  lastNode = p.newDest[i,j]
 
-"Updates the paths of the city to be the shortest paths in time with turning costs"
-function realPaths!(pb::TaxiProblem)
-    pb.paths = realPaths(pb.network, pb.roadTime, pb.roadCost, pb.positions)
-end
+  while p.nodeMapping[lastNode] != i
+    push!(path, Road(p.nodeMapping[p.previous[lastNode]], p.nodeMapping[lastNode]))
 
-function realPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
-                               roadCost::SparseMatrixCSC{Float64, Int},
-                               positions::Vector{Coordinates})
-
-  """
-  Given mapping from old nodes to new, returns mapping from new nodes to old.
-  """
-  function getInverseMapping(new_nodes::Array{Array{Int}}, numNewVertices::Int)
-    old_nodes = zeros(Int, numNewVertices)
-    for (i, array) in enumerate(new_nodes), j in array
-      old_nodes[j] = i
+    temp = newRoadTime[p.previous[lastNode], lastNode] - city.roadTime[p.nodeMapping[p.previous[lastNode]], p.nodeMapping[lastNode]]
+    if abs(temp) > EPS
+      push!(wait, temp)
+    else
+      push!(wait, 0.0)
     end
-    return old_nodes
+    lastNode = p.previous[lastNode]
   end
+  reverse(path), zeros(Float64, length(path))
+end
+
+"Create the paths of the city to be the shortest paths in time with turning penalties"
+function realPaths(n::Network, roadTime::AbstractArray{Float64, 2},
+                               roadCost::AbstractArray{Float64, 2},
+                               positions::Vector{Coordinates},
+                               turnTime::Float64,
+                               turnCost::Float64)
 
   """
-  Given a graph g, modifies it so that left turns are afflicted with the extra cost turn_cost.
-  Requires old edge_costs as well as geographic coordinates of nodes (to determine left turns).
+  Given a graph g, modifies it so that left turns are afflicted with the extra time turnTime.
+  Requires geographic coordinates of nodes (to determine left turns).
   Returns new network, new edge weights, and map from nodes in g to nodes in the new graph as a list of lists.
   """
-  function modifyGraphForDijkstra(g::AbstractGraph, edge_dists::AbstractArray{Float64, 2},
-  coords::Vector{Coordinates}; turn_cost::Float64 = 10.0)
+  function leftTurnGraph(g::Network,
+      roadTime::AbstractArray{Float64, 2},
+      roadCost::AbstractArray{Float64, 2},
+      coords::Vector{Coordinates},
+      turnTime::Float64,
+      turnCost::Float64)
 
     """
     Get angle to a given point from a given point, given a current heading.
@@ -83,7 +83,8 @@ function realPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
         push!(new_nodes[i], id)
       end
     end
-    new_edge_dists = spzeros(nv(newGraph), nv(newGraph))
+    newRoadTime = spzeros(nv(newGraph), nv(newGraph))
+    newRoadCost = spzeros(nv(newGraph), nv(newGraph))
     # Now deal with edges
     for i = 1:nvg, j = 1:length(inn[i]), k = 1:length(out[i])
       # Find correct sub-node of i to connect to k
@@ -94,106 +95,41 @@ function realPaths(n::Network, roadTime::SparseMatrixCSC{Float64, Int},
       # Add extra edge weight appropriately
       # Make sure not to add weight if the node has only one incoming edge and one outgoing edge
       angle = getAngleEdges(coords[src].x, coords[src].y, coords[i].x, coords[i].y, coords[dst].x, coords[dst].y)
-      if angle < pi/4 || (length(out[i]) == 1 && length(inn[i]) == 1)
-        new_edge_dists[new_nodes[i][j], new_nodes[dst][l]] = edge_dists[i, dst]
+      if angle < π/4 || (length(out[i]) == 1 && length(inn[i]) == 1)
+        newRoadTime[new_nodes[i][j], new_nodes[dst][l]] = roadTime[i, dst]
+        newRoadCost[new_nodes[i][j], new_nodes[dst][l]] = roadCost[i, dst]
       else
-        new_edge_dists[new_nodes[i][j], new_nodes[dst][l]] = edge_dists[i, dst] + turn_cost
+        newRoadTime[new_nodes[i][j], new_nodes[dst][l]] = roadTime[i, dst] + turnTime
+        newRoadCost[new_nodes[i][j], new_nodes[dst][l]] = roadCost[i, dst] + turnCost
       end
     end
-    return newGraph, new_edge_dists, new_nodes
+    return newGraph, newRoadTime, newRoadCost, new_nodes
   end
 
-  newGraph, newRoadTime, nodeMapping = modifyGraphForDijkstra(n,roadTime,positions,turn_cost=2.0)
+  newGraph, newRoadTime, newRoadCost, nodeMapping = leftTurnGraph(n,roadTime,roadCost,turnTime,turnCost)
 
-  nLocs  = length( vertices(n))
+  nLocs  = nv(n)
+  nnLocs = nv(newGraph)
   pathTime = Array(Float64, (nLocs,nLocs))
   pathCost = Array(Float64, (nLocs,nLocs))
-  previous = Array(Int, (nLocs,nLocs))
+  newDest =  Array(Float64, (nLocs,nLocs))
+
+  previous = Array(Int, (nLocs,nnLocs))
 
   for i in 1:nLocs
-    parents, dists, costs = dijkstra_with_turn_cost(n, newGraph, i, newRoadTime, nodeMapping)(n,i, roadTime, roadCost)
+    parents, times, costs = dijkstraWithCosts(newGraph, nodeMapping[i], newRoadTime, nodeMapping)
     previous[i,:] = parents
-    pathTime[i,:] = dists
-    pathCost[i,:] = costs
-  end
-  nodeMappingRev = getInverseMapping(nodeMapping, nv(new_graph))
-
-  return RealPaths(pathTime, pathCost, newRoadTime, nodeMappingRev)
-end
-
-
-
-
-
-
-
-#TEMPORARY FIX
-#Dijkstra algorithm
-
-# define appropriate comparators for heap entries
-<(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
-Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
-
-"Run dijkstra while also running costs"
-function dijkstraWithCosts(
-    g::AbstractGraph,
-    src::Int,
-    edge_dists::AbstractArray{Float64, 2},
-    edge_costs::AbstractArray{Float64, 2})
-
-    # find number of vertices
-    nvg = nv(g)
-    # initialize return types
-    dists = fill(typemax(Float64), nvg)
-    costs = fill(typemax(Float64), nvg)
-    parents = zeros(Int, nvg)
-    visited = falses(nvg)
-    # Create mutable binary heap and associated hashmap
-    h = DijkstraEntry{Float64}[]
-    sizehint!(h, nvg)
-    H = mutable_binary_minheap(h)
-    hmap = zeros(Int, nvg)
-    dists[src] = 0.0
-    costs[src] = 0.0
-    # Add source node to heap
-    ref = push!(H, DijkstraEntry{Float64}(src, dists[src], costs[src]))
-    hmap[src] = ref
-    # As long as all edges have not been explored
-    while !isempty(H)
-        # Retrieve closest element to source
-        hentry = pop!(H)
-        u = hentry.vertex
-        # Look at all its neighbors and update relevant distances if necessary
-        for v in out_neighbors(g,u)
-            if dists[u] == typemax(Float64)
-                alt = typemax(Float64)
-                alt2 = typemax(Float64)
-            else
-                alt = dists[u] + edge_dists[u,v]
-                alt2 = costs[u] + edge_costs[u,v]
-            end
-            if !visited[v]  # If a vertex has never been visited, push it to the heap
-                dists[v] = alt
-                costs[v] = alt2
-                parents[v] = u
-                visited[v] = true
-                ref = push!(H, DijkstraEntry{Float64}(v, alt, alt2))
-                hmap[v] = ref
-            else            # If a vertex has been visited, decrease its key if distance estimate decreases
-                if alt < dists[v]
-                    dists[v] = alt
-                    costs[v] = alt2
-                    parents[v] = u
-                    update!(H, hmap[v], DijkstraEntry{Float64}(v, alt, alt2))
-                end
-            end
-        end
+    for node = 1:nLocs
+        pathTime[i,node], index = findmin(times[nodeMapping[node]])
+        newDest[i,node] = index + nodeMapping[node][1] - 1
+        pathCost[i,node] = costs[newDest[node]]
     end
+  end
 
-    dists[src] = 0
-    costs[src] = 0.0
-    parents[src] = 0
+  nodeMappingRev = zeros(Int, nnLocs)
+  for (i, array) in enumerate(nodeMapping), j in array
+    nodeMappingRev[j] = i
+  end
 
-
-    return parents, dists, costs
+  return RealPaths(pathTime, pathCost, newRoadTime, newRoadCost, previous, newDest, nodeMappingRev)
 end
