@@ -41,7 +41,7 @@ type Manhattan <: TaxiProblem
     c.waitCost  = 10.
     c.timeSteptoSecond = 1.0
     c.turnTime = 10/c.timeSteptoSecond
-    c.turnCost = c.turnTime * c.timeSteptoSecond * driveCost/3600
+    c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost/3600
 
 
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
@@ -145,6 +145,7 @@ end
 
 "Compute _real_ paths (with left turns)"
 function realPaths!(sim::Manhattan)
-    sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
+  sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
                           sim.turnTime, sim.turnCost);
+  return
 end

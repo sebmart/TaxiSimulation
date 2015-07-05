@@ -66,12 +66,15 @@ function dijkstraWithCosts(
     sizehint!(h, nvg)
     H = mutable_binary_minheap(h)
     hmap = zeros(Int, nvg)
-    dists[src] = 0.0
-    costs[src] = 0.0
+
     # Add source node to heap
-    ref = push!(H, DijkstraEntry{Float64}(src, dists[src], costs[src]))
-    hmap[src] = ref
-    visited[src] = true
+    for s in src
+        dists[s] = 0.0
+        costs[s] = 0.0
+        ref = push!(H, DijkstraEntry{Float64}(s, 0.0, 0.0))
+        hmap[s] = ref
+        visited[s] = true
+    end
     # As long as all edges have not been explored
     while !isempty(H)
         # Retrieve closest element to source

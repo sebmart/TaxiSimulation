@@ -14,16 +14,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	 	close(stdin)
 	end
 
-	# Write the graph in dot format
-	function to_dot(pb::TaxiProblem, stream::IO)
-	    write(stream, "digraph  citygraph {\n")
-	    for i in vertices(pb.network), j in out_neighbors(pb.network,i)
-	      write(stream, "$i -> $j\n")
-	    end
-	    write(stream, "}\n")
-	    return stream
-	end
-
 	# Create bounds for the graph
 	function generateBounds(nodes::Array{Coordinates,1})
 		minX = 0; maxX = 0; minY = 0; maxY = 0

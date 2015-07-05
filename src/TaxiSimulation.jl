@@ -23,9 +23,9 @@ export fullOpt, fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptConti
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
-export printSolution, shortestPaths!, shortestPaths, testSolution, saveTaxiPb,
-       loadTaxiPb, drawNetwork, dotFile, copySolution, expandWindows!,
-       dijkstraWithCosts, solutionCost
+export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
+       testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
+       expandWindows!, dijkstraWithCosts, solutionCost
 
 #Visualization
 export visualize

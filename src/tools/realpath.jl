@@ -72,11 +72,11 @@ function realPaths(n::Network, roadTime::AbstractArray{Float64, 2},
     # Create new graph
     newGraph = Network()
     new_nodes = Array{Int}[]
-    sizehint(new_nodes, nvg)
+    sizehint!(new_nodes, nvg)
     # Deal with vertices first
     for i in 1:nvg
       push!(new_nodes,Int[])
-      sizehint(new_nodes[i], length(inn[i]))
+      sizehint!(new_nodes[i], length(inn[i]))
       # Create as many new vertices as there are edges into the original vertex
       for j = 1:length(inn[i])
         id = add_vertex!(newGraph)
@@ -106,23 +106,23 @@ function realPaths(n::Network, roadTime::AbstractArray{Float64, 2},
     return newGraph, newRoadTime, newRoadCost, new_nodes
   end
 
-  newGraph, newRoadTime, newRoadCost, nodeMapping = leftTurnGraph(n,roadTime,roadCost,turnTime,turnCost)
+  newGraph, newRoadTime, newRoadCost, nodeMapping = leftTurnGraph(n,roadTime,roadCost,positions,turnTime,turnCost)
 
   nLocs  = nv(n)
   nnLocs = nv(newGraph)
   pathTime = Array(Float64, (nLocs,nLocs))
   pathCost = Array(Float64, (nLocs,nLocs))
-  newDest =  Array(Float64, (nLocs,nLocs))
+  newDest =  Array(Int, (nLocs,nLocs))
 
   previous = Array(Int, (nLocs,nnLocs))
 
   for i in 1:nLocs
-    parents, times, costs = dijkstraWithCosts(newGraph, nodeMapping[i], newRoadTime, nodeMapping)
+    parents, times, costs = dijkstraWithCosts(newGraph, nodeMapping[i], newRoadTime, newRoadCost)
     previous[i,:] = parents
     for node = 1:nLocs
         pathTime[i,node], index = findmin(times[nodeMapping[node]])
         newDest[i,node] = index + nodeMapping[node][1] - 1
-        pathCost[i,node] = costs[newDest[node]]
+        pathCost[i,node] = costs[newDest[i,node]]
     end
   end
 
@@ -136,5 +136,5 @@ end
 
 "empty RealPaths object"
 RealPaths() =  RealPaths(Array(Float64,(0,0)), Array(Float64,(0,0)),
-spzeros(Float64,0,0)), spzeros(Float64,0,0)), Array(Int,(0,0)), Array(Int,(0,0)),
-Int[]
+spzeros(Float64,0,0), spzeros(Float64,0,0), Array(Int,(0,0)), Array(Int,(0,0)),
+Int[])
