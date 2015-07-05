@@ -2,22 +2,22 @@
 #-- Useful functions to deal with TaxiProblem and TaxiSolution objects
 #----------------------------------------
 
-"Compute the cost of a solution"
-function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
-  cost = 0.
-  for (k,t) in enumerate(taxis)
-    totaltime = 0.
-    for (i,(time,road)) in enumerate(t.path)
-      cost += pb.roadCost[ src(road), dst(road)]
-      totaltime += pb.roadTime[ src(road), dst(road)]
-    end
-    cost += pb.waitingCost * (pb.nTime - totaltime)
-    for c in t.custs
-      cost -= pb.custs[c.id].price
-    end
-  end
-  return cost
-end
+# "Compute the cost of a solution (depreciated..)"
+# function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
+#   cost = 0.
+#   for (k,t) in enumerate(taxis)
+#     totaltime = 0.
+#     for (i,(time,road)) in enumerate(t.path)
+#       cost += pb.roadCost[ src(road), dst(road)]
+#       totaltime += pb.roadTime[ src(road), dst(road)]
+#     end
+#     cost += pb.waitingCost * (pb.nTime - totaltime)
+#     for c in t.custs
+#       cost -= pb.custs[c.id].price
+#     end
+#   end
+#   return cost
+# end
 
 "compute the cost of a solution just using customers"
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
