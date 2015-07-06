@@ -16,6 +16,8 @@ type Manhattan <: TaxiProblem
   distances::SparseMatrixCSC{Float64, Int}
   "ENU position for each node"
   positions::Vector{Coordinates}
+  "Road type, from 1 (fastest) to 8 (slowest)"
+  roadType::SparseMatrixCSC{Int, Int}
   "First pickup of the simulation"
   tStart::DateTime
   "Last pickup of the simulation"
@@ -47,10 +49,11 @@ type Manhattan <: TaxiProblem
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
+    c.roadType  = data["roadType"]
     timings = [95.,72.,48.,32.,22.,12.,8.,5.]
     c.roadTime  = spzeros(nv(c.network),nv(c.network))
     for r in edges(c.network)
-      c.roadTime[src(r),dst(r)] = 3.6* c.distances[src(r),dst(r)]/timings[data["roadType"][src(r),dst(r)]]
+      c.roadTime[src(r),dst(r)] = 3.6* c.distances[src(r),dst(r)]/timings[c.roadType[src(r),dst(r)]]
     end
     c.roadCost  = c.roadTime*c.driveCost/3600
     c.positions = data["positions"]
