@@ -20,7 +20,7 @@ function getPath(city::TaxiProblem, p::RealPaths, i::Int, j::Int)
     end
     lastNode = prev
   end
-  reverse(path), wait
+  reverse(path), reverse(wait)
 end
 
 "Create the paths of the city to be the shortest paths in time with turning penalties"

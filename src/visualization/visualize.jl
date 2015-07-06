@@ -16,19 +16,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 	# Create bounds for the graph
 	function generateBounds(nodes::Array{Coordinates,1})
-		minX = 0; maxX = 0; minY = 0; maxY = 0
-		X = Float64[]
-		Y = Float64[]
+		minX = Inf; maxX = -Inf; minY = Inf; maxY = -Inf
 		for i = 1:length(nodes)
-			push!(X, nodes[i].x)
-			push!(Y, nodes[i].y)
+			minX > nodes[i].x && (minX = nodes[i].x)
+			minY > nodes[i].y && (minY = nodes[i].y)
+			maxX < nodes[i].x && (maxX = nodes[i].x)
+			maxY < nodes[i].y && (maxY = nodes[i].y)
 		end
-		minX = minimum(X)
-		maxX = maximum(X)
-		minY = minimum(Y)
-		maxY = maximum(Y)
-		bounds = (minX, maxX, minY, maxY)
-		return bounds
+		return (minX, maxX, minY, maxY)
 	end
 
 	# Creates the coordinates of the nodes
@@ -60,7 +55,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 		return nodes
 	end
 
-	# Finds the minimal and maximal scores (as determied by distance / roadTime)
+	# Finds the minimal and maximal speeds (as determined by distance / roadTime)
 	function generateScoreBound(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates})
 		minscore = Inf; maxscore = -Inf; minedge = Inf
 		for edge in edges(city.network)
@@ -86,7 +81,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 		return (minscore, maxscore, minedge)
 	end
 
-	# Creates the roads of the graph, using coordinates from GraphViz
+	# Creates the roads of the graph
 	function generateRoads(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
 		roads = Line[]
 		for edge in edges(city.network)
@@ -124,7 +119,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	                g = 128.0
 	                b = 0.0
 	        end
-			set_fillcolor(road, SFML.Color(Int(floor(r)), Int(floor(g)), Int(floor(b))))
+			set_fillcolor(road, SFML.Color(floor(Int,r), floor(Int,g), floor(Int,b)))
 			push!(roads, road)
 		end
 		return roads
@@ -174,14 +169,11 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 	# Reformats the given customer information into the customerTime type defined above
 	function generateCustomerTimes(city::TaxiProblem, solution::TaxiSolution)
-		customerTimes = customerTime[]
+		customerTimes = Array(customerTime, length(city.custs))
 		for i = 1:length(city.custs)
 			min = city.custs[i].tmin
 			maxt = city.custs[i].tmaxt
-			first = (min, max)
-			second =
-			time = customerTime((min, maxt), (0, 0, 0))
-			push!(customerTimes, time)
+			customerTimes[i] = customerTime((min, maxt), (0, 0, 0))
 		end
 		for i = 1:length(solution.taxis)
 			for j = 1:length(solution.taxis[i].custs)
@@ -197,7 +189,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 	# Identifies a location of a given taxi at a given time
 	function findTaxiLocation(city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
-		last = solution.taxis[id].path[length(solution.taxis[id].path)]
+		last = solution.taxis[id].path[end]
 		pos = 0
 		if (0 <= time && time < solution.taxis[id].path[1][1])
 			pos = src(solution.taxis[id].path[1][2])
@@ -207,8 +199,8 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 			return (nodeCoordinates[pos].x, nodeCoordinates[pos].y)
 		else
 			index = length(solution.taxis[id].path)
-			for i = 1:length(solution.taxis[id].path) - 1
-				if solution.taxis[id].path[i][1] <= time && time < solution.taxis[id].path[i + 1][1]
+			for i = 1:(length(solution.taxis[id].path) - 1)
+				if solution.taxis[id].path[i][1] <= time < solution.taxis[id].path[i + 1][1]
 					index = i
 					break
 				end

@@ -47,7 +47,7 @@ type Manhattan <: TaxiProblem
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
-    c.roadTime  = data["timings"] #temporary
+    c.roadTime  = data["timings"] #temporary, in seconds!
     c.roadCost  = c.roadTime*c.driveCost/3600
     c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
     if sp
@@ -111,8 +111,8 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
   empty!(sim.custs)
   for i in 1:nrow(df)
     if sStart <= df[i, :ptime] <= sEnd && df[i, :pnode] != df[i, :dnode] &&
-      rand() <= demand
-      tInf = DateTime(df[i, :ptime], "y-m-d H:M:S")
+    tt[df[i,:pnode],df[i,:dnode]] > 60./sim.timeSteptoSecond && rand() <= demand
+      tInf = DateTime(df[i, :ptime], "y-m-d H:M:S") + Second(rand(-29:30)) #to make up for database rounding
       tSup = tInf + Minute(rand(1:15))
       tCall = min(sim.tStart, tInf - Minute(rand(1:60)))
       customer = Customer(

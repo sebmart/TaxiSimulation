@@ -135,10 +135,11 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
 
     #travels to customer origin
     p, wait = getPath(pb, initLoc, cust.orig)
-    t = c.timeIn - tt[initLoc, cust.orig] - sum(wait)
+    t = c.timeIn - tt[initLoc, cust.orig]
     for i in 1:length(p)
+      t += wait[i]
       push!(path, (t, p[i]))
-      t += roadTime[src(p[i]), dst(p[i])] + wait[i]
+      t += roadTime[src(p[i]), dst(p[i])]
     end
 
     #travels with customer

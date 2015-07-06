@@ -16,6 +16,7 @@ end
 "Updates the paths of the city to be the shortest ones in time"
 function shortestPaths!(pb::TaxiProblem)
     pb.paths = shortestPaths(pb.network, pb.roadTime, pb.roadCost)
+    return
 end
 
 "Run an all-pair shortest path using dijkstra, minimizing time and not costs"
