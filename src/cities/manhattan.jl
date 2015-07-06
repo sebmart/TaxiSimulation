@@ -47,9 +47,13 @@ type Manhattan <: TaxiProblem
     data = load("$(path)/src/cities/manhattan/manhattan.jld")
     c.network   = data["network"]
     c.distances = data["distances"]
-    c.roadTime  = data["timings"] #temporary, in seconds!
+    timings = [95.,72.,48.,32.,22.,12.,8.,5.]
+    c.roadTime  = spzeros(nv(c.network),nv(c.network))
+    for r in edges(c.network)
+      c.roadTime[src(r),dst(r)] = 3.6* c.distances[src(r),dst(r)]/timings[data["roadType"][src(r),dst(r)]]
+    end
     c.roadCost  = c.roadTime*c.driveCost/3600
-    c.positions = [Coordinates(i,j) for (i,j) in data["positions"]]
+    c.positions = data["positions"]
     if sp
       realPaths!(c)
     else
