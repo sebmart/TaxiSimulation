@@ -22,8 +22,6 @@ immutable Customer
   tmin::Float64
   "Latest time for pickup"
   tmaxt::Float64
-  "Maximum time for dropoff (most of the time not needed)"
-  tmax::Float64
   "Fare paid by customer for the ride"
   price::Float64
 end
@@ -43,7 +41,7 @@ TaxiProblem: All data needed for simulation
     paths::Path Contain paths information
     custs::Array{Customer,1} (customers)
     taxis::Array{Taxi,1} (taxis)
-    nTime::Int number of timesteps
+    nTime::Float64 last possible pickup time
     waitingCost::Float64 cost of waiting
     discreteTime::Bool if time is discrete
 """
