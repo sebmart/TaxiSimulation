@@ -100,6 +100,9 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
 
       println(io, "Moves from location $(src(road)) to location $(dst(road))")
     end
+    if idc <= length(tax.custs)
+        println(io, "Drops customer $(tax.custs[idc].id) off")
+    end
   end
 end
 
