@@ -129,7 +129,6 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
         timeToTs(tCall),
         timeToTs(tInf),
         timeToTs(tSup),
-        0.,
         df[i, :price]
       )
       push!(sim.custs, customer)
