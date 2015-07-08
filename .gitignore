@@ -2,6 +2,7 @@
 *.pdf
 *.jld
 *.osm
+*.sh
 todo.md
 *.DS_Store
 !src/cities/manhattan/manhattan.jld
