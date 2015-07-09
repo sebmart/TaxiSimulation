@@ -3,7 +3,7 @@
 #----------------------------------------
 
 #The MILP formulation, needs the previous computation of the shortest paths
-function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActions[],Int[],0.))
+function fixedTimeOpt(pb::TaxiProblem, init::IntervalSolution = IntervalSolution())
     if !pb.discreteTime
         error("fixedTimeOpt needs a city with discrete times")
     end
@@ -38,7 +38,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
     # =====================================================
     # Initialisation
     # =====================================================
-    if length(init.taxis) == length(pb.taxis)
+    if length(init.custs) == length(pb.taxis)
         for k=1:nTaxis, c=1:nCusts, c0=1:length(pCusts[c]), t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)
             setValue(x[k,c,c0,t],0)
         end
@@ -46,8 +46,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::TaxiSolution =TaxiSolution(TaxiActi
             setValue(y[k,c,t],0)
         end
 
-        for (k,t) in enumerate(init.taxis)
-            l = t.custs
+        for (k,t) in enumerate(init.custs)
             if length(l) > 0
                 setValue(y[k,l[1].id,l[1].timeIn], 1)
             end
