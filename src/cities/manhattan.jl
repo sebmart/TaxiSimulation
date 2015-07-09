@@ -145,7 +145,7 @@ function generateTaxis!(sim::Manhattan, nTaxis::Int)
     empty!(sim.taxis)
     sim.taxis = Array(Taxi,nTaxis);
     for k in 1:nTaxis
-        sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)));
+        sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)), 0.0);
     end
 end
 

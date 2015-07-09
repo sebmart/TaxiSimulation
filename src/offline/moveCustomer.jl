@@ -23,8 +23,9 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
     #We test the new customer for each taxi
     for (k,custs) in enumerate(sol.custs)
         initPos = pb.taxis[k].initPos
+        initTime = pb.taxis[k].initTime
         #First Case: taking customer before all the others
-        if tt[initPos, c.orig] <= c.tmaxt
+        if initTime + tt[initPos, c.orig] <= c.tmaxt
             if length(custs) == 0 #if no customer at all
                 cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
                 (tt[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
@@ -38,7 +39,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
             elseif length(custs) != 0
                 c1 = cDesc[custs[1].id]
 
-                if max(tt[initPos, c.orig], c.tmin) +
+                if max(initTime + tt[initPos, c.orig], c.tmin) +
                     tt[c.orig, c.dest] + tt[c.dest, c1.orig] <= custs[1].tSup
 
                     cost = tc[initPos, c.orig] + tc[c.orig, c.dest] +
@@ -102,7 +103,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
         custs = sol.custs[mintaxi]
         #If customer is to be inserted in first position
         if i == 1
-            tmin = max(tt[t.initPos, c.orig], c.tmin)
+            tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
             if length(custs) == 0
                 push!( custs, AssignedCustomer(c.id, tmin, c.tmaxt))
             else
@@ -154,7 +155,8 @@ function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
     # Update the freedom intervals of the other assigned customers
     #-------------------------
     if length(list) >= 1
-        list[1].tInf = max(custs[list[1].id].tmin, tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+        list[1].tInf = max(custs[list[1].id].tmin,
+        pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
         list[end].tSup = custs[list[end].id].tmaxt
     end
     for i = 2:(length(list))
@@ -185,7 +187,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
     #Extract the list to move from k
     sol.custs[k] = sol.custs[k][1:i-1]
 
-    while !isempty(custsA) && tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig] > custsA[1].tSup
+    while !isempty(custsA) && pb.taxis[k2].initTime + tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig] > custsA[1].tSup
         sol.notTaken[custsA[1].id] = true
         deleteat!(custsA, 1)
     end
@@ -210,7 +212,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
 
         #Update the windows of custsA
         if isempty(sol.custs[k2])
-            custsA[1].tInf = max(custs[custsA[1].id].tmin,
+            custsA[1].tInf = max(custs[custsA[1].id].tmin, pb.taxis[k2].initTime +
             tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig])
         else
             custsA[1].tInf = max(custs[custsA[1].id].tmin,
@@ -246,8 +248,9 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
         i2 = 1
         if isempty(sol.custs[k])
             pos = pb.taxis[k].initPos
+            initTime = pb.taxis[k].initPos
             for (j,c) in enumerate(custsB)
-                if tt[pos, custs[c.id].orig] <= c.tSup
+                if initTime + tt[pos, custs[c.id].orig] <= c.tSup
                     break
                 else
                     i2 = j + 1
@@ -285,7 +288,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
         else
             #Update the windows of custsB
             if isempty(sol.custs[k])
-                custsB[1].tInf = max(custs[custsB[1].id].tmin,
+                custsB[1].tInf = max(custs[custsB[1].id].tmin, pb.taxis[k].initTime +
                 tt[pb.taxis[k].initPos, custs[custsB[1].id].orig])
             else
                 custsB[1].tInf = max(custs[custsB[1].id].tmin,

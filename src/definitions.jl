@@ -30,6 +30,7 @@ end
 immutable Taxi
     id::Int
     initPos::Int
+    initTime::Float64
 end
 
 """
@@ -133,8 +134,9 @@ Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::O
     initialize! initializes a given OnlineMethod with a selected taxi problem without customers
     update! updates OnlineMethod to account for new customers, returns a list of TaxiActions
     since the last update
-    """
-    abstract OnlineMethod
+"""
 
-    #time epsilon for float comparisons
-    EPS = 1e-5
+abstract OnlineMethod
+
+#time epsilon for float comparisons
+EPS = 1e-5
