@@ -31,7 +31,7 @@ type Manhattan <: TaxiProblem
   waitCost::Float64
   "Time step length in seconds"
   timeSteptoSecond::Float64
-  "Left turn time (in time-steps)"
+  "Left turn time (in time-steps)"x
   turnTime::Float64
   "Left turn cost (in dollars)"
   turnCost::Float64

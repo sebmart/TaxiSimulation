@@ -236,7 +236,7 @@ function updateTaxi!(ia::ImmediateAssignment, t::TaxiSituation)
 
     #If customer in taxi and at destination: drop it
     if length(t.custs) > 0 && t.custs[1].tTake <= ia.tCurrent &&
-            road[t.road].target == t.custs[1].desc.dest
+            road[t.road].tazrget == t.custs[1].desc.dest
       push!(actions, CustomerAction(t.custs[1].desc.id, DROP, t.id))
       splice!(t.custs, 1)
 

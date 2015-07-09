@@ -38,7 +38,7 @@ TaxiProblem: All data needed for simulation
     network::Network (graph of city)
     roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
     roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
-    paths::Path Contain paths information
+    sp::ShortPaths Shortest paths (time, cost and structure)
     custs::Array{Customer,1} (customers)
     taxis::Array{Taxi,1} (taxis)
     nTime::Float64 last possible pickup time
@@ -61,7 +61,7 @@ his path and interactions with customers
 """
 type TaxiActions
   "roads in order : (time, road)"
-  path::Vector{ Tuple{ Float64, Road}}
+  path::Vector{ Tuple{ Float64, Edge}}
   "customer in order: (id, pickup, dropoff)"
   custs::Vector{ CustomerAssignment} #
 end
@@ -73,28 +73,14 @@ type TaxiSolution
   cost::Float64
 end
 
-"""
-Contains all the information necessary to have path timings and construction
-"""
-abstract Paths
-
-"Paths that are just the fastest in time"
-type ShortestPaths <: Paths
+"Contains all the information necessary to have path timings and construction"
+type ShortPaths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
 end
 
-"Paths with an extra cost for turning left"
-type RealPaths <: Paths
-  traveltime::Array{Float64,2}
-  travelcost::Array{Float64,2}
-  newRoadTime::AbstractArray{Float64,2}
-  newRoadCost::AbstractArray{Float64,2}
-  newPrevious::Array{Int,2}
-  newDest::Array{Int,2}
-  nodeMapping::Vector{Int}
-end
+ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
 
 "Dijkstra Heap entry"
 immutable DijkstraEntry{Float64}
@@ -123,6 +109,16 @@ immutable Coordinates
   y::Float64
 end
 
+
+"""
+  Type used to solve online simulation problems
+  Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::OnlineMethod, 
+    newEndTime::Float64, newCustomers::Vector{Customer})
+  initialize! initializes a given OnlineMethod with a selected taxi problem without customers
+  update! updates OnlineMethod to account for new customers, returns a list of TaxiActions 
+  since the last update
+"""
+abstract OnlineMethod
 
 #time epsilon for float comparisons
 EPS = 1e-5
