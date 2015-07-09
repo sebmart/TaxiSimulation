@@ -134,24 +134,31 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
     cust = pb.custs[c.id]
 
     #travels to customer origin
+    p = getPath(pb, initLoc, cust.orig, c.timeIn - tt[initLoc, cust.orig])
+    append!(path,p)
+
+    #travels with customer
+    p = getPath(pb, initLoc, cust.orig, c.timeIn)
+    append!(path,p)
+    
+    initLoc = cust.dest
+   end
+   return TaxiActions(path,custs)
+end
+
+"""
+    Return a path with timings given a starting time, an origin and a destination
+"""
+function getPath(city::TaxiProblem, startNode::Int, endNode::Int, startTime::Float64)
+    path = Tuple{Float64,Road}[]
     p, wait = getPath(pb, initLoc, cust.orig)
-    t = c.timeIn - tt[initLoc, cust.orig]
+    t = startTime
     for i in 1:length(p)
       t += wait[i]
       push!(path, (t, p[i]))
       t += roadTime[src(p[i]), dst(p[i])]
     end
-
-    #travels with customer
-    p, wait = getPath(pb, cust.orig, cust.dest)
-    t = c.timeIn
-    for i in 1:length(p)
-      push!(path, (t, p[i]))
-      t += roadTime[src(p[i]), dst(p[i])] + wait[i]
-    end
-    initLoc = cust.dest
-   end
-   return TaxiActions(path,custs)
+    return path
 end
 
 function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)
@@ -286,4 +293,4 @@ toInt(x::Float64) = round(Int,x)
 
 traveltimes(pb::TaxiProblem) = traveltimes(pb.paths)
 travelcosts(pb::TaxiProblem) = travelcosts(pb.paths)
-getPath(city::TaxiProblem, i::Int, j::Int) = getPath(city, city.paths, i, j)
+getPath(city::TaxiProblem, startNode::Int, endNode::Int) = getPath(city, city.paths, startNode, endNode)
