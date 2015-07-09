@@ -1,13 +1,10 @@
 #Try full opt
-width, nTime, nTaxis, nCusts = 3, 20., 2, 3;
-city = SquareCity(width, discreteTime=true);
-generateProblem!(city, nTaxis, nTime, nCusts);
-sol = fullOpt(city);
+# width, nTime, nTaxis, nCusts = 3, 20., 2, 3;
+# city = SquareCity(width, discreteTime=true);
+# generateProblem!(city, nTaxis, nTime, nCusts);
+# sol = fullOpt(city);
 
-#printing
-printSolution(sol,verbose=0)
-printSolution(sol,verbose=1)
-printSolution(sol,verbose=2)
+
 
 #try simple opt
 width, nTime, nTaxis, nCusts = 5, 50., 3, 10;
@@ -20,7 +17,13 @@ sol3 = intervalOptContinuous(city);
 
 @test_approx_eq_eps sol1.cost sol2.cost 1e-5
 @test_approx_eq_eps sol2.cost sol3.cost 1e-5
+@test_approx_eq_eps sol1.cost solutionCost(city, sol1.custs) 1e-5
 
+sol = TaxiSolution(city,sol1)
+#printing
+printSolution(sol,verbose=0)
+printSolution(sol,verbose=1)
+printSolution(sol,verbose=2)
 
 #Try interval opt and heuristics
 width, nTime, nTaxis, nCusts = 8, 200., 10, 60;
@@ -42,6 +45,7 @@ expandWindows!(city,sol4)
 testSolution(city, sol4)
 ts = TaxiSolution(city, sol1)
 
+@test_approx_eq_eps sol1.cost solutionCost(city, sol1.custs) 1e-5
 @test_approx_eq_eps sol1.cost solutionCost(city, ts.taxis) 1e-5
 
 testSolution(city, IntervalSolution(city, ts))

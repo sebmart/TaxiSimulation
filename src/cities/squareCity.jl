@@ -129,24 +129,22 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     price = (5+rand())*clienttime
     if city.discreteTime
-      tmaxt = rand(0:(city.nTime - clienttime))
-      tmax  = tmaxt + clienttime
+      tmaxt = rand(0:city.nTime)
       tmin = max(0, tmaxt - rand(1:10))
       tcall = max(0,tmin - rand(1:80))
     else
-      tmaxt = rand()*(city.nTime - clienttime)
-      tmax  = tmaxt + clienttime
+      tmaxt = rand()*(city.nTime)
       tmin = max(0.0, tmaxt - (EPS+10*rand()))
       tcall = max(0.0,tmin- (EPS + 80*rand()))
     end
 
-    customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,tmax,price)
+    customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,price)
   end
   city.custs = customers
   return city
 end
 
-function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts = -1)
+function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts::Int = -1)
   city.nTime = nTime
   generateTaxis!(city, nTaxis)
   generateCustomers!(city, nCusts)
