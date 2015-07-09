@@ -2,7 +2,7 @@
 Simulates the online problem by initializing an Online Method, updating customers 
 using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
 """
-function onlineSimulation(pb::TaxiProblem, om::OnlineMethod, period::Float64)
+function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1.0)
 	custs = sort(pb.custs, by = x -> x.tcall)
 	initialCustomers = Vector{Customer}
 	laterCustomers = Vector{Customer}
