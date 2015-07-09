@@ -52,7 +52,7 @@ type Metropolis <: TaxiProblem
         end
         function longTrvlTime()
             if discreteTime
-                rand(1:4)
+                rand(5:15)
             else
                 5+10*rand()
             end
