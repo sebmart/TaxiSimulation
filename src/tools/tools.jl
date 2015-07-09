@@ -26,17 +26,14 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
     tc = travelcosts(pb)
     for (k,custs) in enumerate(t)
         pos = pb.taxis[k].initPos
-        time = 0
+        drivingTime = 0
         for c in custs
             c1 = pb.custs[c.id]
-            cost -= c1.price
-            cost += tc[pos,c1.orig]
-            cost += tc[c1.orig,c1.dest]
-            cost += (c.tInf - time - tt[pos,c1.orig])*pb.waitingCost
-            time =  c.tInf + tt[c1.orig,c1.dest]
+            cost += tc[pos,c1.orig] + tc[c1.orig,c1.dest] - c1.price
+            drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
             pos = c1.dest
         end
-        cost += (pb.nTime - time)*pb.waitingCost
+        cost += (pb.nTime - drivingTime)*pb.waitingCost
     end
     return cost
 end
@@ -126,7 +123,6 @@ The rule is to wait _before_ going to the next customer if the taxi has to wait
 """
 function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
     tt = traveltimes(pb)
-    roadTime = pb.roadTime
     path = Tuple{Float64,Road}[]
 
     initLoc = pb.taxis[id_taxi].initPos
@@ -138,7 +134,7 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
         append!(path,p)
 
         #travels with customer
-        p = getPath(pb, initLoc, cust.orig, c.timeIn)
+        p = getPath(pb, cust.orig, cust.dest, c.timeIn)
         append!(path,p)
 
         initLoc = cust.dest
@@ -151,12 +147,12 @@ Return a path with timings given a starting time, an origin and a destination
 """
 function getPath(city::TaxiProblem, startNode::Int, endNode::Int, startTime::Float64)
     path = Tuple{Float64,Road}[]
-    p, wait = getPath(pb, initLoc, cust.orig)
+    p, wait = getPath(city, startNode, endNode)
     t = startTime
     for i in 1:length(p)
         t += wait[i]
         push!(path, (t, p[i]))
-        t += roadTime[src(p[i]), dst(p[i])]
+        t += city.roadTime[src(p[i]), dst(p[i])]
     end
     return path
 end

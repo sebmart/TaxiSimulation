@@ -50,7 +50,7 @@ Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 
 "Run dijkstra while also running costs"
 function dijkstraWithCosts(
-    g::AbstractGraph,
+    g::DiGraph,
     src::Vector{Int},
     edge_dists::AbstractArray{Float64, 2},
     edge_costs::AbstractArray{Float64, 2})

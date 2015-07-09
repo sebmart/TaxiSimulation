@@ -17,7 +17,7 @@ export Manhattan, Metropolis, SquareCity,
 generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
-export fullOpt, fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
+export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
@@ -43,7 +43,6 @@ include("tools/tools.jl")
 include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
-include("offline/fullOpt.jl")
 include("offline/fixedTimeOpt.jl")
 include("offline/intervalOpt.jl")
 

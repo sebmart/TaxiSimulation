@@ -49,9 +49,11 @@ abstract TaxiProblem
 
 "Represent the assignement of a customer to a taxi"
 immutable CustomerAssignment
-    "id of taxi, 0 if customer is not assigned"
+    "id of customer"
     id::Int
+    "pickup time"
     timeIn::Float64
+    "dropoff time"
     timeOut::Float64
 end
 

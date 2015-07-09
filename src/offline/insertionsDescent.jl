@@ -28,6 +28,6 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} = collect
         order[i], order[j] = order[j], order[i]
     end
     print("\rFinal: $(-best.cost) dollars             \n")
-    
+    expandWindows!(pb,best)
     return best
 end

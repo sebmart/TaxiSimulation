@@ -163,7 +163,7 @@ function fixedTime_solution(pb::TaxiProblem, pCusts::Vector{Vector{Int}}, x, y, 
             end
         end
 
-        for c =1:nCusts, t=toInt(pb.custs[c].tmin) : toInt(pb.custs[c].tmaxt)
+        for c =1:nCusts, t=toInt(pb.custs[c].tmin) : toInt(pb.custs[c].tmaxt),
             c0= 1:length(pCusts[c])
             if x[k,c,c0,t] > 0.9
                 push!(result[k], AssignedCustomer(c,t,t))

@@ -22,7 +22,7 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
             best = sol.cost
         end
     end
-    expandWindows!(sol)
+    expandWindows!(pb, sol)
     print("\r====Final: $(-sol.cost) dollars              \n")
     return sol
 end

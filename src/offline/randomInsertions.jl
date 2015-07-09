@@ -18,5 +18,6 @@ function randomInsertions(pb::TaxiProblem, n::Int)
         order = randomOrder(pb)
     end
     print("\r====Final: $(-best.cost) dollars              \n")
+    expandWindows!(pb,best)
     return best
 end

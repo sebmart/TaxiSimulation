@@ -144,7 +144,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
   return city
 end
 
-function generateProblem!(city::SquareCity, nTaxis::Int, nCusts = -1)
+function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts::Int = -1)
   city.nTime = nTime
   generateTaxis!(city, nTaxis)
   generateCustomers!(city, nCusts)
