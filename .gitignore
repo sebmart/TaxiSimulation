@@ -4,4 +4,5 @@
 *.osm
 todo.md
 *.DS_Store
+*.sh
 !src/cities/manhattan/manhattan.jld
