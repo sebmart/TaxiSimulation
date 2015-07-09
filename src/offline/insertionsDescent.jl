@@ -4,7 +4,7 @@
 include("orderedInsertions.jl")
 function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOrderedCustomers(pb))
     order = start
-    tic()
+    startTime = time_ns()
     best = orderedInsertions(pb, order)
     println("Try: 1, $(-best.cost) dollars\n")
     success = 0.
@@ -22,7 +22,9 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOr
         if sol.cost <= best.cost
             success += 1
             if sol.cost < best.cost
-                @printf("\r====Try: %i, %.2f dollars (%.2f tests/min, %.3f\% successful)                  ",trys, -sol.cost, trys*60/toq(), success/(trys-1)*100)
+                minutes = (time_ns()-startTime)/(60*1.0e9)
+                s = @sprintf("====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)                  ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
+                print("\r$s")
             end
             best = sol
             order[i], order[j] = order[j], order[i]
