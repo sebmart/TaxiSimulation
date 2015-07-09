@@ -103,7 +103,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
         custs = sol.custs[mintaxi]
         #If customer is to be inserted in first position
         if i == 1
-            tmin = max(initTime + tt[t.initPos, c.orig], c.tmin)
+            tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
             if length(custs) == 0
                 push!( custs, AssignedCustomer(c.id, tmin, c.tmaxt))
             else
