@@ -331,9 +331,9 @@ function generateTaxis!(sim::Metropolis, nTaxis::Int)
     sim.taxis = Taxi[]
     for k in 1:nTaxis
         if rand(1:2) == 1 #taxi in city
-            push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.width), rand(1:sim.width), 0, sim)))
+            push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.width), rand(1:sim.width), 0, sim), 0.0))
         else
-            push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)))
+            push!(sim.taxis, Taxi( k, coordToLoc( rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim), 0.0))
         end
     end
 end
