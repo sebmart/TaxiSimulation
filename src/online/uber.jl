@@ -1,8 +1,8 @@
 type Uber <: OnlineMethod
 	solver::Function
 	tHorizon::Float64
-
 	pb::TaxiProblem
+
 	endTime::Float64
 	newCustomers::Vector{Customer}
 	newTaxiActions::Vector{TaxiActions}
@@ -14,9 +14,6 @@ type Uber <: OnlineMethod
 		return offline
 	end
 end
-
-# Should store endtime as well
-# Change to initialize with no customers at all
 
 # Initializes a given OnlineMethod with a selected taxi problem without customers
 function initialize!(om::OnlineMethod, pb::TaxiProblem)

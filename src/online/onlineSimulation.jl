@@ -33,6 +33,13 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 		currentStep += 1
 	end
 
+	for (k, totalAction) in enumerate(totalTaxiActions)
+		if totalAction.custs[end].timeIn <= pb.nTime < totalAction.custs[end].timeOut
+			finalPath = getPath(pb, dst(totalAction.path[end][2]), pb.custs[totalAction.custs[end].id])
+			append!(totalAction.path, finalPath)
+		end
+	end
+
 	customersNotTaken = falses(length(pb.custs))
 	for taxi in totalTaxiActions, customer in totalTaxiActions[taxi].custs
 		customersNotTaken[customer] = true
