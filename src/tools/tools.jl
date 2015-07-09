@@ -140,7 +140,7 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
     #travels with customer
     p = getPath(pb, initLoc, cust.orig, c.timeIn)
     append!(path,p)
-    
+
     initLoc = cust.dest
    end
    return TaxiActions(path,custs)

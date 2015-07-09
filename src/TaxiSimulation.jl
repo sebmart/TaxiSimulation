@@ -5,16 +5,16 @@
 module TaxiSimulation
 
 using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-      SFML, DataStructures, Base.Dates, DataFrames
+SFML, DataStructures, Base.Dates, DataFrames
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
-       TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-       IntervalSolution, Coordinates
+TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
+IntervalSolution, Coordinates
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
-       generateCustomers!, generateTaxis!, generateProblem!
+generateCustomers!, generateTaxis!, generateProblem!
 
 #Offline MILP solvers
 export fullOpt, fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
@@ -24,8 +24,8 @@ export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
-       testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
-       expandWindows!, dijkstraWithCosts, solutionCost
+testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
+expandWindows!, dijkstraWithCosts, solutionCost
 
 #Visualization
 export visualize
