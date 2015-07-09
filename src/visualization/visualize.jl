@@ -452,29 +452,27 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 		# Sets the taxi and customer locations as determined by the above functions and current time
 		if !flag
-			if (t <= city.nTime)
-				for i = 1:length(taxis)
-					taxiloc = findTaxiLocation(city, sol, i, t, nodeCoordinates)
-					set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
-				end
-				for i = 1:length(customers)
-					customerloc = findCustomerLocation(customerTimes, city, sol, i, t, nodeCoordinates)
-					if customerloc[1] < 0
-						time = - 1 * customerloc[1]
-						if time == customerTimes[i].driving[2]
-							posX = nodeCoordinates[city.custs[i].dest].x
-							posY = nodeCoordinates[city.custs[i].dest].y
-							set_position(customers[i], Vector2f(posX - customerRadius, posY - customerRadius))
-						else
-							taxi = customerTimes[i].driving[3]
-							pos = get_position(taxis[taxi])
-							set_position(customers[i], Vector2f(pos.x + taxiRadius - customerRadius, pos.y + taxiRadius - customerRadius))
-						end
-					elseif customerloc[1] == 0
-						set_position(customers[i], Vector2f(0, 0))
+			for i = 1:length(taxis)
+				taxiloc = findTaxiLocation(city, sol, i, t, nodeCoordinates)
+				set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
+			end
+			for i = 1:length(customers)
+				customerloc = findCustomerLocation(customerTimes, city, sol, i, t, nodeCoordinates)
+				if customerloc[1] < 0
+					time = - 1 * customerloc[1]
+					if time == customerTimes[i].driving[2]
+						posX = nodeCoordinates[city.custs[i].dest].x
+						posY = nodeCoordinates[city.custs[i].dest].y
+						set_position(customers[i], Vector2f(posX - customerRadius, posY - customerRadius))
 					else
-						set_position(customers[i], Vector2f(customerloc[1] - customerRadius, customerloc[2] - customerRadius))
+						taxi = customerTimes[i].driving[3]
+						pos = get_position(taxis[taxi])
+						set_position(customers[i], Vector2f(pos.x + taxiRadius - customerRadius, pos.y + taxiRadius - customerRadius))
 					end
+				elseif customerloc[1] == 0
+					set_position(customers[i], Vector2f(0, 0))
+				else
+					set_position(customers[i], Vector2f(customerloc[1] - customerRadius, customerloc[2] - customerRadius))
 				end
 			end
 		end
