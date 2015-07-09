@@ -22,12 +22,11 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
         if sol.cost < best
             success += 1
             minutes = (time_ns()-startTime)/(60*1.0e9)
-            s = @sprintf("====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)                  ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
-            print("\r$s")
+            @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
             best = sol.cost
         end
     end
     expandWindows!(pb, sol)
-    print("\r====Final: $(-sol.cost) dollars              \n")
+    print("\n====Final: $(-sol.cost) dollars \n")
     return sol
 end

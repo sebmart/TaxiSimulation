@@ -20,18 +20,17 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOr
 
         sol = orderedInsertions(pb, order)
         if sol.cost <= best.cost
-            success += 1
             if sol.cost < best.cost
+                success += 1
                 minutes = (time_ns()-startTime)/(60*1.0e9)
-                s = @sprintf("====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)                  ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
-                print("\r$s")
+                @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)   ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
             end
             best = sol
             order[i], order[j] = order[j], order[i]
         end
         order[i], order[j] = order[j], order[i]
     end
-    print("\rFinal: $(-best.cost) dollars             \n")
+    print("\nFinal: $(-best.cost) dollars\n")
     expandWindows!(pb,best)
     return best
 end
