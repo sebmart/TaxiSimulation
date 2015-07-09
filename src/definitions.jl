@@ -40,7 +40,7 @@ TaxiProblem: All data needed for simulation
     network::Network (graph of city)
     roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
     roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
-    sp::ShortPaths Shortest paths (time, cost and structure)
+    paths::Path Contain paths information
     custs::Array{Customer,1} (customers)
     taxis::Array{Taxi,1} (taxis)
     nTime::Int number of timesteps
@@ -63,26 +63,40 @@ his path and interactions with customers
 """
 type TaxiActions
   "roads in order : (time, road)"
-  path::Vector{ Tuple{ Float64, Edge}}
+  path::Vector{ Tuple{ Float64, Road}}
   "customer in order: (id, pickup, dropoff)"
   custs::Vector{ CustomerAssignment} #
 end
 
 "Represent the solution of a simulation"
 type TaxiSolution
-  taxis::Array{TaxiActions, 1}
+  taxis::Array{TaxiiActions, 1}
   notTaken::BitVector
   cost::Float64
 end
 
-"Contains all the information necessary to have path timings and construction"
-type ShortPaths
+"""
+Contains all the information necessary to have path timings and construction
+"""
+abstract Paths
+
+"Paths that are the fastest in time"
+type ShortestPaths <: Paths
   traveltime::Array{Float64,2}
   travelcost::Array{Float64,2}
   previous::Array{Int,2}
 end
 
-ShortPaths() = ShortPaths( Array(Float64, (0,0)), Array(Float64, (0,0)), Array(Int, (0,0)))
+"Paths with an extra cost for turning left"
+type RealPaths <: Paths
+  traveltime::Array{Float64,2}
+  travelcost::Array{Float64,2}
+  newRoadTime::AbstractArray{Float64,2}
+  newRoadCost::AbstractArray{Float64,2}
+  newPrevious::Array{Int,2}
+  newDest::Array{Int,2}
+  nodeMapping::Vector{Int}
+end
 
 "Dijkstra Heap entry"
 immutable DijkstraEntry{Float64}
@@ -114,10 +128,10 @@ end
 
 """
   Type used to solve online simulation problems
-  Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::OnlineMethod, 
+  Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::OnlineMethod,
     newEndTime::Float64, newCustomers::Vector{Customer})
   initialize! initializes a given OnlineMethod with a selected taxi problem without customers
-  update! updates OnlineMethod to account for new customers, returns a list of TaxiActions 
+  update! updates OnlineMethod to account for new customers, returns a list of TaxiActions
   since the last update
 """
 abstract OnlineMethod
