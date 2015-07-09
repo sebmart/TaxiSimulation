@@ -144,9 +144,11 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
 
     #First move constraint
-    @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts,
-    t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, tt[taxi[k].initPos, cust[c].orig]-1))],
-    tw[c,t] <= 1 - y[k, c])
+    @addConstraint(m, c8[
+        k=1:nTaxis,c=1:nCusts,
+        t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt,
+            toInt(taxi[k].initTime) + tt[taxi[k].initPos, cust[c].orig]-1))],
+        tw[c,t] <= 1 - y[k, c])
 
     status = solve(m)
     tx = getValue(x)
@@ -349,7 +351,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
 
     #First move constraint
     @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts],
-    i[c] - tt[taxi[k].initPos, cust[c].orig] >= M*(y[k, c] - 1))
+    i[c] - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
 
     status = solve(m)
     tx = getValue(x)
