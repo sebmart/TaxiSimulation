@@ -28,6 +28,6 @@ function update!(om::OnlineMethod, newEndTime::Float64, newCustomers::Vector{Cus
 
 end
 
-onlineSimulation(pb, Uber(solver, 30))
+onlineSimulation(pb, Uber(UberSolver, 600), 30))
 
 function UberSolver()

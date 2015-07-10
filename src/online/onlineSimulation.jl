@@ -27,18 +27,20 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 		
 		newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)
-			append!(totalAction.path,newTaxiActions[k].path)
-			append!(totalAction.custs,newTaxiActions[k].custs)
+			if newTaxiActions[k].path[1][1] >= (currentStep - 1) * period && newTaxiActions[k].custs[1][2] >= (currentStep - 1) * period
+				append!(totalAction.path,newTaxiActions[k].path)
+				append!(totalAction.custs,newTaxiActions[k].custs)
+			end
 		end
 		currentStep += 1
 	end
 
-	for (k, totalAction) in enumerate(totalTaxiActions)
-		if totalAction.custs[end].timeIn <= pb.nTime < totalAction.custs[end].timeOut
-			finalPath = getPath(pb, dst(totalAction.path[end][2]), pb.custs[totalAction.custs[end].id])
-			append!(totalAction.path, finalPath)
-		end
-	end
+	# for (k, totalAction) in enumerate(totalTaxiActions)
+	# 	if totalAction.custs[end].timeIn <= pb.nTime < totalAction.custs[end].timeOut
+	# 		finalPath = getPath(pb, dst(totalAction.path[end][2]), pb.custs[totalAction.custs[end].id].dest)
+	# 		append!(totalAction.path, finalPath)
+	# 	end
+	# end
 
 	customersNotTaken = falses(length(pb.custs))
 	for taxi in totalTaxiActions, customer in totalTaxiActions[taxi].custs
