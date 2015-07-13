@@ -127,7 +127,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::IntervalSolution = IntervalSolution
     tt[cust[pCusts[c][c0]].dest, cust[c].orig]))} +
         sum{y[k,pCusts[c][c0],t1],
           t1=toInt(cust[pCusts[c][c0]].tmin):toInt(min(cust[pCusts[c][c0]].tmaxt,
-    t - custTime - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
+    t - 2*custTime - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
     tt[cust[pCusts[c][c0]].dest, cust[c].orig]))} >= x[k,c,c0,t])
 
     #For the special case of a taxi's first customer, the taxis has to have the
@@ -135,7 +135,7 @@ function fixedTimeOpt(pb::TaxiProblem, init::IntervalSolution = IntervalSolution
 
     @addConstraint(m, c5[k=1:nTaxis, c=1:nCusts,
     t=toInt(cust[c].tmin):toInt(min(cust[c].tmaxt, toInt(taxi[k].initTime) +
-    tt[taxi[k].initPos, cust[c].orig] + custTime - 1))], y[k,c,t] == 0)
+    tt[taxi[k].initPos, cust[c].orig] - 1))], y[k,c,t] == 0)
 
     status = solve(m)
     tx = getValue(x)

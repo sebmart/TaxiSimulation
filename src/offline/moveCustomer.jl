@@ -13,6 +13,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
     end
     c = pb.custs[cId]
     cDesc = pb.custs
+    custTime = pb.customerTime
     mincost = Inf
     mintaxi = 0
     position = 0
@@ -58,7 +59,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
         #Second Case: taking customer after all the others
         if length(custs) > 0
             cLast = cDesc[custs[end].id]
-            if custs[end].tInf + tt[cLast.orig, cLast.dest] +
+            if custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
                 tt[cLast.dest, c.orig] <= c.tmaxt
                 cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
                 (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
@@ -75,12 +76,12 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
             for i in 1:length(custs)-1
                 ci = cDesc[custs[i].id]
                 cip1 = cDesc[custs[i+1].id]
-                if custs[i].tInf + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] <= c.tmaxt &&
-                    max(custs[i].tInf + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig], c.tmin)+
-                    tt[c.orig, c.dest] + tt[c.dest, cip1.orig] <= custs[i+1].tSup
+                if custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] <= c.tmaxt &&
+                    max(custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig], c.tmin)+
+                    tt[c.orig, c.dest] + 2*custTime + tt[c.dest, cip1.orig] <= custs[i+1].tSup
                     cost = tc[ci.dest, c.orig] + tc[c.orig, c.dest] +
                     tc[c.dest,cip1.orig] -  tc[ci.dest, cip1.orig] -
-                    (tt[ci.dest, c.orig] + tc[c.orig, c.dest] +
+                    (tt[ci.dest, c.orig] + tt[c.orig, c.dest] +
                     tt[c.dest, cip1.orig] - tt[ci.dest, cip1.orig]) * pb.waitingCost
                     if cost < mincost
                         mincost = cost
@@ -108,18 +109,18 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                 push!( custs, AssignedCustomer(c.id, tmin, c.tmaxt))
             else
                 tmaxt = min(c.tmaxt,custs[1].tSup - tt[c.orig,c.dest] -
-                tt[c.dest,cDesc[custs[1].id].orig])
+                tt[c.dest,cDesc[custs[1].id].orig] - 2*custTime)
                 insert!(custs, 1, AssignedCustomer(c.id, tmin, tmaxt))
             end
         else
-            tmin = max(c.tmin, custs[i-1].tInf +
+            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime
             tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
             tt[cDesc[custs[i-1].id].dest, c.orig])
             if i > length(custs) #If inserted in last position
                 push!(custs, AssignedCustomer(c.id, tmin, c.tmaxt))
             else
                 tmaxt = min(c.tmaxt,custs[i].tSup - tt[c.orig,c.dest] -
-                tt[c.dest,cDesc[custs[i].id].orig])
+                tt[c.dest,cDesc[custs[i].id].orig] - 2*custTime)
                 insert!(custs, i, AssignedCustomer(c.id, tmin, tmaxt))
             end
         end
@@ -128,48 +129,18 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
         # Update the freedom intervals of the other assigned customers
         #-------------------------
         for j = (i-1) :(-1):1
-            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup -
+            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime
             tt[cDesc[custs[j].id].orig, cDesc[custs[j].id].dest] -
             tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
         end
         for j = (i+1) :length(custs)
-            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf +
+            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime
             tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
             tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
         end
         sol.notTaken[cId] = false
     end
     return mincost, mintaxi, position
-end
-
-"Take an IntervalSolution and remove a taken customer"
-function removeCustomer!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
-    list = sol.custs[k]
-    c = list[i].id
-    deleteat!(list, i)
-    tt = traveltimes(pb)
-    tc = travelcosts(pb)
-    custs = pb.custs
-
-    #-------------------------
-    # Update the freedom intervals of the other assigned customers
-    #-------------------------
-    if length(list) >= 1
-        list[1].tInf = max(custs[list[1].id].tmin,
-        pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
-        list[end].tSup = custs[list[end].id].tmaxt
-    end
-    for i = 2:(length(list))
-        list[i].tInf = max(list[i].tInf, list[i-1].tInf+
-        tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
-        tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
-    end
-    for i = (length(list) - 1):(-1):1
-        list[i].tSup = min(list[i].tSup, list[i+1].tSup-
-        tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
-        tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
-    end
-    sol.notTaken[c] = true;
 end
 
 "Split a customer list and exchange with another taxi. Returns the best between this solution and the previous one"
@@ -197,7 +168,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
     if !isempty(custsA)
         i2 = 1
         for (j,c) in enumerate(sol.custs[k2])
-            if c.tInf + tt[custs[c.id].orig, custs[c.id].dest] +
+            if c.tInf + 2*custTime + tt[custs[c.id].orig, custs[c.id].dest] +
                 tt[custs[c.id].dest, custs[custsA[1].id].orig] <=
                 custsA[1].tSup
                 i2 = j+1
@@ -215,12 +186,12 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
             custsA[1].tInf = max(custs[custsA[1].id].tmin, pb.taxis[k2].initTime +
             tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig])
         else
-            custsA[1].tInf = max(custs[custsA[1].id].tmin,
+            custsA[1].tInf = max(custs[custsA[1].id].tmin, 2*custTime+
             sol.custs[k2][end].tInf + tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
             + tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig])
         end
         for j = 2: length(custsA)
-            custsA[j].tInf = max(custs[custsA[j].id].tmin,
+            custsA[j].tInf = max(custs[custsA[j].id].tmin, 2*custTime +
             custsA[j-1].tInf + tt[custs[custsA[j-1].id].orig, custs[custsA[j-1].id].dest]
             + tt[custs[custsA[j-1].id].dest, custs[custsA[j].id].orig])
         end
@@ -228,11 +199,11 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
         if !isempty(sol.custs[k2])
             sol.custs[k2][end].tSup = min(custs[sol.custs[k2][end].id].tmaxt,
             custsA[1].tSup - tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
-            - tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig])
+            - tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig] - 2*custTime)
             for j = (length(sol.custs[k2])-1):-1:1
                 sol.custs[k2][j].tSup = min(custs[sol.custs[k2][j].id].tmaxt,
                 sol.custs[k2][j+1].tSup - tt[custs[sol.custs[k2][j].id].orig, custs[sol.custs[k2][j].id].dest] -
-                tt[custs[sol.custs[k2][j].id].dest, custs[sol.custs[k2][j+1].id].orig])
+                tt[custs[sol.custs[k2][j].id].dest, custs[sol.custs[k2][j+1].id].orig] - 2*custTime)
             end
         end
         #reconstruct k2 customers
@@ -261,7 +232,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
             for (j,c) in enumerate(custsB)
                 pc = sol.custs[k][end]
                 if pc.tInf + tt[custs[pc.id].orig, custs[pc.id].dest] +
-                    tt[custs[pc.id].dest, custs[c.id].orig] <= c.tSup
+                    tt[custs[pc.id].dest, custs[c.id].orig] + 2*custTime<= c.tSup
                     break
                 else
                     i2 = j+1
@@ -282,7 +253,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
                 for j = (length(sol.custs[k])-1):-1:1
                     sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
                     sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
-                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig])
+                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig] - 2*custTime)
                 end
             end
         else
@@ -293,22 +264,22 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
             else
                 custsB[1].tInf = max(custs[custsB[1].id].tmin,
                 sol.custs[k][end].tInf + tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
-                + tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig])
+                + tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig] + 2*custTime)
             end
             for j = 2: length(custsB)
                 custsB[j].tInf = max(custs[custsB[j].id].tmin,
                 custsB[j-1].tInf + tt[custs[custsB[j-1].id].orig, custs[custsB[j-1].id].dest]
-                + tt[custs[custsB[j-1].id].dest, custs[custsB[j].id].orig])
+                + tt[custs[custsB[j-1].id].dest, custs[custsB[j].id].orig] + 2*custTime)
             end
             #update the windows of taxi k
             if !isempty(sol.custs[k])
                 sol.custs[k][end].tSup = min(custs[sol.custs[k][end].id].tmaxt,
                 custsB[1].tSup - tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
-                - tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig])
+                - tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig] - 2*custTime)
                 for j = (length(sol.custs[k])-1):-1:1
                     sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
                     sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
-                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig])
+                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig] - 2*custTime)
                 end
             end
             #reconstruct k customers
