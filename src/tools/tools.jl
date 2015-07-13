@@ -43,6 +43,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     custs = pb.custs
     nt = trues(length(pb.custs))
     tt = traveltimes(pb)
+    custTime = pb.customerTime
 
     for k = 1:length(pb.taxis)
         list = sol.custs[k]
@@ -58,7 +59,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
         for i = 2:(length(list))
             list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
             tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
-            tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
+            tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig] + 2*custTime)
             if nt[list[i].id]
                 nt[list[i].id] = false
             else
@@ -68,7 +69,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
         for i = (length(list) - 1):(-1):1
             list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
             tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
-            tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
+            tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig]- 2*custTime)
         end
         for c in list
             if c.tInf > c.tSup
@@ -91,6 +92,7 @@ end
 function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
     custs = pb.custs
     tt = traveltimes(pb)
+    custTime = pb.customerTime
 
     for k = 1:length(pb.taxis)
         list = sol.custs[k]
@@ -101,12 +103,12 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
         for i = 2:(length(list))
             list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
             tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
-            tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig])
+            tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig]+2*custTime)
         end
         for i = (length(list) - 1):(-1):1
             list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
             tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
-            tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig])
+            tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig]-2*custTime)
         end
         #quick check..
         for c in list
@@ -134,7 +136,7 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
         append!(path,p)
 
         #travels with customer
-        p = getPath(pb, cust.orig, cust.dest, c.timeIn)
+        p = getPath(pb, cust.orig, cust.dest, c.timeIn + pb.customerTime)
         append!(path,p)
 
         initLoc = cust.dest
@@ -213,7 +215,7 @@ function customersCompatibility(pb::TaxiProblem)
     end
 
     for (i,c1) in enumerate(cust)
-        pCusts[i]= filter(c2->c2 != i && cust[c2].tmin +
+        pCusts[i]= filter(c2->c2 != i && cust[c2].tmin + 2*pb.customerTime +
         tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
         collect(1:nCusts))
         for (id,j) in enumerate(pCusts[i])
@@ -240,13 +242,13 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
         for i = 2:(length(cust))
             cust[i].tInf = max(cust[i].tInf, cust[i-1].tInf+
             tt[pb.custs[cust[i-1].id].orig, pb.custs[cust[i-1].id].dest]+
-            tt[pb.custs[cust[i-1].id].dest, pb.custs[cust[i].id].orig])
+            tt[pb.custs[cust[i-1].id].dest, pb.custs[cust[i].id].orig]+ 2*pb.customerTime)
             nt[cust[i].id] = false
         end
         for i = (length(cust) - 1):(-1):1
             cust[i].tSup = min(cust[i].tSup, cust[i+1].tSup-
             tt[pb.custs[cust[i].id].orig,pb.custs[cust[i].id].dest]-
-            tt[pb.custs[cust[i].id].dest, pb.custs[cust[i+1].id].orig])
+            tt[pb.custs[cust[i].id].dest, pb.custs[cust[i+1].id].orig] - 2*pb.customerTime)
         end
         for c in cust
             if c.tSup < c.tInf
@@ -269,7 +271,7 @@ function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
     for k in 1:nTaxis
         custs = CustomerAssignment[]
         for c in sol.custs[k]
-            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest]))
+            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest] + 2*pb.customerTime))
         end
         actions[k] = TaxiActions(pb,k,custs)
     end
