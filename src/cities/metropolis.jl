@@ -352,7 +352,7 @@ end
 
 function Base.copy(city::Metropolis)
     m =  Metropolis(emptyType=true)
-    for k = 1:length(names(m))
+    for k = 1:length(fieldnames(m))
         setfield!(m, k, getfield(city,k))
     end
     return m

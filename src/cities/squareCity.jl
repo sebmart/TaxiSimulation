@@ -155,7 +155,7 @@ end
 
 function Base.copy(city::SquareCity)
     m =  SquareCity(emptyType=true)
-    for k = 1:length(names(m))
+    for k = 1:length(fieldnames(m))
         setfield!(m, k, getfield(city,k))
     end
     return m
