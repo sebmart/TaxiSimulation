@@ -36,8 +36,11 @@ type Metropolis <: TaxiProblem
     timeSteptoSecond::Float64
 
 
-    function Metropolis(width::Int, nSub::Int; discreteTime=false)
+    function Metropolis(width::Int, nSub::Int; discreteTime=false, emptyType=false)
         c = new()
+        if emptyType
+            return c
+        end
         #Load the constants
         c.hourFare = (t::DateTime -> 150)
         c.driveCost = 30.
@@ -345,4 +348,12 @@ function coordToLoc(i::Int, j::Int, c::Int, city::Metropolis)
     else
         return city.width^2 + (c-1)*city.subWidth^2 + j + (i-1)*city.subWidth
     end
+end
+
+function Base.copy(city::Metropolis)
+    m =  Metropolis(emptyType=true)
+    for k = 1:length(names(m))
+        setfield!(m, k, getfield(city,k))
+    end
+    return m
 end

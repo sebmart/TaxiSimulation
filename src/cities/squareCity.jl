@@ -18,8 +18,11 @@ type SquareCity <: TaxiProblem
     width::Int
 
     #constructor that only create the graph
-    function SquareCity(width::Int; discreteTime = false)
+    function SquareCity(width::Int; discreteTime = false, emptyType=false)
         c = new()
+        if emptyType
+            return c
+        end
         #automatically select the number of customers
         c.waitingCost = 0.25
         c.width = width
@@ -148,4 +151,12 @@ function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts:
     city.nTime = nTime
     generateTaxis!(city, nTaxis)
     generateCustomers!(city, nCusts)
+end
+
+function Base.copy(city::SquareCity)
+    m =  SquareCity(emptyType=true)
+    for k = 1:length(names(m))
+        setfield!(m, k, getfield(city,k))
+    end
+    return m
 end
