@@ -36,7 +36,7 @@ type Manhattan <: TaxiProblem
     "Left turn cost (in dollars)"
     turnCost::Float64
 
-    function Manhattan(;sp=false;emptyType=false)
+    function Manhattan(;sp=false,emptyType=false)
         c = new()
         if emptyType
             return c
