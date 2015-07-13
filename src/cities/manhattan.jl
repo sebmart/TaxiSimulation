@@ -161,7 +161,7 @@ end
 
 function Base.copy(man::Manhattan)
     m =  Manhattan(emptyType=true)
-    for k = 1:length(names(m))
+    for k = 1:length(fieldnames(m))
         setfield!(m, k, getfield(man,k))
     end
     return m

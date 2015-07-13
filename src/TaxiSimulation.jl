@@ -30,6 +30,8 @@ expandWindows!, dijkstraWithCosts, solutionCost
 #Visualization
 export visualize
 
+export EPS
+
 path = string(Pkg.dir("TaxiSimulation"))
 include("definitions.jl")
 
