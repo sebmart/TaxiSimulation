@@ -36,7 +36,7 @@ type Metropolis <: TaxiProblem
     timeSteptoSecond::Float64
 
 
-    function Metropolis(width::Int, nSub::Int; discreteTime=false, emptyType=false)
+    function Metropolis(width::Int=8, nSub::Int=8; discreteTime=false, emptyType=false)
         c = new()
         if emptyType
             return c
