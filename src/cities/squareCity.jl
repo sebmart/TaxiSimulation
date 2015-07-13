@@ -11,6 +11,7 @@ type SquareCity <: TaxiProblem
     nTime::Float64
     waitingCost::Float64
     paths::ShortestPaths
+    customerTime::Float64
     discreteTime::Bool
 
     #-----------------------------------------
@@ -22,6 +23,7 @@ type SquareCity <: TaxiProblem
         c = new()
         #automatically select the number of customers
         c.waitingCost = 0.25
+        c.customerTime = 0.5
         c.width = width
         #Locs are numerated as follow :
         #123

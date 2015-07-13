@@ -37,14 +37,16 @@ end
 TaxiProblem: All data needed for simulation
 has to include:
 network::Network (graph of city)
-roadTime::SparseMatrixCSC{Int,Int} Time to cross a road
-roadCost::SparseMatrixCSC{Float64,Int} Cost to cross a road
+roadTime::SparseMatrixCSC{Int,Int} time to cross a road
+roadCost::SparseMatrixCSC{Float64,Int} cost to cross a road
 paths::Path Contain paths information
 custs::Array{Customer,1} (customers)
 taxis::Array{Taxi,1} (taxis)
 nTime::Float64 last possible pickup time
 waitingCost::Float64 cost of waiting
+customerTime::Float64 time to pickup or dropoff a customer
 discreteTime::Bool if time is discrete
+
 """
 abstract TaxiProblem
 

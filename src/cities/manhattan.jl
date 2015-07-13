@@ -8,6 +8,7 @@ type Manhattan <: TaxiProblem
     nTime::Float64
     waitingCost::Float64
     paths::Paths
+    customerTime::Float64
     discreteTime::Bool
 
     #--------------
@@ -42,6 +43,7 @@ type Manhattan <: TaxiProblem
         c.driveCost = 30.
         c.waitCost  = 10.
         c.timeSteptoSecond = 1.0
+        c.customerTime = 30/c.timeSteptoSecond
         c.turnTime = 10/c.timeSteptoSecond
         c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost/3600
 
