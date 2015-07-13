@@ -18,7 +18,7 @@ type SquareCity <: TaxiProblem
     width::Int
 
     #constructor that only create the graph
-    function SquareCity(width::Int; discreteTime = false, emptyType=false)
+    function SquareCity(width::Int=5; discreteTime = false, emptyType=false)
         c = new()
         if emptyType
             return c
