@@ -3,6 +3,7 @@ type IterativeOffline <: OnlineMethod
 	tHorizon::Float64
 	startTime::Float64
 	
+	totalSimulationTime::Float64
 	pb::TaxiProblem
 
 	customers::Vector{Customer}
@@ -25,6 +26,7 @@ function initialize!(om::OnlineMethod, pb::TaxiProblem)
 	reducedPb = copy(pb)
 	reducedPb.custs = Customer[]
 	om.pb = reducedPb
+	om.totalSimulationTime = om.pb.nTime
 end
 
 """
@@ -67,7 +69,7 @@ function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Custom
 	# Sets the problem's customers to those identified within the time window, and solves
 	om.pb.custs = currentCustomers
 	om.pb.nTime = om.tHorizon
-	offlineSolution = TaxiSolution(om.pb,localDescent(om.pb, 100))
+	offlineSolution = TaxiSolution(om.pb,localDescent(om.pb, 1000))
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
 	# Not taken customers should be carried over, modifying tmaxt or tmin as necessary
@@ -95,6 +97,8 @@ function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Custom
 	
 	om.startTime = endTime
 
+	println("===============")
+	@printf("%.2f %% solved", 100 * endTime / om.totalSimulationTime)
 	# Returns new TaxiActions to OnlineSimulation
 	return onlineTaxiActions
 end
