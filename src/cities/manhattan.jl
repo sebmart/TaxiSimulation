@@ -37,8 +37,11 @@ type Manhattan <: TaxiProblem
     "Left turn cost (in dollars)"
     turnCost::Float64
 
-    function Manhattan(;sp=false)
+    function Manhattan(;sp=false,emptyType=false)
         c = new()
+        if emptyType
+            return c
+        end
         #Initialize the constants
         c.driveCost = 30.
         c.waitCost  = 10.
@@ -156,4 +159,12 @@ function realPaths!(sim::Manhattan)
     sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
     sim.turnTime, sim.turnCost);
     return
+end
+
+function Base.copy(man::Manhattan)
+    m =  Manhattan(emptyType=true)
+    for k = 1:length(fieldnames(m))
+        setfield!(m, k, getfield(man,k))
+    end
+    return m
 end
