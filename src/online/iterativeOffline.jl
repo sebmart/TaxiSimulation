@@ -33,7 +33,6 @@ end
 Updates OnlineMethod to account for new customers, returns a list of TaxiActions 
 since the last update. Needs initial information to start from. 
 """
-# remove/ignore customers that are after THorizon?
 function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Customer})
 	# Sets the time window for the offline solver	
 	startOffline = om.startTime
@@ -103,5 +102,4 @@ function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Custom
 	return onlineTaxiActions
 end
 
-onlineSimulation(pb, IterativeOffline(30))
 
