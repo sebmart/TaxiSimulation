@@ -20,6 +20,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     taxi = pb.taxis
     cust = pb.custs
     nTime = pb.nTime
+    custTime = toInt(pb.custTime)
 
     nTaxis = length(taxi)
     nCusts = length(cust)
@@ -139,14 +140,14 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     #Compatibility rules
     @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c]), t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)],
     sum{tw[pCusts[c][c0],t2], t2= toInt(cust[pCusts[c][c0]].tmin) : toInt(min(cust[pCusts[c][c0]].tmaxt,
-    t - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
+    t - custTime - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
     tt[cust[pCusts[c][c0]].dest, cust[c].orig]))} >= tw[c, t] + x[c,c0] - 1)
 
 
     #First move constraint
     @addConstraint(m, c8[
         k=1:nTaxis,c=1:nCusts,
-        t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt,
+        t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, custTime +
             toInt(taxi[k].initTime) + tt[taxi[k].initPos, cust[c].orig]-1))],
         tw[c,t] <= 1 - y[k, c])
 
@@ -342,16 +343,16 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     #Sup bounds rules
     @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c])],
     s[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-    tt[cust[pCusts[c][c0]].dest, cust[c].orig] - s[c] <= M*(1 - x[c, c0]))
+    tt[cust[pCusts[c][c0]].dest, cust[c].orig] + pb.customerTime - s[c] <= M*(1 - x[c, c0]))
 
     #Inf bounds rules
     @addConstraint(m, c7[c=1:nCusts, c0=1:length(pCusts[c])],
     i[pCusts[c][c0]] + tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] +
-    tt[cust[pCusts[c][c0]].dest, cust[c].orig] - i[c] <= M*(1 - x[c, c0]))
+    tt[cust[pCusts[c][c0]].dest, cust[c].orig] + pb.customerTime - i[c] <= M*(1 - x[c, c0]))
 
     #First move constraint
     @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts],
-    i[c] - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
+    i[c] - pb.customerTime - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
 
     status = solve(m)
     tx = getValue(x)
