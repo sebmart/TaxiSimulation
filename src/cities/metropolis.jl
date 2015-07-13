@@ -188,8 +188,8 @@ end
 
 #Generate customers and taxis, demand is a parameter correlated to the number of
 # customers
-function generateProblem!(city::Metropolis, nTaxis::Int, demand::Float64,
-    tStart::DateTime, tEnd::DateTime)
+function generateProblem!(city::Metropolis, nTaxis::Int = 25, demand::Float64 = 0.55,
+    tStart::DateTime=now(), tEnd::DateTime=(now()+Hour(2)))
 
     city.tStart = tStart
     city.tEnd   = tEnd

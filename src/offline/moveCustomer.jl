@@ -113,7 +113,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                 insert!(custs, 1, AssignedCustomer(c.id, tmin, tmaxt))
             end
         else
-            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime
+            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime +
             tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
             tt[cDesc[custs[i-1].id].dest, c.orig])
             if i > length(custs) #If inserted in last position
@@ -129,12 +129,12 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
         # Update the freedom intervals of the other assigned customers
         #-------------------------
         for j = (i-1) :(-1):1
-            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime
+            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime -
             tt[cDesc[custs[j].id].orig, cDesc[custs[j].id].dest] -
             tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
         end
         for j = (i+1) :length(custs)
-            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime
+            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime -
             tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
             tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
         end
