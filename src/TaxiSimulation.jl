@@ -39,17 +39,25 @@ include("tools/shortestpath.jl")
 include("tools/realpath.jl")
 include("tools/tools.jl")
 
-#Solvers
+#cities
+include("cities/squareCity.jl")
+include("cities/metropolis.jl")
+include("cities/manhattan.jl")
+
+#offline
+include("offline/moveCustomer.jl")
 include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
 include("offline/fixedTimeOpt.jl")
 include("offline/intervalOpt.jl")
 
-include("cities/squareCity.jl")
-include("cities/metropolis.jl")
-include("cities/manhattan.jl")
+#online
+include("online/onlineSimulation.jl")
+include("online/iterativeOffline.jl")
+include("online/fixedAssignment.jl")
 
+#visualization
 include("visualization/visualize.jl")
 
 end

@@ -1,13 +1,15 @@
 """
-Simulates the online problem by initializing an Online Method, updating customers 
+Simulates the online problem by initializing an Online Method, updating customers
 using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
 """
 function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1.0)
 	# Sorts customers by tcall
 	custs = sort(pb.custs, by = x -> x.tcall)
 
-	# Initializes the online method with the given taxi problem
-	initialize!(om, pb)
+	# Initializes the online method with the given taxi problem without the customers
+	init = copy(pb)
+	init.custs = Customer[]
+	initialize!(om, init)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
 	# Goes through time, adding customers and updating the online solution
@@ -23,7 +25,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 				break
 			end
 		end
-		
+
 		# Updates the online method, selecting for taxi actions within the given time period
 		newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)

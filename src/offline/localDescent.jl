@@ -1,7 +1,6 @@
 #-------------------------------------------------------------
 #-- Local changes on window solution to look for a better one
 #--------------------------------------------------------------
-include("moveCustomer.jl")
 
 function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb))
     nTaxis = length(pb.taxis)
