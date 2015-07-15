@@ -112,7 +112,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     nLocs = (city.width)^2
     if nCusts == -1
-        nCusts = 2*int(ceil(city.nTime * length(city.taxis) /(2*2.5*city.width*1.5)))
+        nCusts = 2*ceil(Int, city.nTime * length(city.taxis) /(2*2.5*city.width*1.5))
     end
 
     customers = Array(Customer,nCusts)
@@ -149,7 +149,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     return city
 end
 
-function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts::Int = -1)
+function generateProblem!(city::SquareCity, nTaxis::Int=2*city.width, nTime::Float64=150., nCusts::Int = -1)
     city.nTime = nTime
     generateTaxis!(city, nTaxis)
     generateCustomers!(city, nCusts)

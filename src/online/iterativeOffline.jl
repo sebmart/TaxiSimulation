@@ -31,7 +31,7 @@ since the last update. Needs initial information to start from.
 function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vector{Customer})
 	# Sets the time window for the offline solver
 	startOffline = om.startTime
-	finishOffline = startOffline + om.tHorizon
+	finishOffline = min(om.pb.nTime,startOffline + om.tHorizon)
 
 	# Adds the new customers to the problem's customers
 	append!(om.customers, newCustomers)

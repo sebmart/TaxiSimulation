@@ -4,6 +4,7 @@ type FixedAssignment <: OnlineMethod
 	pb::TaxiProblem
 	sol::IntervalSolution
     currentCust::Vector{Int}
+    startTime::Float64
 
 	FixedAssignment() = new()
 end
@@ -13,6 +14,7 @@ Initializes a given FixedAssignment with a selected taxi problem without custome
 """
 function onlineInitialize!(om::FixedAssignment, pb::TaxiProblem)
 	om.pb = pb
+    om.startTime=0.
     om.currentCust = ones(Int, length(pb.taxis))
     om.sol = IntervalSolution(pb)
 end
@@ -28,9 +30,10 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
                 push!(om.sol.notTaken, true)
             end
         end
-        pb.custs[c.id] = c
-
-        insertCustomer!(pb,om.sol)
+        if c.tmaxt >= om.startTime
+            pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,max(c.tmin,startTime),c.tmaxt,c.price)
+            insertCustomer!(pb,om.sol,c.id)
+        end
     end
     actions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
@@ -58,7 +61,7 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
             end
         end
     end
-
+    om.startTime = endTime
     println("===============")
 	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
 

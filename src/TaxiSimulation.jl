@@ -22,6 +22,9 @@ export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
+#Online
+export onlineSimulation
+
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
 testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
