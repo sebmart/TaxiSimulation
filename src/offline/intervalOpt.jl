@@ -140,14 +140,14 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     #Compatibility rules
     @addConstraint(m, c6[c=1:nCusts, c0=1:length(pCusts[c]), t=toInt(cust[c].tmin) : toInt(cust[c].tmaxt)],
     sum{tw[pCusts[c][c0],t2], t2= toInt(cust[pCusts[c][c0]].tmin) : toInt(min(cust[pCusts[c][c0]].tmaxt,
-    t - custTime - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
+    t - 2*custTime - tt[cust[pCusts[c][c0]].orig, cust[pCusts[c][c0]].dest] -
     tt[cust[pCusts[c][c0]].dest, cust[c].orig]))} >= tw[c, t] + x[c,c0] - 1)
 
 
     #First move constraint
     @addConstraint(m, c8[
         k=1:nTaxis,c=1:nCusts,
-        t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt, custTime +
+        t=toInt(cust[c].tmin) : toInt(min(cust[c].tmaxt,
             toInt(taxi[k].initTime) + tt[taxi[k].initPos, cust[c].orig]-1))],
         tw[c,t] <= 1 - y[k, c])
 

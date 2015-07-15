@@ -41,7 +41,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                 c1 = cDesc[custs[1].id]
 
                 if max(initTime + tt[initPos, c.orig], c.tmin) +
-                    tt[c.orig, c.dest] + tt[c.dest, c1.orig] <= custs[1].tSup
+                    tt[c.orig, c.dest] + tt[c.dest, c1.orig] + 2*custTime <= custs[1].tSup
 
                     cost = tc[initPos, c.orig] + tc[c.orig, c.dest] +
                     tc[c.dest,c1.orig] - tc[initPos, c1.orig] -
@@ -134,7 +134,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
             tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
         end
         for j = (i+1) :length(custs)
-            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime -
+            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime +
             tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
             tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
         end
@@ -147,6 +147,7 @@ end
 function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, k2::Int)
     tt = traveltimes(pb)
     custs = pb.custs
+    custTime = pb.customerTime
     sol = copySolution(sol2)
 
     #-------------------------
