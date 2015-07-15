@@ -1,4 +1,4 @@
-type IterativeOffline <: OnlineMethod
+type IterativeOffline2 <: OnlineMethod
 	solver::Function
 	tHorizon::Float64
 	startTime::Float64
@@ -8,7 +8,7 @@ type IterativeOffline <: OnlineMethod
 	customers::Vector{Customer}
 	notTaken::Dict{Int64, Bool}
 
-	function IterativeOffline(tHorizon::Float64)
+	function IterativeOffline2(tHorizon::Float64)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -17,7 +17,7 @@ type IterativeOffline <: OnlineMethod
 		return offline
 	end
 end
-	
+
 """
 Initializes a given OnlineMethod with a selected taxi problem without customers
 """
@@ -33,6 +33,7 @@ Updates OnlineMethod to account for new customers, returns a list of TaxiActions
 since the last update. Needs initial information to start from. 
 """
 function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Customer})
+	tt = TaxiSimulation.traveltimes(om.pb)
 	# Sets the time window for the offline solver	
 	startOffline = om.startTime
 	finishOffline = startOffline + om.tHorizon
@@ -73,14 +74,27 @@ function update!(om::OnlineMethod, endTime::Float64, newCustomers::Vector{Custom
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
 	# Processes offline solution to fit it to online simulation
 	for (i, TaxiAction) in enumerate(offlineSolution.taxis)
-		# Selects for customers who are picked up before the start of the next time window
-		for (j, customer) in enumerate(TaxiAction.custs)
-			if TaxiAction.custs[j].timeIn + startOffline > endTime
-				break
+		# Selects for customers who taxis begin driving towards before the start of the next time window
+		for j = 1:length(TaxiAction.custs)
+			customer = TaxiAction.custs[j]
+			if j == 1
+				if TaxiAction.custs[j].timeIn + startOffline > endTime
+					break
+				else
+					om.notTaken[IDtoIndex[customer.id]] = false
+					c = CustomerAssignment(IDtoIndex[customer.id], customer.timeIn + startOffline, customer.timeOut + startOffline)
+					push!(onlineTaxiActions[i].custs, c)
+				end
 			else
-				om.notTaken[IDtoIndex[customer.id]] = false
-				c = CustomerAssignment(IDtoIndex[customer.id], customer.timeIn + startOffline, customer.timeOut + startOffline)
-				push!(onlineTaxiActions[i].custs, c)
+				start = om.pb.custs[TaxiAction.custs[j - 1].id].dest
+				finish = om.pb.custs[TaxiAction.custs[j].id].orig
+				if TaxiAction.custs[j].timeIn - tt[start, finish] + startOffline > endTime
+					break
+				else
+					om.notTaken[IDtoIndex[customer.id]] = false
+					c = CustomerAssignment(IDtoIndex[customer.id], customer.timeIn + startOffline, customer.timeOut + startOffline)
+					push!(onlineTaxiActions[i].custs, c)
+				end
 			end
 		end
 		# Selects for taxi paths that finish before the last customer's dropoff

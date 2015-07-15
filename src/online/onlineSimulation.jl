@@ -2,7 +2,16 @@
 Simulates the online problem by initializing an Online Method, updating customers 
 using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
 """
-function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1.0)
+function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1.0, noTCall::Bool = false)
+	if noTCall
+		newCustomers = Customer[]
+		for c in pb.custs
+			newC = Customer(c.id, c.orig, c.dest, c.tmin, c.tmin, c.tmaxt, c.price)
+			push!(newCustomers, newC)
+		end
+		pb.custs = newCustomers
+	end
+
 	# Sorts customers by tcall
 	custs = sort(pb.custs, by = x -> x.tcall)
 
