@@ -20,7 +20,7 @@ end
 """
 Initializes a given OnlineMethod with a selected taxi problem without customers
 """
-function initialize!(om::IterativeOffline, pb::TaxiProblem)
+function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.pb = pb
 end
 
@@ -28,7 +28,7 @@ end
 Updates OnlineMethod to account for new customers, returns a list of TaxiActions
 since the last update. Needs initial information to start from.
 """
-function update!(om::IterativeOffline, endTime::Float64, newCustomers::Vector{Customer})
+function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vector{Customer})
 	# Sets the time window for the offline solver
 	startOffline = om.startTime
 	finishOffline = startOffline + om.tHorizon

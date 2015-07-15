@@ -9,7 +9,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 	# Initializes the online method with the given taxi problem without the customers
 	init = copy(pb)
 	init.custs = Customer[]
-	initialize!(om, init)
+	onlineInitialize!(om, init)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
 	# Goes through time, adding customers and updating the online solution
@@ -27,7 +27,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 		end
 
 		# Updates the online method, selecting for taxi actions within the given time period
-		newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
+		newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)
 			if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
 				append!(totalAction.path,newTaxiActions[k].path)

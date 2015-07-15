@@ -11,14 +11,14 @@ end
 """
 Initializes a given FixedAssignment with a selected taxi problem without customers
 """
-function initialize!(om::FixedAssignment, pb::TaxiProblem)
+function onlineInitialize!(om::FixedAssignment, pb::TaxiProblem)
 	om.pb = pb
     om.currentCust = ones(Int, length(pb.taxis))
     om.sol = IntervalSolution(pb)
 end
 
 
-function update!(om::FixedAssignment, endTime::Float64, newCustomers::Vector{Customer})
+function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vector{Customer})
     pb = om.pb
     tt = traveltimes(pb)
     for c in sort(newCustomers, by=x->x.tmin)
