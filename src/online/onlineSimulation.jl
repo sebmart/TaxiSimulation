@@ -6,7 +6,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 	if noTCall
 		newCustomers = Customer[]
 		for c in pb.custs
-			newC = Customer(c.id, c.orig, c.dest, c.tmin, c.tmin, c.tmaxt, c.price)
+			newC = Customer(c.id, c.orig, c.dest, c.tmin, c.tmin, pb.nTime, c.price)
 			push!(newCustomers, newC)
 		end
 		pb.custs = newCustomers
@@ -22,6 +22,23 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 	# Goes through time, adding customers and updating the online solution
 	currentStep = 1
 	currentIndex = 1
+
+	if noTCall
+		for c in custs
+			newCustomers = Customer[]
+			push!(newCustomers, c)
+			newTaxiActions = update!(om, pb.nTime, newCustomers)
+			for (k,totalAction) in enumerate(totalTaxiActions)
+				if !isempty(newTaxiActions[k].path)
+					append!(totalAction.path,newTaxiActions[k].path)
+				end
+				if !isempty(newTaxiActions[k].custs)
+					append!(totalAction.custs,newTaxiActions[k].custs)
+				end
+			end
+		end
+	end
+
 	while (currentStep * period < pb.nTime)
 		# Selects for customers with tcall in the current time period
 		newCustomers = Customer[]
@@ -34,15 +51,30 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 		end
 		
 		# Updates the online method, selecting for taxi actions within the given time period
-		newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
-		for (k,totalAction) in enumerate(totalTaxiActions)
-			if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
-				append!(totalAction.path,newTaxiActions[k].path)
+		if noTCall
+			for c in newCustomers
+				newTaxiActions = update!(om, min(currentStep * period, pb.nTime), [c])
+				for (k,totalAction) in enumerate(totalTaxiActions)
+					if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
+						append!(totalAction.path,newTaxiActions[k].path)
+					end
+					if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
+						append!(totalAction.custs,newTaxiActions[k].custs)
+					end
+				end
 			end
-			if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
-				append!(totalAction.custs,newTaxiActions[k].custs)
+		else
+			newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
+			for (k,totalAction) in enumerate(totalTaxiActions)
+				if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
+					append!(totalAction.path,newTaxiActions[k].path)
+				end
+				if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
+					append!(totalAction.custs,newTaxiActions[k].custs)
+				end
 			end
 		end
+		
 		currentStep += 1
 	end
 

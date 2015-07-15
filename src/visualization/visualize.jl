@@ -135,13 +135,13 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	end
 
 	# Creates the taxis in the graph
-	function generateTaxis(solution::TaxiSolution, radius::Float64, nodeCoordinates::Vector{Coordinates})
+	function generateTaxis(city::TaxiProblem, solution::TaxiSolution, radius::Float64, nodeCoordinates::Vector{Coordinates})
 		taxis = CircleShape[]
 		for i = 1:length(solution.taxis)
 			taxi = CircleShape()
 			set_radius(taxi, radius)
 			set_fillcolor(taxi, SFML.red)
-			taxiPos = src(solution.taxis[i].path[1][2])
+			taxiPos = city.taxis[i].initPos
 			set_position(taxi, Vector2f(nodeCoordinates[taxiPos].x - radius, nodeCoordinates[taxiPos].y - radius))
 			push!(taxis, taxi)
 		end
@@ -189,6 +189,9 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 
 	# Identifies a location of a given taxi at a given time
 	function findTaxiLocation(city::TaxiProblem, solution::TaxiSolution, id::Int64, time::Float64, nodeCoordinates::Vector{Coordinates})
+		if isempty(solution.taxis[id].path)
+			return (-1, -1)
+		end
 		last = solution.taxis[id].path[end]
 		pos = 0
 		if (0 <= time && time < solution.taxis[id].path[1][1])
@@ -293,7 +296,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
 	if !flag
 		taxiRadius = 1.5 * nodeRadius
-		taxis = generateTaxis(sol, taxiRadius, nodeCoordinates)
+		taxis = generateTaxis(city, sol, taxiRadius, nodeCoordinates)
 		customerRadius = 2.0 * nodeRadius
 		customers = generateCustomers(city, sol, customerRadius, nodeCoordinates)
 		customerTimes = generateCustomerTimes(city, sol)
@@ -454,7 +457,9 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 		if !flag
 			for i = 1:length(taxis)
 				taxiloc = findTaxiLocation(city, sol, i, t, nodeCoordinates)
-				set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
+				if taxiloc[1] >= 0
+					set_position(taxis[i], Vector2f(taxiloc[1] - taxiRadius, taxiloc[2] - taxiRadius))
+				end
 			end
 			for i = 1:length(customers)
 				customerloc = findCustomerLocation(customerTimes, city, sol, i, t, nodeCoordinates)
