@@ -127,19 +127,19 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
     tt = traveltimes(pb)
     path = Tuple{Float64,Road}[]
 
-    initLoc = pb.taxis[id_taxi].initPos
+    initPos = pb.taxis[id_taxi].initPos
     for c in custs
         cust = pb.custs[c.id]
 
         #travels to customer origin
-        p = getPath(pb, initLoc, cust.orig, c.timeIn - tt[initLoc, cust.orig])
+        p = getPath(pb, initPos, cust.orig, c.timeIn - tt[initPos, cust.orig])
         append!(path,p)
 
         #travels with customer
         p = getPath(pb, cust.orig, cust.dest, c.timeIn + pb.customerTime)
         append!(path,p)
 
-        initLoc = cust.dest
+        initPos = cust.dest
     end
     return TaxiActions(path,custs)
 end
