@@ -20,7 +20,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     taxi = pb.taxis
     cust = pb.custs
     nTime = pb.nTime
-    custTime = toInt(pb.custTime)
+    custTime = toInt(pb.customerTime)
 
     nTaxis = length(taxi)
     nCusts = length(cust)

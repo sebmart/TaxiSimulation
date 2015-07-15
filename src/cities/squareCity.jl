@@ -26,7 +26,7 @@ type SquareCity <: TaxiProblem
         end
         #automatically select the number of customers
         c.waitingCost = 0.25
-        c.customerTime = 0.5
+        c.customerTime = 1.0
         c.width = width
         #Locs are numerated as follow :
         #123
