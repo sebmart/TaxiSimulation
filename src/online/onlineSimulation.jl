@@ -29,11 +29,19 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 		# Updates the online method, selecting for taxi actions within the given time period
 		newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)
-			if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
-				append!(totalAction.path,newTaxiActions[k].path)
+			if !isempty(newTaxiActions[k].path)
+				if newTaxiActions[k].path[1][1] < (currentStep - 1) * period
+					error("Path modification back in time!")
+				else
+					append!(totalAction.path,newTaxiActions[k].path)
+				end
 			end
-			if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
-				append!(totalAction.custs,newTaxiActions[k].custs)
+			if !isempty(newTaxiActions[k].custs)
+				if newTaxiActions[k].custs[1].timeIn < (currentStep - 1) * period
+					error("Customer modification back in time!")
+				else
+					append!(totalAction.custs,newTaxiActions[k].custs)
+				end
 			end
 		end
 		currentStep += 1

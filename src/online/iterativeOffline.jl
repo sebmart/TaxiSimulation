@@ -102,7 +102,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	om.startTime = endTime
 
 	println("===============")
-	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
+	@printf("%.2f %% solved", 100 * min(1.,endTime / om.pb.nTime))
 
 	# Returns new TaxiActions to OnlineSimulation
 	return onlineTaxiActions

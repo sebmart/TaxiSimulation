@@ -3,7 +3,6 @@
 type FixedAssignment <: OnlineMethod
 	pb::TaxiProblem
 	sol::IntervalSolution
-    currentCust::Vector{Int}
     startTime::Float64
 
 	FixedAssignment() = new()
@@ -13,9 +12,9 @@ end
 Initializes a given FixedAssignment with a selected taxi problem without customers
 """
 function onlineInitialize!(om::FixedAssignment, pb::TaxiProblem)
-	om.pb = pb
+	pb.taxis = copy(pb.taxis)
+    om.pb = pb
     om.startTime=0.
-    om.currentCust = ones(Int, length(pb.taxis))
     om.sol = IntervalSolution(pb)
 end
 
@@ -26,44 +25,50 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
     for c in sort(newCustomers, by=x->x.tmin)
         if length(pb.custs) < c.id
             resize!(pb.custs, c.id)
-            for i = 1:(c.id-length(pb.custs))
+            for i = 1:(c.id-length(om.sol.notTaken))
                 push!(om.sol.notTaken, true)
             end
         end
         if c.tmaxt >= om.startTime
-            pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,max(c.tmin,startTime),c.tmaxt,c.price)
+            pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,
+            max(c.tmin,om.startTime),c.tmaxt,c.price)
             insertCustomer!(pb,om.sol,c.id)
         end
     end
     actions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
-    for (k,custs) in enumerate(om.sol)
-        for i = currentCust[k]:length(custs)
-            c = custs[i]
-            if c.tSup <= endTime
-                if i == 1
-                    append!(actions[k].path, getPath(pb, pb.taxis[k].initPos,
-                    pb.custs[c.id].orig, c.tSup - tt[pb.taxis[k].initPos, pb.custs[c.id].orig]))
-                else
-                    append!(actions[k].path, getPath(pb, pb.custs[custs[i-1]].dest, pb.custs[c.id].orig,
-                    c.tSup - tt[pb.custs[custs[i-1]].dest, pb.custs[c.id].orig]))
-                end
+    for (k,custs) in enumerate(om.sol.custs)
+        while !isempty(custs)
+            c = custs[1]
+            if c.tSup - tt[pb.taxis[k].initPos, pb.custs[c.id].orig] <= endTime
+
+                append!(actions[k].path, getPath(pb, pb.taxis[k].initPos,
+                pb.custs[c.id].orig, c.tSup - tt[pb.taxis[k].initPos, pb.custs[c.id].orig]))
                 append!(actions[k].path, getPath(pb,pb.custs[c.id].orig,
-                pb.custs[c.id].dest, c.tSup + customerTime))
-                push!(actions[k].custs, CustomerAssignment(
-                c.id, c.tSup, c.tSup + 2*pb.customerTime + tt[pb.custs[c.id].orig,
-                pb.custs[c.id].dest]))
-                currentCust[k] += 1
-            elseif c.tInf < endTime
-                c.tInf = endTime
+                pb.custs[c.id].dest, c.tSup + pb.customerTime))
+
+                newTime = c.tSup + 2*pb.customerTime + tt[pb.custs[c.id].orig,
+                pb.custs[c.id].dest]
+                push!(actions[k].custs, CustomerAssignment(c.id, c.tSup, newTime))
+                pb.taxis[k] = Taxi(pb.taxis[k].id, pb.custs[c.id].dest, newTime)
+                shift!(custs)
+            elseif c.tInf - tt[pb.taxis[k].initPos, pb.custs[c.id].orig] < endTime
+                c.tInf = endTime + tt[pb.taxis[k].initPos, pb.custs[c.id].orig]
+                pb.taxis[k] = Taxi(pb.taxis[k].id, pb.taxis[k].initPos, endTime)
+                for j = 2 :length(custs)
+                    custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*pb.customerTime +
+                    tt[pb.custs[custs[j-1].id].orig, pb.custs[custs[j-1].id].dest] +
+                    tt[pb.custs[custs[j-1].id].dest, pb.custs[custs[j].id].orig])
+                end
+                break
             else
                 break
             end
         end
+
     end
     om.startTime = endTime
-    println("===============")
-	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
+	@printf("\r%.2f %% solved", 100 * min(1.,endTime / om.pb.nTime))
 
 	return actions
 end

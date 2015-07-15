@@ -128,7 +128,7 @@ immutable Coordinates
     y::Float64
 end
 
- 
+
 """
 Type used to solve online simulation problems
 Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::OnlineMethod,
