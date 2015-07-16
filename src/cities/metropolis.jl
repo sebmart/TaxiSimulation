@@ -14,6 +14,7 @@ type Metropolis <: TaxiProblem
     nTime::Float64
     waitingCost::Float64
     paths::ShortestPaths
+    customerTime::Float64
     discreteTime::Bool
 
     #--------------
@@ -46,18 +47,20 @@ type Metropolis <: TaxiProblem
         c.driveCost = 30.
         c.waitCost  = 10.
         c.timeSteptoSecond = 30.
+        c.customerTime = 30./c.timeSteptoSecond
+        discreteTime && (c.customerTime = round(c.customerTime))
         function cityTrvlTime()
             if discreteTime
-                rand(1:4)
+                rand(round(Int,30./c.timeSteptoSecond):round(Int,120./c.timeSteptoSecond))
             else
-                1+3*rand()
+                (30+90*rand())/c.timeSteptoSecond
             end
         end
         function longTrvlTime()
             if discreteTime
-                rand(5:15)
+                rand(round(Int,150./c.timeSteptoSecond):round(Int,450./c.timeSteptoSecond))
             else
-                5+10*rand()
+                (150+300*rand())/c.timeSteptoSecond
             end
         end
         cityTrvlCost(trvltime) = trvltime * c.driveCost*c.timeSteptoSecond/3600
@@ -185,8 +188,8 @@ end
 
 #Generate customers and taxis, demand is a parameter correlated to the number of
 # customers
-function generateProblem!(city::Metropolis, nTaxis::Int, demand::Float64,
-    tStart::DateTime, tEnd::DateTime)
+function generateProblem!(city::Metropolis, nTaxis::Int = 25, demand::Float64 = 0.55,
+    tStart::DateTime=now(), tEnd::DateTime=(now()+Hour(2)))
 
     city.tStart = tStart
     city.tEnd   = tEnd

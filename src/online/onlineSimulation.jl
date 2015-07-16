@@ -1,5 +1,5 @@
 """
-Simulates the online problem by initializing an Online Method, updating customers 
+Simulates the online problem by initializing an Online Method, updating customers
 using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
 """
 function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1.0, noTCall::Bool = false)
@@ -15,68 +15,46 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 	# Sorts customers by tcall
 	custs = sort(pb.custs, by = x -> x.tcall)
 
-	# Initializes the online method with the given taxi TaxiProblem
-	reducedPb = copy(pb)
-	reducedPb.custs = Customer[]
-	initialize!(om, reducedPb)
+	# Initializes the online method with the given taxi problem without the customers
+	init = copy(pb)
+	init.custs = Customer[]
+	onlineInitialize!(om, init)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
 	# Goes through time, adding customers and updating the online solution
 	currentStep = 1
 	currentIndex = 1
+	while (currentStep * period < pb.nTime)
+		# Selects for customers with tcall in the current time period
+		newCustomers = Customer[]
+		for index = currentIndex:length(custs)
+			if custs[index].tcall > (currentStep - 1) * period
+				newCustomers = custs[currentIndex:(index - 1)]
+				currentIndex = index
+				break
+			end
+		end
 
-	if noTCall
-		for (i, c) in enumerate(custs)
-			newCustomers = Customer[]
-			push!(newCustomers, c)
-			newTaxiActions = update!(om, pb.nTime, newCustomers)
-			for (k,totalAction) in enumerate(totalTaxiActions)
-				if !isempty(newTaxiActions[k].path)
+		# Updates the online method, selecting for taxi actions within the given time period
+		newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
+		for (k,totalAction) in enumerate(totalTaxiActions)
+			if !isempty(newTaxiActions[k].path)
+				if newTaxiActions[k].path[1][1] < (currentStep - 1) * period
+					error("Path modification back in time!")
+				else
 					append!(totalAction.path,newTaxiActions[k].path)
 				end
-				if !isempty(newTaxiActions[k].custs)
+			end
+			if !isempty(newTaxiActions[k].custs)
+				if newTaxiActions[k].custs[1].timeIn < (currentStep - 1) * period
+					error("Customer modification back in time!")
+				else
 					append!(totalAction.custs,newTaxiActions[k].custs)
 				end
 			end
 		end
+		currentStep += 1
 	end
-
-	# while (currentStep * period < pb.nTime)
-	# 	# Selects for customers with tcall in the current time period
-	# 	newCustomers = Customer[]
-	# 	for index = currentIndex:length(custs)
-	# 		if custs[index].tcall > (currentStep - 1) * period
-	# 			newCustomers = custs[currentIndex:(index - 1)]
-	# 			currentIndex = index
-	# 			break
-	# 		end
-	# 	end
-	# 	# Updates the online method, selecting for taxi actions within the given time period
-	# 	if !noTCall
-	# 		for c in newCustomers
-	# 			newTaxiActions = update!(om, min(currentStep * period, pb.nTime), [c])
-	# 			for (k,totalAction) in enumerate(totalTaxiActions)
-	# 				if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
-	# 					append!(totalAction.path,newTaxiActions[k].path)
-	# 				end
-	# 				if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
-	# 					append!(totalAction.custs,newTaxiActions[k].custs)
-	# 				end
-	# 			end
-	# 		end
-	# 	else
-	# 		newTaxiActions = update!(om, min(currentStep * period, pb.nTime), newCustomers)
-	# 		for (k,totalAction) in enumerate(totalTaxiActions)
-	# 			if !isempty(newTaxiActions[k].path) && newTaxiActions[k].path[1][1] >= (currentStep - 1) * period
-	# 				append!(totalAction.path,newTaxiActions[k].path)
-	# 			end
-	# 			if !isempty(newTaxiActions[k].custs) && newTaxiActions[k].custs[1].timeIn >= (currentStep - 1) * period
-	# 				append!(totalAction.custs,newTaxiActions[k].custs)
-	# 			end
-	# 		end
-	# 	end
-	# 	currentStep += 1
-	# end
 
 	# Identifies customers who are not taken as part of the online solution
 	customersNotTaken = trues(length(pb.custs))

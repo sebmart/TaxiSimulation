@@ -5,12 +5,13 @@
 module TaxiSimulation
 
 using HDF5, JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-SFML, DataStructures, Base.Dates, DataFrames
+SFML, DataStructures, Base.Dates, DataFrames, Base.Test
+
 
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-IntervalSolution, Coordinates, OnlineMethod
+IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
@@ -22,6 +23,9 @@ export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
+#Online
+export onlineSimulation
+
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
 testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
@@ -29,8 +33,6 @@ expandWindows!, dijkstraWithCosts, solutionCost
 
 #Visualization
 export visualize
-
-export EPS
 
 path = string(Pkg.dir("TaxiSimulation"))
 include("definitions.jl")
@@ -41,17 +43,25 @@ include("tools/shortestpath.jl")
 include("tools/realpath.jl")
 include("tools/tools.jl")
 
-#Solvers
+#cities
+include("cities/squareCity.jl")
+include("cities/metropolis.jl")
+include("cities/manhattan.jl")
+
+#offline
+include("offline/moveCustomer.jl")
 include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
 include("offline/fixedTimeOpt.jl")
 include("offline/intervalOpt.jl")
 
-include("cities/squareCity.jl")
-include("cities/metropolis.jl")
-include("cities/manhattan.jl")
+#online
+include("online/onlineSimulation.jl")
+include("online/iterativeOffline.jl")
+include("online/fixedAssignment.jl")
 
+#visualization
 include("visualization/visualize.jl")
 
 end

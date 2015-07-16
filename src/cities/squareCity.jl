@@ -11,6 +11,7 @@ type SquareCity <: TaxiProblem
     nTime::Float64
     waitingCost::Float64
     paths::ShortestPaths
+    customerTime::Float64
     discreteTime::Bool
 
     #-----------------------------------------
@@ -25,6 +26,7 @@ type SquareCity <: TaxiProblem
         end
         #automatically select the number of customers
         c.waitingCost = 0.25
+        c.customerTime = 1.0
         c.width = width
         #Locs are numerated as follow :
         #123
@@ -110,7 +112,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
 
     nLocs = (city.width)^2
     if nCusts == -1
-        nCusts = 2*int(ceil(city.nTime * length(city.taxis) /(2*2.5*city.width*1.5)))
+        nCusts = 2*ceil(Int, city.nTime * length(city.taxis) /(2*2.5*city.width*1.5))
     end
 
     customers = Array(Customer,nCusts)
@@ -147,7 +149,7 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
     return city
 end
 
-function generateProblem!(city::SquareCity, nTaxis::Int, nTime::Float64, nCusts::Int = -1)
+function generateProblem!(city::SquareCity, nTaxis::Int=2*city.width, nTime::Float64=150., nCusts::Int = -1)
     city.nTime = nTime
     generateTaxis!(city, nTaxis)
     generateCustomers!(city, nCusts)

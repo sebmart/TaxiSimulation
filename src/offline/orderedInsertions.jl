@@ -2,9 +2,6 @@
 #-- Compute a solution, given an order on customers (multiple insertions)
 #----------------------------------------
 
-include("moveCustomer.jl")
-
-
 #Only return cost and list of assignment, given problem and order on customers
 function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb))
     nTaxis, nCusts = length(pb.taxis), length(pb.custs)
