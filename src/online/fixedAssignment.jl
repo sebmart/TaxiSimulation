@@ -51,10 +51,15 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
                 pb.custs[c.id].dest]
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tSup, newTime))
                 pb.taxis[k] = Taxi(pb.taxis[k].id, pb.custs[c.id].dest, newTime)
+				custs[1].tInf = custs[1].tSup
+				for j = 2 :length(custs)
+                    custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*pb.customerTime +
+                    tt[pb.custs[custs[j-1].id].orig, pb.custs[custs[j-1].id].dest] +
+                    tt[pb.custs[custs[j-1].id].dest, pb.custs[custs[j].id].orig])
+                end
                 shift!(custs)
             elseif c.tInf - tt[pb.taxis[k].initPos, pb.custs[c.id].orig] < endTime
                 c.tInf = endTime + tt[pb.taxis[k].initPos, pb.custs[c.id].orig]
-                pb.taxis[k] = Taxi(pb.taxis[k].id, pb.taxis[k].initPos, endTime)
                 for j = 2 :length(custs)
                     custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*pb.customerTime +
                     tt[pb.custs[custs[j-1].id].orig, pb.custs[custs[j-1].id].dest] +
@@ -65,7 +70,9 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
                 break
             end
         end
-
+		if pb.taxis[k].initTime < endTime
+			pb.taxis[k] = Taxi(pb.taxis[k].id, pb.taxis[k].initPos, endTime)
+		end
     end
     om.startTime = endTime
 	@printf("\r%.2f %% solved", 100 * min(1.,endTime / om.pb.nTime))
