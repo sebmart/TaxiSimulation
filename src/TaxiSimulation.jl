@@ -10,7 +10,7 @@ SFML, DataStructures, Base.Dates, DataFrames
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-IntervalSolution, Coordinates, OnlineMethod, Uber
+IntervalSolution, Coordinates, OnlineMethod
 
 #Cities
 export Manhattan, Metropolis, SquareCity,

@@ -2,7 +2,9 @@ using TaxiSimulation
 using LightGraphs
 
 problem = Metropolis(8, 8)
-generateProblem!(problem, 20, 0.45, now(), now() + Dates.Hour(3))
+generateProblem!(problem, 10, 0.2, now(), now() + Dates.Hour(3))
+
+problem2 = Square
 cd("/Users/bzeng/.julia/v0.4/TaxiSimulation/src/online")
 
 # onlineSimulation(problem, IterativeOffline(90), period = 10)
