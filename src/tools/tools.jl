@@ -38,6 +38,59 @@ function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
     return cost
 end
 
+
+"""
+Test if a TaxiSolution is feasible
+- The paths must be feasible paths (time to cross roads, no jumping..)
+- The customers must correspond to the path, and be driven  directly as soon
+ as picked-up, using the shortest path available
+"""
+function testSolution(pb::TaxiProblem, sol::TaxiSolution)
+    custs = pb.custs
+    nt = trues(length(pb.custs))
+    tt = traveltimes(pb)
+    custTime = pb.customerTime
+    for (k,actions) in enumerate(sol.taxis)
+        lastTime = pb.taxis[k].initTime - EPS
+        lastRoad = Road(pb.taxis[k].initPos,pb.taxis[k].initPos)
+        idc = isempty(actions.custs) ? 0 : 1
+        for (t,r) in actions.path
+            if 0<idc<=length(actions.custs)
+                if lastTime < actions.custs[idc].timeIn <= t
+                    @test_approx_eq_eps (t - custTime) actions.custs[idc].timeIn EPS
+                    @test src(r) == custs[actions.custs[idc].id].orig
+                elseif lastTime < actions.custs[idc].timeOut <= t +EPS
+                    @test_approx_eq_eps (lastTime + custTime + pb.roadTime[src(lastRoad),dst(lastRoad)]) actions.custs[idc].timeOut EPS
+                    @test src(r) == custs[actions.custs[idc].id].dest
+                    @test_approx_eq_eps (actions.custs[idc].timeOut - actions.custs[idc].timeIn) (2*custTime + tt[custs[actions.custs[idc].id].orig,custs[actions.custs[idc].id].dest]) EPS
+                    nt[actions.custs[idc].id] = false
+
+                    idc+=1
+                end
+            end
+            @test dst(lastRoad) == src(r)
+            @test (lastTime + pb.roadTime[src(lastRoad),dst(lastRoad)]) <= (t + EPS)
+            lastTime, lastRoad = t, r
+        end
+        if idc>0
+            if idc < length(actions.custs)
+                error("Customer list not good for taxi $k")
+            elseif idc == length(actions.custs)
+                @test_approx_eq_eps (lastTime + custTime + pb.roadTime[src(lastRoad),dst(lastRoad)]) actions.custs[idc].timeOut EPS
+                @test dst(lastRoad) == custs[actions.custs[idc].id].dest
+                @test_approx_eq_eps (actions.custs[idc].timeOut - actions.custs[idc].timeIn) (2*custTime + tt[custs[actions.custs[idc].id].orig,custs[actions.custs[idc].id].dest]) EPS
+                nt[actions.custs[idc].id] = false
+            end
+        end
+    end
+
+    if sol.notTaken != nt
+        error("NotTaken is not correct")
+    end
+    @test_approx_eq_eps sol.cost solutionCost(pb,sol.taxis) EPS
+    println("all good!")
+end
+
 "test if interval solution is indeed feasible"
 function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     custs = pb.custs

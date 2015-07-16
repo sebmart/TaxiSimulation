@@ -22,6 +22,7 @@ Initializes a given OnlineMethod with a selected taxi problem without customers
 """
 function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.pb = pb
+	om.pb.taxis = copy(om.pb.taxis)
 end
 
 """

@@ -66,9 +66,9 @@ function printMedium(s::TaxiSolution, io::IO = STDOUT)
         moves = true
       end
       if i < length(tax.path)
-        @printf(io, "%i=>%i (%.2f) - ", src(road), dst(road), tax.path[i+1][1] - t)
+        @printf(io, "%i=>%i (%.2f) - ", src(road), dst(road), t)
       else
-        @printf(io, "%i=>%i", src(road), dst(road))
+        @printf(io, "%i=>%i (%.2f)", src(road), dst(road), t)
       end
     end
     if idc <= length(tax.custs)
