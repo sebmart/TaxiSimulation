@@ -7,12 +7,16 @@ type IterativeOffline <: OnlineMethod
 	customers::Vector{Customer}
 	notTaken::Dict{Int64, Bool}
 
+	noTcall::Bool
+	noTmaxt::Bool	
 	function IterativeOffline(tHorizon::Float64)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
 		offline.customers = Customer[]
 		offline.notTaken = Dict{Int64, Bool}()
+		noTcall = false
+		noTmaxt = false
 		return offline
 	end
 end
@@ -82,7 +86,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		end
 		# Selects for taxi paths that finish before the last customer's dropoff
 		for (t, road) in TaxiAction.path
-			if isempty(onlineTaxiActions[i].custs) || t + startOffline >= onlineTaxiActions[i].custs[end].timeOut - EPS
+			if isempty(onlineTaxiActions[i].custs) || t + startOffline >= onlineTaxiActions[i].custs[end].timeOut - TaxiSimulation.EPS
 				break
 			else
 				push!(onlineTaxiActions[i].path, (t + startOffline, road))

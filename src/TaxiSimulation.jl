@@ -24,7 +24,7 @@ export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Online
-export onlineSimulation
+export onlineSimulation, initialize
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
