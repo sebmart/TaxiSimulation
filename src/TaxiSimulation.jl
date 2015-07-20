@@ -11,7 +11,8 @@ SFML, DataStructures, Base.Dates, DataFrames, Base.Test
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment
+IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment, 
+Uber
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
@@ -24,7 +25,7 @@ export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
 
 #Online
-export onlineSimulation, initialize
+export onlineSimulation
 
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
@@ -60,6 +61,7 @@ include("offline/intervalOpt.jl")
 include("online/onlineSimulation.jl")
 include("online/iterativeOffline.jl")
 include("online/fixedAssignment.jl")
+include("online/uber.jl")
 
 #visualization
 include("visualization/visualize.jl")

@@ -3,12 +3,14 @@ type Uber <: OnlineMethod
 	startTime::Float64
 
 	noTcall::Bool
-	noTmaxt::Bool	
-	function Uber(tHorizon::Float64)
+	noTmaxt::Bool
+	bySteps::Bool	
+	function Uber(steps::Bool)
 		offline = new()
 		offline.startTime = 0.0
 		offline.noTcall = true
 		offline.noTmaxt = true
+		offline.bySteps = steps
 		return offline
 	end
 end

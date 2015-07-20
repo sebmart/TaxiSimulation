@@ -21,39 +21,78 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 	onlineInitialize!(om, init)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
-	# Goes through time, adding customers and updating the online solution
-	currentStep = 1
-	currentIndex = 1
-	while (currentStep * period < pb.nTime)
-		# Selects for customers with tcall in the current time period
-		newCustomers = Customer[]
-		for index = currentIndex:length(custs)
-			if custs[index].tcall > (currentStep - 1) * period
-				newCustomers = custs[currentIndex:(index - 1)]
-				currentIndex = index
-				break
+	if om.bySteps
+		# Goes through time, adding customers and updating the online solution
+		currentStep = 1
+		currentIndex = 1
+		while (currentStep * period < pb.nTime)
+			# Selects for customers with tcall in the current time period
+			newCustomers = Customer[]
+			for index = currentIndex:length(custs)
+				if custs[index].tcall > (currentStep - 1) * period
+					newCustomers = custs[currentIndex:(index - 1)]
+					currentIndex = index
+					break
+				end
 			end
-		end
 
-		# Updates the online method, selecting for taxi actions within the given time period
-		newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
-		for (k,totalAction) in enumerate(totalTaxiActions)
-			if !isempty(newTaxiActions[k].path)
-				if newTaxiActions[k].path[1][1] < (currentStep - 1) * period
-					error("Path modification back in time!")
-				else
-					append!(totalAction.path,newTaxiActions[k].path)
+			# Updates the online method, selecting for taxi actions within the given time period
+			newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
+			for (k,totalAction) in enumerate(totalTaxiActions)
+				if !isempty(newTaxiActions[k].path)
+					if newTaxiActions[k].path[1][1] < (currentStep - 1) * period
+						error("Path modification back in time!")
+					else
+						append!(totalAction.path,newTaxiActions[k].path)
+					end
+				end
+				if !isempty(newTaxiActions[k].custs)
+					if newTaxiActions[k].custs[1].timeIn < (currentStep - 1) * period
+						error("Customer modification back in time!")
+					else
+						append!(totalAction.custs,newTaxiActions[k].custs)
+					end
 				end
 			end
-			if !isempty(newTaxiActions[k].custs)
-				if newTaxiActions[k].custs[1].timeIn < (currentStep - 1) * period
-					error("Customer modification back in time!")
-				else
-					append!(totalAction.custs,newTaxiActions[k].custs)
-				end
-			end
+			currentStep += 1
 		end
-		currentStep += 1
+	else
+		# Goes through time, adding customers and updating the online solution
+		startIndex = 1
+		while (startIndex <= length(custs))
+			# Selects for customers with tcall in the current time period
+			newCustomers = Customer[]
+			finishIndex = startIndex
+			while (finishIndex <= length(custs) && custs[finishIndex].tcall < custs[startIndex].tcall + TaxiSimulation.EPS)
+				finishIndex += 1
+			end
+			newCustomers = custs[startIndex:finishIndex - 1]
+
+			# Updates the online method, selecting for taxi actions within the given time period
+			if finishIndex <= length(custs)
+				newTaxiActions = onlineUpdate!(om, min(custs[finishIndex].tcall, pb.nTime), newCustomers)
+			else
+				newTaxiActions = onlineUpdate!(om, pb.nTime, newCustomers)
+			end
+
+			for (k,totalAction) in enumerate(totalTaxiActions)
+				if !isempty(newTaxiActions[k].path)
+					if newTaxiActions[k].path[1][1] < custs[startIndex].tcall
+						error("Path modification back in time!")
+					else
+						append!(totalAction.path,newTaxiActions[k].path)
+					end
+				end
+				if !isempty(newTaxiActions[k].custs)
+					if newTaxiActions[k].custs[1].timeIn < custs[startIndex].tcall
+						error("Customer modification back in time!")
+					else
+						append!(totalAction.custs,newTaxiActions[k].custs)
+					end
+				end
+			end
+			startIndex = finishIndex
+		end
 	end
 
 	# Identifies customers who are not taken as part of the online solution

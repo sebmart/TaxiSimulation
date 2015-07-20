@@ -1,20 +1,22 @@
 using TaxiSimulation
-using LightGraphs
-cd("/Users/bzeng/.julia/v0.4/TaxiSimulation/src/online")
-include("onlineSimulation2.jl")
-include("IterativeOffline.jl")
-problem = Metropolis(8, 8)
-generateProblem!(problem, 5, 0.1, now(), now() + Dates.Hour(3))
+# using LightGraphs
+# cd("/Users/bzeng/.julia/v0.4/TaxiSimulation/src/tools/")
+# using("tools.jl")
 
-s1 = onlineSimulation2(problem, IterativeOffline(90.0), period = 10.0)
+problem = Metropolis(8, 8)
+generateProblem!(problem, 25, 0.5, now(), now() + Dates.Hour(3))
+# s0 = intervalOpt(problem)
+
+s1 = onlineSimulation(problem, IterativeOffline(200.0, true, true), period = 5.0)
 testSolution(problem, s1)
 
-s2 = onlineSimulation2(problem, IterativeOffline2(90.0), period = 10.0)
+s2 = onlineSimulation(problem, IterativeOffline(200.0, true, false), period = 5.0)
 testSolution(problem, s2)
 
-include("uber.jl")
-s3 = onlineSimulation2(problem, Uber(90.0), period = 10.0)
+s3 = onlineSimulation(problem, FixedAssignment(false), period = 10.0)
 testSolution(problem, s3)
-printSolution(s3)
 
-visualize(problem, s3)
+s4 = onlineSimulation(problem, Uber(false), period = 10.0)
+testSolution(problem, s4)
+
+visualize(problem, s1)
