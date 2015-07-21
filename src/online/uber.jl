@@ -5,11 +5,12 @@ type Uber <: OnlineMethod
 	noTcall::Bool
 	noTmaxt::Bool
 	bySteps::Bool	
-	function Uber(steps::Bool)
+	function Uber(steps::Bool; removeTcall::Bool = true, removeTmaxt::Bool = true) 
 		offline = new()
 		offline.startTime = 0.0
-		offline.noTcall = true
-		offline.noTmaxt = true
+		offline.noTcall = removeTcall
+		print(removeTmaxt)
+		offline.noTmaxt = removeTmaxt
 		offline.bySteps = steps
 		return offline
 	end
@@ -78,8 +79,8 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 		end
 	end
 
-	# println("===============")
-	# @printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
+	println("===============")
+	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
 
 	# Returns new TaxiActions to OnlineSimulation
 	om.startTime = endTime

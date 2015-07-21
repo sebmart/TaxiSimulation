@@ -4,9 +4,13 @@ using TaxiSimulation
 # using("tools.jl")
 
 problem = Metropolis(8, 8)
-generateProblem!(problem, 2, 0.5, now(), now() + Dates.Hour(3))
-# s0 = intervalOpt(problem)
+generateProblem!(problem, 10, 0.5, now(), now() + Dates.Hour(3))
 
+
+# problem = Metropolis(8, 8)
+# generateProblem!(problem, 5, 0.2, now(), now() + Dates.Hour(1))
+
+# allows for taxis to start driving towards customers w
 s1 = onlineSimulation(problem, IterativeOffline(200.0, true, true), period = 5.0)
 testSolution(problem, s1)
 
@@ -18,5 +22,8 @@ testSolution(problem, s3)
 
 s4 = onlineSimulation(problem, Uber(false), period = 10.0)
 testSolution(problem, s4)
+
+s5 = onlineSimulation(problem, Uber(false, removeTmaxt = false), period = 10.0)
+testSolution(problem, s5)
 
 visualize(problem, s1)

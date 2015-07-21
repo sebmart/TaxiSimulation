@@ -35,10 +35,8 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; period::Float64 = 1
 					break
 				end
 			end
-			# println("Step: $((currentStep-1)*period), $(currentStep*period)")
 			# Updates the online method, selecting for taxi actions within the given time period
 			newTaxiActions = onlineUpdate!(om, min(currentStep * period, pb.nTime), newCustomers)
-			# println(newTaxiActions)
 			for (k,totalAction) in enumerate(totalTaxiActions)
 				if !isempty(newTaxiActions[k].path)
 					if newTaxiActions[k].path[1][1] < (currentStep - 1) * period

@@ -74,7 +74,7 @@ end
 "Represent the solution of a simulation"
 type TaxiSolution
     taxis::Array{TaxiActions, 1}
-    notTaken::BitVector1
+    notTaken::BitVector
     cost::Float64
 end
 
