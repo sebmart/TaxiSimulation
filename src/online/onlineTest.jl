@@ -4,7 +4,7 @@ using TaxiSimulation
 # using("tools.jl")
 
 problem = Metropolis(8, 8)
-generateProblem!(problem, 25, 0.5, now(), now() + Dates.Hour(3))
+generateProblem!(problem, 2, 0.5, now(), now() + Dates.Hour(3))
 # s0 = intervalOpt(problem)
 
 s1 = onlineSimulation(problem, IterativeOffline(200.0, true, true), period = 5.0)

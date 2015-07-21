@@ -35,7 +35,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1))
+    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag = 0))
 
     # =====================================================
     # Decision variables
@@ -237,7 +237,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1))
+    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag = 0))
 
     # =====================================================
     # Decision variables

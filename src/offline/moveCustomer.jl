@@ -4,7 +4,6 @@
 
 "Take an IntervalSolution and insert a not-taken customer"
 function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
-
     #-------------------------
     # Select the taxi to assign
     #-------------------------
