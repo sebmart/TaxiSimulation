@@ -101,7 +101,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     for k = 1:length(pb.taxis)
         list = sol.custs[k]
         if length(list) >= 1
-            list[1].tInf = max(custs[list[1].id].tmin, tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+            list[1].tInf = max(custs[list[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
             list[end].tSup = custs[list[end].id].tmaxt
             if nt[list[1].id]
                 nt[list[1].id] = false
@@ -150,7 +150,7 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
     for k = 1:length(pb.taxis)
         list = sol.custs[k]
         if length(list) >= 1
-            list[1].tInf = max(custs[list[1].id].tmin, tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+            list[1].tInf = max(custs[list[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
             list[end].tSup = custs[list[end].id].tmaxt
         end
         for i = 2:(length(list))
@@ -166,7 +166,7 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
         #quick check..
         for c in list
             if c.tInf > c.tSup
-                error("Solution Infeasible for taxi $k")
+                error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
         end
     end

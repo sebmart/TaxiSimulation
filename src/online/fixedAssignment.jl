@@ -1,11 +1,20 @@
-
 "Insert customer in a taxi timeline, but cannot be modified later"
 type FixedAssignment <: OnlineMethod
 	pb::TaxiProblem
 	sol::IntervalSolution
     startTime::Float64
 
-	FixedAssignment() = new()
+    noTcall::Bool
+    noTmaxt::Bool   
+    bySteps::Bool
+	# FixedAssignment() = new()
+    function FixedAssignment(steps::Bool)
+        offline = new()
+        offline.noTcall = false
+        offline.noTmaxt = false
+        offline.bySteps = steps
+        return offline
+    end
 end
 
 """
