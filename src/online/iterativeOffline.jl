@@ -8,19 +8,19 @@ type IterativeOffline <: OnlineMethod
 	notTaken::Dict{Int64, Bool}
 
 	noTcall::Bool
-	noTmaxt::Bool	
-	bySteps::Bool
+	noTmaxt::Bool
+	period::Float64
 
 	beforeEndTime::Bool
-	function IterativeOffline(tHorizon::Float64, steps::Bool, before::Bool;)
+	function IterativeOffline(tHorizon::Float64, period::Float64, before::Bool;)
 		offline = new()
-		offline.tHorizon = tHorizon		
+		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
 		offline.customers = Customer[]
 		offline.notTaken = Dict{Int64, Bool}()
 		offline.noTcall = false
 		offline.noTmaxt = false
-		offline.bySteps = steps
+		offline.period = period
 		offline.beforeEndTime = before
 		return offline
 	end

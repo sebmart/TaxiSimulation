@@ -5,14 +5,14 @@ type FixedAssignment <: OnlineMethod
     startTime::Float64
 
     noTcall::Bool
-    noTmaxt::Bool   
-    bySteps::Bool
+    noTmaxt::Bool
+    period::Float64
 	# FixedAssignment() = new()
-    function FixedAssignment(steps::Bool)
+    function FixedAssignment(;period::Float64=0.)
         offline = new()
         offline.noTcall = false
         offline.noTmaxt = false
-        offline.bySteps = steps
+        offline.period = period
         return offline
     end
 end
