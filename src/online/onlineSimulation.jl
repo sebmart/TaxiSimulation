@@ -47,7 +47,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod)
 		# Goes through time, adding customers and updating the online solution
 		currentStep = 1
 		currentIndex = 1
-		while (currentStep * period < pb.nTime)
+		while (currentStep-1) * period <= pb.nTime
 			newCustomers = Customer[]
 			for index = currentIndex:length(custs)
 				if custs[index].tcall > (currentStep - 1) * period
@@ -63,14 +63,14 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod)
 	else
 		# Goes through time, adding customers and updating the online solution
 		startIndex = 1
-		while (startIndex <= length(custs))
+		while startIndex <= length(custs)
 			# Selects for customers with tcall in the current time period
 			newCustomers = Customer[]
 			finishIndex = startIndex
-			while (finishIndex <= length(custs) && custs[finishIndex].tcall < custs[startIndex].tcall + TaxiSimulation.EPS)
+			while (finishIndex <= length(custs) && custs[finishIndex].tcall < custs[startIndex].tcall + EPS)
 				finishIndex += 1
 			end
-			newCustomers = custs[startIndex:finishIndex - 1]
+			newCustomers = custs[startIndex:(finishIndex - 1)]
 
 			# Updates the online method, selecting for taxi actions within the given time period
 			if finishIndex <= length(custs)
