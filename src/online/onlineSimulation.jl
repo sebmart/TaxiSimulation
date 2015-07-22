@@ -31,14 +31,14 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 		newTaxiActions = onlineUpdate!(om, tEnd, newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)
 			if !isempty(newTaxiActions[k].path)
-				if newTaxiActions[k].path[1][1] < tStart
-					error("Path modification back in time!")
+				if newTaxiActions[k].path[1][1] < tStart - EPS
+					error("Path modification back in time: $(newTaxiActions[k].path[1][1]) < $tStart !")
 				else
 					append!(totalAction.path,newTaxiActions[k].path)
 				end
 			end
 			if !isempty(newTaxiActions[k].custs)
-				if newTaxiActions[k].custs[1].timeIn < tStart
+				if newTaxiActions[k].custs[1].timeIn < tStart - EPS
 					error("Customer modification back in time!")
 				else
 					append!(totalAction.custs,newTaxiActions[k].custs)

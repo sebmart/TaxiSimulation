@@ -63,14 +63,14 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 				if customer.tmaxt >= startOffline
 					tmaxt = min(customer.tmaxt, finishOffline) - startOffline
 					push!(IDtoIndex, customer.id)
-					newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., 0.0, tmaxt, customer.price)
+					newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., 0., tmaxt, customer.price)
 					push!(currentCustomers, newCust)
 				end
 			elseif customer.tmin <= finishOffline
 			 	tmaxt = min(customer.tmaxt, finishOffline) - startOffline
 			 	push!(IDtoIndex, customer.id)
-				c = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., customer.tmin - startOffline, tmaxt, customer.price)
-				push!(currentCustomers, c)
+				newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., customer.tmin - startOffline, tmaxt, customer.price)
+				push!(currentCustomers, newCust)
 			end
 		end
 	end
