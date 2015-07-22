@@ -2,6 +2,7 @@
 type IterativeOffline <: OnlineMethod
 	tHorizon::Float64
 	startTime::Float64
+	nTime::Float64
 
 	pb::TaxiProblem
 	customers::Vector{Customer}
@@ -31,6 +32,7 @@ Initializes a given OnlineMethod with a selected taxi problem without customers
 """
 function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.pb = pb
+	om.nTime = pb.nTime
 	om.pb.taxis = copy(om.pb.taxis)
 	om.pb.custs = Customer[]
 end
@@ -44,7 +46,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	# Sets the time window for the offline solver
 	tt = TaxiSimulation.traveltimes(om.pb)
 	startOffline = om.startTime
-	finishOffline = min(om.pb.nTime,startOffline + om.tHorizon)
+	finishOffline = min(om.nTime,startOffline + om.tHorizon)
 
 	# Adds the new customers to the problem's customers
 	for c in newCustomers
@@ -59,15 +61,15 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		if om.notTaken[customer.id]
 			if customer.tmin < startOffline
 				if customer.tmaxt >= startOffline
-					tmin = 0.0; tmaxt = min(customer.tmaxt, finishOffline) - startOffline
+					tmaxt = min(customer.tmaxt, finishOffline) - startOffline
 					push!(IDtoIndex, customer.id)
-					c = Customer(length(IDtoIndex), customer.orig, customer.dest, 0, tmin, tmaxt, customer.price)
-					push!(currentCustomers, c)
+					newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., 0.0, tmaxt, customer.price)
+					push!(currentCustomers, newCust)
 				end
-			elseif customer.tmin < finishOffline
+			elseif customer.tmin <= finishOffline
 			 	tmaxt = min(customer.tmaxt, finishOffline) - startOffline
 			 	push!(IDtoIndex, customer.id)
-				c = Customer(length(IDtoIndex), customer.orig, customer.dest, 0, customer.tmin - startOffline, tmaxt, customer.price)
+				c = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., customer.tmin - startOffline, tmaxt, customer.price)
 				push!(currentCustomers, c)
 			end
 		end

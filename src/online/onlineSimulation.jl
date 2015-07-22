@@ -23,8 +23,9 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})
 		if verbose
-			l = string(Int[c.id for c in newCustomers])
-			@printf("Online Step -- time %.2f => %.2f (%.2f%%), customer(s) : %s\n", tStart, tEnd, l)
+			l = string([c.id for c in newCustomers])
+			println("================================")
+			@printf("Online Step -- time %.2f => %.2f (%.2f%%), customer(s) : %s\n", tStart, tEnd, 100*tEnd/pb.nTime, l)
 		end
 		# Updates the online method, selecting for taxi actions within the given time period
 		newTaxiActions = onlineUpdate!(om, tEnd, newCustomers)
