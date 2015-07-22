@@ -219,7 +219,7 @@ function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, 
         i2 = 1
         if isempty(sol.custs[k])
             pos = pb.taxis[k].initPos
-            initTime = pb.taxis[k].initPos
+            initTime = pb.taxis[k].initTime
             for (j,c) in enumerate(custsB)
                 if initTime + tt[pos, custs[c.id].orig] <= c.tSup
                     break
