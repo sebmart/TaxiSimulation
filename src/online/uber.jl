@@ -4,14 +4,14 @@ type Uber <: OnlineMethod
 
 	noTcall::Bool
 	noTmaxt::Bool
-	bySteps::Bool	
-	function Uber(steps::Bool; removeTcall::Bool = true, removeTmaxt::Bool = true) 
+	period::Bool
+	function Uber(; removeTcall::Bool = true, removeTmaxt::Bool = true, period::Float64 = 0.0)
 		offline = new()
 		offline.startTime = 0.0
 		offline.noTcall = removeTcall
 		print(removeTmaxt)
 		offline.noTmaxt = removeTmaxt
-		offline.bySteps = steps
+		offline.period = period
 		return offline
 	end
 end
@@ -25,8 +25,8 @@ function onlineInitialize!(om::Uber, pb::TaxiProblem)
 end
 
 """
-Updates OnlineMethod to account for new customers, returns a list of TaxiActions 
-since the last update. Needs initial information to start from. 
+Updates OnlineMethod to account for new customers, returns a list of TaxiActions
+since the last update. Needs initial information to start from.
 """
 function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer})
 	start = om.startTime
@@ -36,7 +36,7 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 
 	# Initializes onlineTaxiActions to update accordingly
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
-	
+
 	# Iterates through all customers and assigns them to the closest free taxi, if available
 	for (i, c) in enumerate(newCustomers)
 		minPickupTime, index = Inf, 0
@@ -60,18 +60,18 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 			# Adds the path from the destination of the previous customer to the origin of the new customer
 			pickupT = minPickupTime
 			dropoffT = pickupT + tt[c.orig, c.dest] + 2 * om.pb.customerTime
-			
+
 			# Adds the path from the origin to the destination of the new customer
 			append!(t.path, TaxiSimulation.getPath(om.pb, om.pb.taxis[index].initPos, c.orig, start))
 			append!(t.path, TaxiSimulation.getPath(om.pb, c.orig, c.dest, pickupT + om.pb.customerTime))
-			
+
 			# Adds the customer assignment to the taxi's customers
 			push!(onlineTaxiActions[index].custs, CustomerAssignment(c.id, pickupT, dropoffT))
 			# Updates the taxi's initial location and time
 			om.pb.taxis[index] = Taxi(om.pb.taxis[index].id, c.dest, dropoffT)
 		end
 	end
-	
+
 	# Updates the remaining taxis
 	for (i, taxiAction) in enumerate(onlineTaxiActions)
 		if om.pb.taxis[i].initTime < endTime
@@ -79,11 +79,7 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 		end
 	end
 
-	println("===============")
-	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
-
 	# Returns new TaxiActions to OnlineSimulation
 	om.startTime = endTime
 	return onlineTaxiActions
 end
-

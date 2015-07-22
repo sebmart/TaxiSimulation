@@ -16,6 +16,9 @@ intervalOpt(pb::TaxiProblem, init::TaxiSolution; timeLimit = 100) =
 intervalOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)
 
 function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+    if length(pb.custs) == 0.
+        return IntervalSolution(pb)
+    end
 
     taxi = pb.taxis
     cust = pb.custs
@@ -227,6 +230,9 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     nTime = pb.nTime
     nTaxis = length(taxi)
     nCusts = length(cust)
+    if length(cust) == 0.
+        return IntervalSolution(pb)
+    end
 
     #short alias
     tt = traveltimes(pb)
@@ -355,6 +361,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     i[c] - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
 
     status = solve(m)
+
     tx = getValue(x)
     ty = getValue(y)
     ti = getValue(i)

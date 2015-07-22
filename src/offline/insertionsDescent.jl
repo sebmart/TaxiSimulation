@@ -4,8 +4,20 @@
 include("orderedInsertions.jl")
 function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOrderedCustomers(pb))
     order = start
+
     startTime = time_ns()
     best = orderedInsertions(pb, order)
+
+    #if no customer
+    if best.notTaken == trues(length(pb.custs))
+        best = IntervalSolution(pb)
+        print("\nFinal: $(-best.cost) dollars\n")
+        return best
+    end
+    if length(pb.custs) == 1
+        print("\nFinal: $(-best.cost) dollars\n")
+        return best
+    end
     println("Try: 1, $(-best.cost) dollars\n")
     success = 0.
     for trys in 2:n

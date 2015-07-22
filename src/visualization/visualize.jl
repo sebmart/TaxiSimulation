@@ -3,7 +3,11 @@ type customerTime
 		driving::Tuple{Float64, Float64, Int64}
 end
 
-function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale::Float64 = 1.0)
+function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale::Float64 = -1.)
+	if radiusScale < 0.
+		radiusScale = (typeof(c) == Manhattan) ? 0.3 : 1.0
+	end
+
 	city = c
 	sol = s
 

@@ -48,7 +48,8 @@ type Manhattan <: TaxiProblem
         c.timeSteptoSecond = 1.0
         c.customerTime = 30/c.timeSteptoSecond
         c.turnTime = 10/c.timeSteptoSecond
-        c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost/3600
+        c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost / 3600.
+        c.waitingCost = c.waitCost * c.timeSteptoSecond / 3600.
 
 
         data = load("$(path)/src/cities/manhattan/manhattan.jld")

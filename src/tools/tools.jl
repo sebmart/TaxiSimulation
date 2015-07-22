@@ -99,7 +99,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     custTime = pb.customerTime
 
     for k = 1:length(pb.taxis)
-        list = sol.custs[k]
+        list = copy(sol.custs[k])
         if length(list) >= 1
             list[1].tInf = max(custs[list[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
             list[end].tSup = custs[list[end].id].tmaxt
@@ -126,7 +126,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
         end
         for c in list
             if c.tInf > c.tSup
-                error("Solution Infeasible for taxi $k")
+                error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
         end
     end
@@ -336,7 +336,7 @@ TaxiSolution() = TaxiSolution(TaxiActions[], trues(0), 0.0)
 IntervalSolution() = IntervalSolution(Vector{CustomerAssignment}[], trues(0), 0.0)
 IntervalSolution(pb::TaxiProblem) =
 IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
-trues(length(pb.custs)), -pb.nTime * length(pb.taxis) * pb.waitingCost)
+trues(length(pb.custs)), pb.nTime * length(pb.taxis) * pb.waitingCost)
 
 copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)
 
