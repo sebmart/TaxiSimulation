@@ -49,13 +49,12 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod)
 		currentIndex = 1
 		while (currentStep-1) * period <= pb.nTime
 			newCustomers = Customer[]
-			for index = currentIndex:length(custs)
-				if custs[index].tcall > (currentStep - 1) * period
-					newCustomers = custs[currentIndex:(index - 1)]
-					currentIndex = index
-					break
-				end
+			index = currentIndex
+			while index <= length(custs) && custs[index].tcall <= (currentStep - 1) * period
+				index += 1
 			end
+			newCustomers = custs[currentIndex:(index - 1)]
+			currentIndex = index
 			# Selects for customers with tcall in the current time period
 			onlineStep!((currentStep-1)*period, min(pb.nTime,currentStep*period), newCustomers)
 			currentStep += 1
