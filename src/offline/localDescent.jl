@@ -4,6 +4,12 @@
 
 function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb))
     nTaxis = length(pb.taxis)
+    #if no customer
+    if orderedInsertions(pb).notTaken == trues(length(pb.custs))
+        best = IntervalSolution(pb)
+        print("\nFinal: $(-best.cost) dollars\n")
+        return best
+    end
     println("Start, $(-start.cost) dollars")
     sol =  copySolution(start)
     best = sol.cost
@@ -11,11 +17,12 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
     startTime = time_ns()
     for trys in 1:maxTry
         k = rand(1:nTaxis)
+        while isempty(sol.custs[k])
+            k = rand(1:nTaxis)
+        end
         k2 = rand( 1 :(nTaxis-1))
         k2 =  k2 >= k ? k2+1 : k2
-        if isempty(sol.custs[k])
-            continue
-        end
+
         i = rand(1:length(sol.custs[k]))
         sol = splitAndMove!(pb, sol, k, i, k2)
         if sol.cost < best
