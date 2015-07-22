@@ -1,5 +1,6 @@
 "iterate offline algorithm, simulating until tHorizon"
 type IterativeOffline <: OnlineMethod
+	solver::Function
 	tHorizon::Float64
 	startTime::Float64
 	nTime::Float64
@@ -13,10 +14,11 @@ type IterativeOffline <: OnlineMethod
 	period::Float64
 
 	beforeEndTime::Bool
-	function IterativeOffline(period::Float64, tHorizon::Float64 ; completeMoves::Bool=false)
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
+		offline.solver = solver
 		offline.customers = Customer[]
 		offline.notTaken = Dict{Int64, Bool}()
 		offline.noTcall = false
@@ -79,7 +81,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	om.pb.custs = currentCustomers
 	om.pb.nTime = om.tHorizon
 
-	offlineSolution = intervalOpt(om.pb)
+	offlineSolution = om.solver(om.pb)
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
 	# Processes offline solution to fit it to online simulation

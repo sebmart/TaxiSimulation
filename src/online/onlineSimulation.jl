@@ -39,7 +39,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 			end
 			if !isempty(newTaxiActions[k].custs)
 				if newTaxiActions[k].custs[1].timeIn < tStart - EPS
-					error("Customer modification back in time!")
+					error("Customer modification back in time: $(newTaxiActions[k].custs[1].timeIn) < $tStart!")
 				else
 					append!(totalAction.custs,newTaxiActions[k].custs)
 				end
