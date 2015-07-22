@@ -12,7 +12,7 @@ type IterativeOffline <: OnlineMethod
 	period::Float64
 
 	beforeEndTime::Bool
-	function IterativeOffline(tHorizon::Float64, period::Float64, before::Bool;)
+	function IterativeOffline(period::Float64, tHorizon::Float64 ; completeMoves::Bool=false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -21,7 +21,7 @@ type IterativeOffline <: OnlineMethod
 		offline.noTcall = false
 		offline.noTmaxt = false
 		offline.period = period
-		offline.beforeEndTime = before
+		offline.beforeEndTime = completeMoves
 		return offline
 	end
 end
@@ -127,9 +127,6 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 
 	# Updates the start time for the next time window
 	om.startTime = endTime
-
-	println("===============")
-	@printf("%.2f %% solved", 100 * min(1.,endTime / om.pb.nTime))
 
 	# Returns new TaxiActions to OnlineSimulation
 	return onlineTaxiActions

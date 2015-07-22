@@ -84,7 +84,6 @@ function onlineUpdate!(om::FixedAssignment, endTime::Float64, newCustomers::Vect
 		end
     end
     om.startTime = endTime
-	@printf("\r%.2f %% solved", 100 * min(1.,endTime / om.pb.nTime))
 
 	return actions
 end

@@ -79,9 +79,6 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 		end
 	end
 
-	println("===============")
-	@printf("%.2f %% solved", 100 * endTime / om.pb.nTime)
-
 	# Returns new TaxiActions to OnlineSimulation
 	om.startTime = endTime
 	return onlineTaxiActions

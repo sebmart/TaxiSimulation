@@ -227,6 +227,9 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     nTime = pb.nTime
     nTaxis = length(taxi)
     nCusts = length(cust)
+    if length(cust) == 0.
+        return IntervalSolution(pb)
+    end
 
     #short alias
     tt = traveltimes(pb)

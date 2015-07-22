@@ -2,7 +2,7 @@
 Simulates the online problem by initializing an Online Method, updating customers
 using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
 """
-function onlineSimulation(pb::TaxiProblem, om::OnlineMethod)
+function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 	customers = Customer[]
 	noTcallInt = Int(om.noTcall)
 	noTmaxtInt = Int(om.noTmaxt)
@@ -22,6 +22,10 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})
+		if verbose
+			l = string(Int[c.id for c in newCustomers])
+			@printf("Online Step -- time %.2f => %.2f (%.2f%%), customer(s) : %s\n", tStart, tEnd, l)
+		end
 		# Updates the online method, selecting for taxi actions within the given time period
 		newTaxiActions = onlineUpdate!(om, tEnd, newCustomers)
 		for (k,totalAction) in enumerate(totalTaxiActions)
