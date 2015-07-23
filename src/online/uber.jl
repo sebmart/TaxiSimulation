@@ -9,7 +9,6 @@ type Uber <: OnlineMethod
 		offline = new()
 		offline.startTime = 0.0
 		offline.noTcall = removeTcall
-		print(removeTmaxt)
 		offline.noTmaxt = removeTmaxt
 		offline.period = period
 		return offline
