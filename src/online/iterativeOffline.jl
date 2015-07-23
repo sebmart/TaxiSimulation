@@ -14,7 +14,10 @@ type IterativeOffline <: OnlineMethod
 	period::Float64
 
 	completeMoves::Bool
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false)
+
+	warmStart::Bool
+	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64, Float64}}
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -25,6 +28,7 @@ type IterativeOffline <: OnlineMethod
 		offline.noTmaxt = false
 		offline.period = period
 		offline.completeMoves = completeMoves
+		offline.warmStart = warmStart
 		return offline
 	end
 end
@@ -37,6 +41,7 @@ function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.nTime = pb.nTime
 	om.pb.taxis = copy(om.pb.taxis)
 	om.pb.custs = Customer[]
+	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64, Float64}}()
 end
 
 """
@@ -44,7 +49,6 @@ Updates OnlineMethod to account for new customers, returns a list of TaxiActions
 since the last update. Needs initial information to start from.
 """
 function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vector{Customer})
-
 	# Sets the time window for the offline solver
 	tt = TaxiSimulation.traveltimes(om.pb)
 	startOffline = om.startTime
@@ -56,6 +60,10 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	end
 	append!(om.customers, newCustomers)
 
+	if om.warmStart
+		warmStartAssignedCustomers = [AssignedCustomer[] for i in 1:length(om.pb.taxis)]
+		warmStartNotTakenIndices = Int64[]
+	end
 	# Identifies current customers with pickup window within the time window
 	currentCustomers = Customer[]
 	IDtoIndex = Int64[]
@@ -67,12 +75,30 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					push!(IDtoIndex, customer.id)
 					newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., 0., tmaxt, customer.price)
 					push!(currentCustomers, newCust)
+					if om.warmStart
+						if customer.id in keys(om.nextAssignedCustomers)
+							info = om.nextAssignedCustomers[customer.id]					
+							newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[3])
+							push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
+						else
+							push!(warmStartNotTakenIndices, length(IDtoIndex))
+						end 
+					end
 				end
 			elseif customer.tmin <= finishOffline
 			 	tmaxt = min(customer.tmaxt, finishOffline) - startOffline
 			 	push!(IDtoIndex, customer.id)
 				newCust = Customer(length(IDtoIndex), customer.orig, customer.dest, 0., customer.tmin - startOffline, tmaxt, customer.price)
 				push!(currentCustomers, newCust)
+				if om.warmStart
+					if customer.id in keys(om.nextAssignedCustomers)
+						info = om.nextAssignedCustomers[customer.id]						
+						newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[3])
+						push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
+					else
+						push!(warmStartNotTakenIndices, length(IDtoIndex))
+					end
+				end
 			end
 		end
 	end
@@ -81,11 +107,24 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	om.pb.custs = currentCustomers
 	om.pb.nTime = om.tHorizon
 
-	offlineSolution = om.solver(om.pb)
+	if om.warmStart
+		notTaken = falses(length(currentCustomers))
+		for customerNotTakenIndex in warmStartNotTakenIndices
+			notTaken[customerNotTakenIndex] = true
+		end
+		warmStartSol = IntervalSolution(warmStartAssignedCustomers, notTaken, 0.)
+		expandWindows!(om.pb, warmStartSol)
+		testSolution(om.pb, warmStartSol)
+		offlineSolution = om.solver(om.pb, warmStartSol)
+	else
+		offlineSolution = om.solver(om.pb)
+	end
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
 
-	println(om.pb.taxis)
+	# println(om.pb.taxis)
+
+	nextUpdateAssignedCustomers = Dict{Int64, Tuple{Int64, Float64, Float64}}()
 
 	# Processes offline solution to fit it to online simulation
 	for (i, assignments) in enumerate(offlineSolution.custs)
@@ -94,8 +133,14 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		halfPath = false
 		for (j, customer) in enumerate(assignments)
 			c = om.pb.custs[customer.id]
-			if customer.tInf - tt[startPos,c.dest] + startOffline > endTime
-				break
+			# if customer.tInf - tt[startPos,c.dest] + startOffline > endTime
+			# 	break
+			if customer.tInf + startOffline > endTime
+				if om.warmStart
+					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tInf + startOffline - endTime, customer.tSup + startOffline - endTime)
+				else
+					break
+				end
 			elseif !om.completeMoves && customer.tInf + startOffline > endTime
 				path = getPath(om.pb, startPos, c.orig, customer.tInf + startOffline - tt[startPos, c.orig])
 				for (t,r) in path
@@ -132,10 +177,11 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-	println(offlineSolution.custs)
-	println(onlineTaxiActions)
+	# println(offlineSolution.custs)
+	# println(onlineTaxiActions)
 	# Updates the start time for the next time window
 	om.startTime = endTime
+	om.nextAssignedCustomers = nextUpdateAssignedCustomers
 
 	# Returns new TaxiActions to OnlineSimulation
 	return onlineTaxiActions
