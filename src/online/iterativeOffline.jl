@@ -13,7 +13,7 @@ type IterativeOffline <: OnlineMethod
 	noTmaxt::Bool
 	period::Float64
 
-	beforeEndTime::Bool
+	completeMoves::Bool
 	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false)
 		offline = new()
 		offline.tHorizon = tHorizon
@@ -24,7 +24,7 @@ type IterativeOffline <: OnlineMethod
 		offline.noTcall = false
 		offline.noTmaxt = false
 		offline.period = period
-		offline.beforeEndTime = completeMoves
+		offline.completeMoves = completeMoves
 		return offline
 	end
 end
@@ -84,26 +84,30 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	offlineSolution = om.solver(om.pb)
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
+
+	println(om.pb.taxis)
+
 	# Processes offline solution to fit it to online simulation
 	for (i, assignments) in enumerate(offlineSolution.custs)
 		# Selects for customers who are picked up before the start of the next time window
 		startPos = om.pb.taxis[i].initPos
+		halfPath = false
 		for (j, customer) in enumerate(assignments)
 			c = om.pb.custs[customer.id]
 			if customer.tInf - tt[startPos,c.dest] + startOffline > endTime
 				break
-			elseif om.beforeEndTime && customer.tInf + startOffline > endTime
+			elseif !om.completeMoves && customer.tInf + startOffline > endTime
 				path = getPath(om.pb, startPos, c.orig, customer.tInf + startOffline - tt[startPos, c.orig])
 				for (t,r) in path
 					if t < endTime
 						push!(onlineTaxiActions[i].path, (t,r))
+						halfPath = true
 					else
 						break
 					end
 				end
 				break
 			else
-				c = om.pb.custs[customer.id]
 				om.notTaken[IDtoIndex[customer.id]] = false
 				timeOut = customer.tInf + startOffline + 2 * om.pb.customerTime + tt[c.orig, c.dest]
 				assignment = CustomerAssignment(IDtoIndex[customer.id], customer.tInf + startOffline, timeOut)
@@ -115,20 +119,21 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		end
 
 		# Updates the initial taxi locations and paths for the next time window
-		if !isempty(onlineTaxiActions[i].custs)
-			(t, road) = onlineTaxiActions[i].path[end]
-			newt = max(onlineTaxiActions[i].custs[end].timeOut - endTime, 0.0)
-			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, dst(road), newt)
-		elseif !isempty(onlineTaxiActions[i].path)
+		if halfPath && !isempty(onlineTaxiActions[i].path)
 			(t, road) = onlineTaxiActions[i].path[end]
 			newt = max(t + om.pb.roadTime[src(road), dst(road)] - endTime, 0.0)
+			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, dst(road), newt)
+		elseif !isempty(onlineTaxiActions[i].custs)
+			(t, road) = onlineTaxiActions[i].path[end]
+			newt = max(onlineTaxiActions[i].custs[end].timeOut - endTime, 0.0)
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, dst(road), newt)
 		else
 			newt = max(om.pb.taxis[i].initTime - endTime + startOffline, 0.0)
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-
+	println(offlineSolution.custs)
+	println(onlineTaxiActions)
 	# Updates the start time for the next time window
 	om.startTime = endTime
 

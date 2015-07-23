@@ -2,10 +2,11 @@ using TaxiSimulation
 using Base.Test
 
 tests = [
+    # "manhattan",
     "shortestPathTests",
     "squareCity",
     "metropolis",
-    "manhattan"
+    "online"
     ]
 testdir = joinpath(Pkg.dir("TaxiSimulation"),"test")
 
