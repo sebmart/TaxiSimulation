@@ -84,6 +84,9 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	offlineSolution = om.solver(om.pb)
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
+
+	println(om.pb.taxis)
+
 	# Processes offline solution to fit it to online simulation
 	for (i, assignments) in enumerate(offlineSolution.custs)
 		# Selects for customers who are picked up before the start of the next time window
@@ -94,11 +97,11 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			if customer.tInf - tt[startPos,c.dest] + startOffline > endTime
 				break
 			elseif !om.completeMoves && customer.tInf + startOffline > endTime
-				halfPath = true
 				path = getPath(om.pb, startPos, c.orig, customer.tInf + startOffline - tt[startPos, c.orig])
 				for (t,r) in path
 					if t < endTime
 						push!(onlineTaxiActions[i].path, (t,r))
+						halfPath = true
 					else
 						break
 					end
@@ -129,6 +132,8 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
+	println(offlineSolution.custs)
+	println(onlineTaxiActions)
 	# Updates the start time for the next time window
 	om.startTime = endTime
 
