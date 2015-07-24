@@ -340,8 +340,8 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     sum{x[pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
     sum{y[k,pCusts[c][c0]], k=1:nTaxis} >= x[c,c0])
 
-    M = 10*pb.nTime #For bigM method
-
+    # M = 100*pb.nTime #For bigM method
+    M = 2 * pb.nTime + 2 * maximum(tt)
     #inf <= sup
     @addConstraint(m, c5[c=1:nCusts],
     i[c] <= s[c])
@@ -361,6 +361,9 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     i[c] - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
 
     status = solve(m)
+    if status == :Infeasible
+        error("Model is infeasible")
+    end
 
     tx = getValue(x)
     ty = getValue(y)

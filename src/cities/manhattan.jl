@@ -138,9 +138,9 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
             df[i, :price]
             )
             push!(sim.custs, customer)
-            maxTime = max(maxTime,timeToTs(tSup) + tt[df[i,:pnode],df[i,:dnode]])
+            maxTime = max(maxTime,timeToTs(tSup))
         end
-        sim.nTime = maxTime
+        sim.nTime = maxTime + EPS
     end
     println("$(length(sim.custs)) NYC customers extracted!")
 

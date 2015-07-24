@@ -16,7 +16,7 @@ type IterativeOffline <: OnlineMethod
 	completeMoves::Bool
 
 	warmStart::Bool
-	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64, Float64}}
+	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
 	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
@@ -41,7 +41,7 @@ function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.nTime = pb.nTime
 	om.pb.taxis = copy(om.pb.taxis)
 	om.pb.custs = Customer[]
-	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64, Float64}}()
+	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
 end
 
 """
@@ -77,8 +77,8 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					push!(currentCustomers, newCust)
 					if om.warmStart
 						if customer.id in keys(om.nextAssignedCustomers)
-							info = om.nextAssignedCustomers[customer.id]					
-							newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[3])
+							info = om.nextAssignedCustomers[customer.id]			
+							newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 							push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 						else
 							push!(warmStartNotTakenIndices, length(IDtoIndex))
@@ -92,12 +92,12 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 				push!(currentCustomers, newCust)
 				if om.warmStart
 					if customer.id in keys(om.nextAssignedCustomers)
-						info = om.nextAssignedCustomers[customer.id]						
-						newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[3])
+						info = om.nextAssignedCustomers[customer.id]			
+						newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 						push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 					else
 						push!(warmStartNotTakenIndices, length(IDtoIndex))
-					end
+					end 
 				end
 			end
 		end
@@ -105,9 +105,19 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 
 	# Sets the problem's customers to those identified within the time window, and solves
 	om.pb.custs = currentCustomers
-	om.pb.nTime = om.tHorizon
-
+	om.pb.nTime = finishOffline - startOffline +EPS
+	println("om.pb.custs")
+	println(om.pb.custs)
+	println("om.pb.taxis")
+	println(om.pb.taxis)
 	if om.warmStart
+		println("warmStartAssignedCustomers")
+		println(warmStartAssignedCustomers)
+	end
+	if om.warmStart
+		for list in warmStartAssignedCustomers
+			sort!(list, by=c->c.tInf)
+		end
 		notTaken = falses(length(currentCustomers))
 		for customerNotTakenIndex in warmStartNotTakenIndices
 			notTaken[customerNotTakenIndex] = true
@@ -122,10 +132,9 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
 
-	# println(om.pb.taxis)
-
-	nextUpdateAssignedCustomers = Dict{Int64, Tuple{Int64, Float64, Float64}}()
-
+	nextUpdateAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
+	println("offlineSolution.custs")
+	println(offlineSolution.custs)
 	# Processes offline solution to fit it to online simulation
 	for (i, assignments) in enumerate(offlineSolution.custs)
 		# Selects for customers who are picked up before the start of the next time window
@@ -133,11 +142,9 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		halfPath = false
 		for (j, customer) in enumerate(assignments)
 			c = om.pb.custs[customer.id]
-			# if customer.tInf - tt[startPos,c.dest] + startOffline > endTime
-			# 	break
-			if customer.tInf + startOffline > endTime
+			if customer.tInf - tt[startPos,c.orig] + startOffline > endTime
 				if om.warmStart
-					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tInf + startOffline - endTime, customer.tSup + startOffline - endTime)
+					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tSup + startOffline - endTime)
 				else
 					break
 				end
@@ -151,7 +158,11 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 						break
 					end
 				end
-				break
+				if om.warmStart
+					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tSup + startOffline - endTime)
+				else
+					break
+				end
 			else
 				om.notTaken[IDtoIndex[customer.id]] = false
 				timeOut = customer.tInf + startOffline + 2 * om.pb.customerTime + tt[c.orig, c.dest]
@@ -177,8 +188,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-	# println(offlineSolution.custs)
-	# println(onlineTaxiActions)
+
 	# Updates the start time for the next time window
 	om.startTime = endTime
 	om.nextAssignedCustomers = nextUpdateAssignedCustomers
