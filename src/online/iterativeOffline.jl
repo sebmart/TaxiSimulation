@@ -106,17 +106,10 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	# Sets the problem's customers to those identified within the time window, and solves
 	om.pb.custs = currentCustomers
 	om.pb.nTime = finishOffline - startOffline +EPS
-	println("om.pb.custs")
-	println(om.pb.custs)
-	println("om.pb.taxis")
-	println(om.pb.taxis)
-	if om.warmStart
-		println("warmStartAssignedCustomers")
-		println(warmStartAssignedCustomers)
-	end
+
 	if om.warmStart
 		for list in warmStartAssignedCustomers
-			sort!(list, by=c->c.tInf)
+			sort!(list, by = c->c.tInf)
 		end
 		notTaken = falses(length(currentCustomers))
 		for customerNotTakenIndex in warmStartNotTakenIndices
@@ -131,10 +124,11 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	end
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
-
 	nextUpdateAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
-	println("offlineSolution.custs")
-	println(offlineSolution.custs)
+
+	# Keeps track of starting taxi paths
+	hasPath = falses(length(om.pb.taxis))
+
 	# Processes offline solution to fit it to online simulation
 	for (i, assignments) in enumerate(offlineSolution.custs)
 		# Selects for customers who are picked up before the start of the next time window
@@ -149,6 +143,9 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					break
 				end
 			elseif !om.completeMoves && customer.tInf + startOffline > endTime
+				if halfPath
+					break
+				end
 				path = getPath(om.pb, startPos, c.orig, customer.tInf + startOffline - tt[startPos, c.orig])
 				for (t,r) in path
 					if t < endTime
