@@ -105,7 +105,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 
 	# Sets the problem's customers to those identified within the time window, and solves
 	om.pb.custs = currentCustomers
-	om.pb.nTime = finishOffline - startOffline +EPS
+	om.pb.nTime = finishOffline - startOffline + EPS
 
 	if om.warmStart
 		for list in warmStartAssignedCustomers
@@ -116,7 +116,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			notTaken[customerNotTakenIndex] = true
 		end
 		warmStartSol = IntervalSolution(warmStartAssignedCustomers, notTaken, 0.)
-		expandWindows!(om.pb, warmStartSol)
+		expandWindows!(copy(om.pb), warmStartSol)
 		testSolution(om.pb, warmStartSol)
 		offlineSolution = om.solver(om.pb, warmStartSol)
 	else
@@ -143,7 +143,12 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					break
 				end
 			elseif !om.completeMoves && customer.tInf + startOffline > endTime
-				if halfPath
+				if om.warmStart
+					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tSup + startOffline - endTime)
+					if halfPath
+						continue
+					end
+				elseif halfPath
 					break
 				end
 				path = getPath(om.pb, startPos, c.orig, customer.tInf + startOffline - tt[startPos, c.orig])
@@ -154,11 +159,6 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					else
 						break
 					end
-				end
-				if om.warmStart
-					nextUpdateAssignedCustomers[IDtoIndex[customer.id]] = (i, customer.tSup + startOffline - endTime)
-				else
-					break
 				end
 			else
 				om.notTaken[IDtoIndex[customer.id]] = false
