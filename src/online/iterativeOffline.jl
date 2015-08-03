@@ -17,9 +17,7 @@ type IterativeOffline <: OnlineMethod
 
 	warmStart::Bool
 	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
-
-	usingLocalDescent::Bool
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false, usingLocalDescent::Bool = false)
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -31,7 +29,6 @@ type IterativeOffline <: OnlineMethod
 		offline.period = period
 		offline.completeMoves = completeMoves
 		offline.warmStart = warmStart
-		offline.usingLocalDescent = usingLocalDescent
 		return offline
 	end
 end
