@@ -4,7 +4,7 @@
 #-- and time intervals to take each customer (continuous or discrete)
 #----------------------------------------
 
-function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 10000)
     if pb.discreteTime
         return intervalOptDiscrete(pb,init,timeLimit=timeLimit)
     else

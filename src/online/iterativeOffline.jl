@@ -17,7 +17,9 @@ type IterativeOffline <: OnlineMethod
 
 	warmStart::Bool
 	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt ; completeMoves::Bool=false, warmStart::Bool = false)
+
+	usingLocalDescent::Bool
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false, usingLocalDescent::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -29,6 +31,7 @@ type IterativeOffline <: OnlineMethod
 		offline.period = period
 		offline.completeMoves = completeMoves
 		offline.warmStart = warmStart
+		offline.usingLocalDescent = usingLocalDescent
 		return offline
 	end
 end
@@ -118,9 +121,17 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		warmStartSol = IntervalSolution(warmStartAssignedCustomers, notTaken, 0.)
 		expandWindows!(om.pb, warmStartSol)
 		testSolution(om.pb, warmStartSol)
-		offlineSolution = om.solver(om.pb, warmStartSol)
+		try 
+			offlineSolution = om.solver(om.pb, 1000, warmStartSol)
+		catch
+			offlineSolution = om.solver(om.pb, warmStartSol)
+		end
 	else
-		offlineSolution = om.solver(om.pb)
+		try
+			offlineSolution = om.solver(om.pb, 10000)
+		catch
+			offlineSolution = om.solver(om.pb)
+		end
 	end
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
@@ -163,7 +174,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			else
 				om.notTaken[IDtoIndex[customer.id]] = false
 				timeOut = customer.tInf + startOffline + 2 * om.pb.customerTime + tt[c.orig, c.dest]
-				assignment = CustomerAssignment(IDtoIndex[customer.id], customer.tInf + startOffline, timeOut)
+				assignment = CustomerAssignment(IDtoIndex[customer.id], customer.tSup + startOffline, timeOut)
 				push!(onlineTaxiActions[i].custs, assignment)
 				append!(onlineTaxiActions[i].path, getPath(om.pb, startPos, c.orig, assignment.timeIn - tt[startPos, c.orig]))
 				append!(onlineTaxiActions[i].path, getPath(om.pb, c.orig, c.dest, assignment.timeIn + om.pb.customerTime))

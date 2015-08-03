@@ -125,7 +125,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
             tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig]- 2*custTime)
         end
         for c in list
-            if c.tInf > c.tSup
+            if c.tInf > c.tSup + EPS
                 error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
         end
@@ -165,7 +165,7 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
         end
         #quick check..
         for c in list
-            if c.tInf > c.tSup
+            if c.tInf > c.tSup + EPS 
                 error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
         end

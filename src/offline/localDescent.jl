@@ -5,11 +5,16 @@
 function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb))
     nTaxis = length(pb.taxis)
     #if no customer
-    if orderedInsertions(pb).notTaken == trues(length(pb.custs))
+    ordered = orderedInsertions(pb)
+    if ordered.notTaken == trues(length(pb.custs))
         best = IntervalSolution(pb)
         print("\nFinal: $(-best.cost) dollars\n")
         return best
     end
+    if start.notTaken == trues(length(pb.custs))
+        start = ordered
+    end
+
     println("Start, $(-start.cost) dollars")
     sol =  copySolution(start)
     best = sol.cost
