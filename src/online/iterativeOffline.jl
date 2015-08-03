@@ -118,17 +118,9 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 		warmStartSol = IntervalSolution(warmStartAssignedCustomers, notTaken, 0.)
 		expandWindows!(om.pb, warmStartSol)
 		testSolution(om.pb, warmStartSol)
-		try 
-			offlineSolution = om.solver(om.pb, 1000, warmStartSol)
-		catch
-			offlineSolution = om.solver(om.pb, warmStartSol)
-		end
+		offlineSolution = om.solver(om.pb, warmStartSol)
 	else
-		try
-			offlineSolution = om.solver(om.pb, 10000)
-		catch
-			offlineSolution = om.solver(om.pb)
-		end
+		offlineSolution = om.solver(om.pb)
 	end
 
 	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
@@ -171,7 +163,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			else
 				om.notTaken[IDtoIndex[customer.id]] = false
 				timeOut = customer.tInf + startOffline + 2 * om.pb.customerTime + tt[c.orig, c.dest]
-				assignment = CustomerAssignment(IDtoIndex[customer.id], customer.tSup + startOffline, timeOut)
+				assignment = CustomerAssignment(IDtoIndex[customer.id], customer.tInf + startOffline, timeOut)
 				push!(onlineTaxiActions[i].custs, assignment)
 				append!(onlineTaxiActions[i].path, getPath(om.pb, startPos, c.orig, assignment.timeIn - tt[startPos, c.orig]))
 				append!(onlineTaxiActions[i].path, getPath(om.pb, c.orig, c.dest, assignment.timeIn + om.pb.customerTime))

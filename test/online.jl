@@ -24,3 +24,26 @@ tUpdate, tHorizon = 50., 100.
 solver = pb -> localDescent(pb,1000)
 sol1 = onlineSimulation(city, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=false), verbose=true)
 testSolution(city,sol1)
+
+# Rest of tests on Metropolis
+city = Metropolis()
+generateProblem!(city)
+
+s1 = TaxiSolution(city, intervalOpt(city, timeLimit = 1800))
+testSolution(city, s1)
+
+s2a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false))
+testSolution(city, s2a)
+s2b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true))
+testSolution(city, s2b)
+
+s3a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true))
+testSolution(city, s3a)
+s3b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true, warmStart = true))
+testSolution(city, s3b)
+
+s4 = onlineSimulation(city, FixedAssignment(period = 0.0))
+testSolution(city, s4)
+
+s5 = onlineSimulation(city, Uber(removeTmaxt = false))
+testSolution(city, s5)
