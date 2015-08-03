@@ -19,31 +19,25 @@ solver = intervalOpt
 sol1 = onlineSimulation(city, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=true))
 testSolution(city,sol1)
 
-
 tUpdate, tHorizon = 50., 100.
 solver = pb -> localDescent(pb,1000)
 sol1 = onlineSimulation(city, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=false), verbose=true)
 testSolution(city,sol1)
 
-# Rest of tests on Metropolis
+# Rest of tests on Metropolis for period = 0.0 and Uber method
 city = Metropolis()
 generateProblem!(city)
 
-s1 = TaxiSolution(city, intervalOpt(city, timeLimit = 1800))
-testSolution(city, s1)
+s1a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false), verbose=true)
+testSolution(city, s1a)
+s1b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true), verbose=true)
+testSolution(city, s1b)
 
-s2a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false))
+s2a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true))
 testSolution(city, s2a)
-s2b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true))
+s2b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true, warmStart = true))
 testSolution(city, s2b)
 
-s3a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true))
-testSolution(city, s3a)
-s3b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true, warmStart = true))
-testSolution(city, s3b)
+s3 = onlineSimulation(city, Uber(removeTmaxt = false))
+testSolution(city, s3)
 
-s4 = onlineSimulation(city, FixedAssignment(period = 0.0))
-testSolution(city, s4)
-
-s5 = onlineSimulation(city, Uber(removeTmaxt = false))
-testSolution(city, s5)
