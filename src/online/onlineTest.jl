@@ -1,4 +1,58 @@
-using TaxiSimulation, Plotly
+using TaxiSimulation, LightGraphs, Clustering
+cd("src/online")
+include("onlineSimulation2.jl")
+include("uber2.jl")
+include("directIdleTaxis.jl")
+
+# p1 = Float64[]
+# p2 = Float64[]
+
+# for i in 1:5
+  taxis = 1000
+  demand = 0.5
+  cityA = loadTaxiPb("manhattan")
+  dateA = DateTime(2013, 03, 08, 12, 00)
+  generateProblem!(cityA, taxis, dateA, dateA + Dates.Minute(60), demand = demand)
+
+  cityB = loadTaxiPb("manhattan")
+  dateB = DateTime(2013, 03, 01, 12, 00)
+  generateProblem!(cityB, taxis, dateB, dateB + Dates.Minute(60), demand = demand)
+  cityB.custs = Customer[]
+
+  s5b = onlineSimulation2(cityA, cityB, Uber2(removeTmaxt = false, period = 300.0))  
+  testSolution(cityA, s5b)
+
+  s5a = onlineSimulation(cityA, Uber(removeTmaxt = false, period = 300.0))
+  testSolution(cityA, s5a)
+
+  
+
+  push!(p1, -s5a.cost)
+  push!(p2, -s5b.cost)
+end
+
+using Plotly
+
+trace1 = [
+  "x" => [1:length(p1)],
+  "y" => p1,
+  "mode" => "lines+markers",
+  "name" => "Uber",
+  "type" => "scatter"
+]
+trace2 = [
+  "x" => [1:length(p2)],
+  "y" => p2,
+  "mode" => "lines+markers",
+  "name" => "Uber with Virtual Customers",
+  "type" => "scatter"
+]
+
+data = [trace1, trace2]
+response = Plotly.plot(data, ["filename" => "Manhattan Uber Test 1 with Virtual Customers"])
+plot_url = response["url"]
+
+
 
 p1 = Float64[]
 p2 = Float64[]
@@ -96,8 +150,8 @@ averageProfit5B = [zeros(5) for i in 1:length(shifts)]
 averageProfit10B = [zeros(5) for i in 1:length(shifts)]
 
 for i in 1:n
-  city = Metropolis()
-  generateProblem!(city, 15, 0.25)
+  p = Metropolis()
+  generateProblem!(p, 30, 0.5)
   for j in 1:length(shifts)
     p = copy(city)
     shiftedCustomers = Customer[]
@@ -117,7 +171,7 @@ for i in 1:n
       averageProfit10B[j][1] += - s1.cost 
     end
 
-    s2 = onlineSimulation(p, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true))
+    s2 = onlineSimulation(p, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true), verbose = true)
     averageProfit0A[j][2] += - s2.cost / n
     s2 = onlineSimulation(p, IterativeOffline(5.0, 60.0, completeMoves = false, warmStart = true))
     averageProfit5A[j][2] += - s2.cost / n
@@ -143,7 +197,7 @@ for i in 1:n
     averageProfit10B[j][4] += - s4.cost / n
     averageProfit10A[j][4] += - s4.cost / n
 
-    s5 = onlineSimulation(p, Uber(removeTmaxt = false))
+    s5 = onlineSimulation(city, Uber(removeTmaxt = false))
     averageProfit0A[j][5] += - s5.cost / n
     averageProfit5A[j][5] += - s5.cost / n
     averageProfit10A[j][5] += - s5.cost / n
