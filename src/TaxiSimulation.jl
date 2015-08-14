@@ -5,7 +5,7 @@
 module TaxiSimulation
 
 using JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-SFML, DataStructures, Base.Dates, DataFrames, Base.Test, Clustering 
+SFML, DataStructures, Base.Dates, DataFrames, Base.Test, Clustering
 
 
 #types

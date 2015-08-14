@@ -191,11 +191,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-
-	println("idleTaxiCount")
-	println(idleTaxiCount)
-	println("")
-
+	
 	# Updates the start time for the next time window
 	om.startTime = endTime
 	om.nextAssignedCustomers = nextUpdateAssignedCustomers

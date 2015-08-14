@@ -1,4 +1,5 @@
 "iterate offline algorithm, simulating until tHorizon"
+"Directs idle taxis in each period by using the probability distribution of customers"
 type IterativeOfflineVariant2 <: OnlineMethod
 	solver::Function
 	tHorizon::Float64
@@ -206,10 +207,6 @@ function onlineUpdate!(om::IterativeOfflineVariant2, endTime::Float64, newCustom
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, dst(road), newt)
 		end
 	end
-
-	println("idleTaxiCount")
-	println(idleTaxiCount)
-	println("")
 
 	# Updates the start time for the next time window
 	om.startTime = endTime

@@ -1,9 +1,10 @@
 using TaxiSimulation
 
-# p1 = Float64[]
-# p2 = Float64[]
+p1 = Float64[]
+p2 = Float64[]
+p3 = Float64[]
 
-# for i in 1:5
+for i in 1:10
   taxis = 100
   demand = 0.05
   cityA = loadTaxiPb("manhattan")
@@ -21,12 +22,13 @@ using TaxiSimulation
   # s5a = onlineSimulation(cityA, Uber(removeTmaxt = false, period = 300.0))
   # testSolution(cityA, s5a)
 
-  s2a = onlineSimulation(cityA, IterativeOffline(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
-  s2b = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
-  s2c = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant2(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
+  @time s2a = onlineSimulation(cityA, IterativeOffline(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
+  @time s2b = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
+  @time s2c = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant2(60.0, 300.0, completeMoves = false, warmStart = true))
 
   push!(p1, -s2a.cost)
   push!(p2, -s2b.cost)
+  push!(p3, -s2c.cost)
 end
 
 using Plotly
@@ -35,19 +37,26 @@ trace1 = [
   "x" => [1:length(p1)],
   "y" => p1,
   "mode" => "lines+markers",
-  "name" => "Uber",
+  "name" => "Iterative Offline",
   "type" => "scatter"
 ]
 trace2 = [
   "x" => [1:length(p2)],
   "y" => p2,
   "mode" => "lines+markers",
-  "name" => "Uber with Virtual Customers",
+  "name" => "Iterative Offline with Virtual Customers",
+  "type" => "scatter"
+]
+trace3 = [
+  "x" => [1:length(p3)],
+  "y" => p3,
+  "mode" => "lines+markers",
+  "name" => "Iterative Offline with Demand Prediction",
   "type" => "scatter"
 ]
 
-data = [trace1, trace2]
-response = Plotly.plot(data, ["filename" => "Manhattan Uber Test 1 with Virtual Customers"])
+data = [trace1, trace2, trace3]
+response = Plotly.plot(data, ["filename" => "Manhattan Iterative Offline Test 6 (tuning travel time limit)", "fileopt" => "overwrite"])
 plot_url = response["url"]
 
 

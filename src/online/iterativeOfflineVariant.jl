@@ -47,7 +47,7 @@ function onlineInitialize!(om::IterativeOfflineVariant, pb::TaxiProblem)
 	om.pb.custs = Customer[]
 	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
 	om.R = clusterCity(pb, 50)
-	om.hCustomers = selectCustomers(length(om.pb.taxis), 1.0, DateTime(2013, 03, 01, 12, 00), 0.0, 0.0)
+	om.hCustomers = selectCustomers(length(om.pb.taxis), 0.5, DateTime(2013, 03, 01, 12, 00), 0.0, 0.0)
 end
 
 """
@@ -78,7 +78,7 @@ function onlineUpdate!(om::IterativeOfflineVariant, endTime::Float64, newCustome
 	currentCustomers = Customer[]
 	IDtoIndex = Int64[]
 	for customer in om.customers
-		if om.notTaken[customer.id]
+		if om.notTaken[customer.id] && (customer.id > 0 || (customer.id < 0 && customer.tcall >= startOffline))
 			if customer.tmin < startOffline
 				if customer.tmaxt >= startOffline
 					tmaxt = min(customer.tmaxt, finishOffline) - startOffline
@@ -212,10 +212,6 @@ function onlineUpdate!(om::IterativeOfflineVariant, endTime::Float64, newCustome
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-
-	println("idleTaxiCount")
-	println(idleTaxiCount)
-	println("")
 
 	# Updates the start time for the next time window
 	om.startTime = endTime
