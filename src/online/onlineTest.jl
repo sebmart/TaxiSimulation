@@ -1,34 +1,32 @@
-using TaxiSimulation, LightGraphs, Clustering
-cd("src/online")
-include("onlineSimulation2.jl")
-include("uber2.jl")
-include("directIdleTaxis.jl")
+using TaxiSimulation
 
 # p1 = Float64[]
 # p2 = Float64[]
 
 # for i in 1:5
-  taxis = 1000
-  demand = 0.5
+  taxis = 100
+  demand = 0.05
   cityA = loadTaxiPb("manhattan")
   dateA = DateTime(2013, 03, 08, 12, 00)
   generateProblem!(cityA, taxis, dateA, dateA + Dates.Minute(60), demand = demand)
 
-  cityB = loadTaxiPb("manhattan")
-  dateB = DateTime(2013, 03, 01, 12, 00)
-  generateProblem!(cityB, taxis, dateB, dateB + Dates.Minute(60), demand = demand)
-  cityB.custs = Customer[]
+  # cityB = loadTaxiPb("manhattan")
+  # dateB = DateTime(2013, 03, 01, 12, 00)
+  # generateProblem!(cityB, taxis, dateB, dateB + Dates.Minute(60), demand = demand)
+  # cityB.custs = Customer[]
 
-  s5b = onlineSimulation2(cityA, cityB, Uber2(removeTmaxt = false, period = 300.0))  
-  testSolution(cityA, s5b)
+  # s5b = onlineSimulation(cityA, cityB, Uber2(removeTmaxt = false, period = 300.0))  
+  # testSolution(cityA, s5b)
 
-  s5a = onlineSimulation(cityA, Uber(removeTmaxt = false, period = 300.0))
-  testSolution(cityA, s5a)
+  # s5a = onlineSimulation(cityA, Uber(removeTmaxt = false, period = 300.0))
+  # testSolution(cityA, s5a)
 
-  
+  s2a = onlineSimulation(cityA, IterativeOffline(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
+  s2b = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
+  s2c = onlineSimulation(cityA, TaxiSimulation.IterativeOfflineVariant2(60.0, 300.0, completeMoves = false, warmStart = true), verbose = true)
 
-  push!(p1, -s5a.cost)
-  push!(p2, -s5b.cost)
+  push!(p1, -s2a.cost)
+  push!(p2, -s2b.cost)
 end
 
 using Plotly

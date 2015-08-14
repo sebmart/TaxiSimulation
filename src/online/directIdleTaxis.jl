@@ -5,7 +5,27 @@ function selectCustomers(taxis::Int64, demand::Float64, date::Dates.DateTime, st
 	city = loadTaxiPb("manhattan")
 	date = DateTime(2013, 03, 01, 12, 00)
 	generateProblem!(city, taxis, date, date + Dates.Minute(60), demand = demand)
-	return city.custs
+	customers = Customer[]
+	for c in city.custs
+		c = Customer(-c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmaxt, c.price)
+		push!(customers, c)
+	end
+	return customers
+end
+
+"""
+Uses historical data to select customers from a certain time and day
+"""
+function selectCustomersWeighted(taxis::Int64, demand::Float64, date::Dates.DateTime, startTime::Float64, endTime::Float64)
+	city = loadTaxiPb("manhattan")
+	date = DateTime(2013, 03, 01, 12, 00)
+	generateProblem!(city, taxis, date, date + Dates.Minute(60), demand = demand)
+	customers = Customer[]
+	for c in city.custs
+		c = Customer(-c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmaxt, c.price * ((c.tmin - startTime) / (endTime - startTime)))
+		push!(customers, c)
+	end
+	return customers
 end
 
 """
@@ -127,7 +147,7 @@ end
 Directing idle taxis using customer demand prediction by scoring a cluster for each idle taxi
 and having the taxi move towards the cluster with the hightest score
 """
-function usingDemandPrediction(pb::TaxiProblem, startTime::Float64, endTime::Float64, customers::Vector{Customer}, R::Clustering.KmeansResult{Float64})
+function usingDemandPrediction(pb::TaxiProblem, sol::TaxiSolution, startTime::Float64, endTime::Float64, customers::Vector{Customer}, R::Clustering.KmeansResult{Float64})
 	tt = TaxiSimulation.traveltimes(pb)
 
 	scores = [0.0 for i in 1:maximum(R.assignments)]
@@ -146,20 +166,74 @@ function usingDemandPrediction(pb::TaxiProblem, startTime::Float64, endTime::Flo
 	closestNode = findClosestNode(pb, coordinates)
 	idleTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 	for (i, t) in enumerate(pb.taxis)
-		if t.initTime == 0.0
-			# p = Tuple{Int64, Float64}[]
-			# for (j, score) in enumerate(scores)
-			# 	if startTime + 0.5 * tt[t.initPos, closestNode[j]] <= endTime
-			# 		push!(p, (j, score))
-			# 	end
-			# end
-			# psum = sum([i[2] for i in p])
-			# pscore = [(i[1], i[2] / psum) for i in p]
-
-			pscore = copy(scores)
+		if isempty(sol.taxis[i].custs)
+			p = Tuple{Int64, Float64}[]
 			for (j, score) in enumerate(scores)
-				pscore[j] = score / (1 + tt[t.initPos, closestNode[j]])
+				if startTime + 0.5 * tt[t.initPos, closestNode[j]] <= endTime
+					push!(p, (j, score))
+				end
 			end
+			psum = sum([i[2] for i in p])
+			pscore = [(i[1], i[2] / psum) for i in p]
+
+			# pscore = copy(scores)
+			# for (j, score) in enumerate(scores)
+			# 	pscore[j] = score / (1 + tt[t.initPos, closestNode[j]])
+			# end
+			maxScore = 0
+			maxIndex = 0
+			for (j, score) in pscore
+			# for (j, score) in enumerate(pscore)
+				if score > maxScore
+					maxScore = score
+					maxIndex = j
+				end
+			end
+			if maxScore != 0
+				append!(idleTaxiActions[i].path, TaxiSimulation.getPath(pb, t.initPos, closestNode[maxIndex], startTime))
+			end
+		end
+	end
+	return idleTaxiActions
+end
+
+"""
+Directing idle taxis using LP to minimize the difference between taxi and customer distribution along the city
+"""
+function usingLP(pb::TaxiProblem, sol::TaxiSolution, startTime::Float64, endTime::Float64, customers::Vector{Customer}, R::Clustering.KmeansResult{Float64})
+	tt = TaxiSimulation.traveltimes(pb)
+
+	cscores = [0.0 for i in 1:maximum(R.assignments)]
+	tscores = [0.0 for i in 1:maximum(R.assignments)]
+	for c in customers
+		cscores[R.assignments[c.orig]] += 1.0
+	end
+	nodeCount = [0 for i in 1:maximum(R.assignments)]
+	for i in 1:length(pb.positions)
+		nodeCount[R.assignments[i]] += 1
+	end
+	coordinates = [TaxiSimulation.Coordinates(0.0, 0.0) for i in 1:maximum(R.assignments)]
+	for (i, coordinate) in enumerate(pb.positions)
+		index = R.assignments[i]
+		coordinates[index] = TaxiSimulation.Coordinates(coordinates[index].x + coordinate.x / nodeCount[index], coordinates[index].y + coordinate.y / nodeCount[index])
+	end 
+	closestNode = findClosestNode(pb, coordinates)
+	idleTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
+	for (i, t) in enumerate(pb.taxis)
+		if isempty(sol.taxis[i].custs)
+			p = Tuple{Int64, Float64}[]
+			for (j, score) in enumerate(cscores)
+				if startTime + 0.5 * tt[t.initPos, closestNode[j]] <= endTime
+					push!(p, (j, score))
+				end
+			end
+			psum = sum([i[2] for i in p])
+			pscore = [(i[1], i[2] / psum) for i in p]
+
+			# pscore = copy(scores)
+			# for (j, score) in enumerate(scores)
+			# 	pscore[j] = score / (1 + tt[t.initPos, closestNode[j]])
+			# end
 			maxScore = 0
 			maxIndex = 0
 			for (j, score) in pscore
