@@ -14,21 +14,6 @@ function selectCustomers(taxis::Int64, demand::Float64, date::Dates.DateTime, st
 end
 
 """
-Uses historical data to select customers from a certain time and day, with prices weighed to favor ones at the end of an interval
-"""
-function selectCustomersWeighted(taxis::Int64, demand::Float64, date::Dates.DateTime, startTime::Float64, endTime::Float64)
-	city = loadTaxiPb("manhattan")
-	date = DateTime(2013, 03, 01, 12, 00)
-	generateProblem!(city, taxis, date, date + Dates.Minute(60), demand = demand)
-	customers = Customer[]
-	for c in city.custs
-		c = Customer(-c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmaxt, c.price * ((c.tmin - startTime) / (endTime - startTime)))
-		push!(customers, c)
-	end
-	return customers
-end
-
-"""
 Direct idle taxis using virtual customers to distrbute taxis more uniformly amongst the city
 """
 function usingVirtualCustomers(pb::TaxiProblem, solver, startTime::Float64, endTime::Float64, customers::Vector{Customer})
