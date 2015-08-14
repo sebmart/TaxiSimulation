@@ -1,5 +1,6 @@
 "iterate offline algorithm, simulating until tHorizon"
-type IterativeOffline <: OnlineMethod
+"Directs idle taxis in each period by using the probability distribution of customers"
+type IterativeOfflineVariant2 <: OnlineMethod
 	solver::Function
 	tHorizon::Float64
 	startTime::Float64
@@ -17,7 +18,10 @@ type IterativeOffline <: OnlineMethod
 
 	warmStart::Bool
 	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false)
+
+	R::Clustering.KmeansResult{Float64}
+	hCustomers::Vector{Customer}
+	function IterativeOfflineVariant2(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0
@@ -36,19 +40,21 @@ end
 """
 Initializes a given OnlineMethod with a selected taxi problem without customers
 """
-function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
+function onlineInitialize!(om::IterativeOfflineVariant2, pb::TaxiProblem)
 	om.pb = pb
 	om.nTime = pb.nTime
 	om.pb.taxis = copy(om.pb.taxis)
 	om.pb.custs = Customer[]
 	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
+	om.R = clusterCity(pb, 50)
+	om.hCustomers = selectCustomers(length(om.pb.taxis), 1.0, DateTime(2013, 03, 01, 12, 00), 0.0, 0.0)
 end
 
 """
 Updates OnlineMethod to account for new customers, returns a list of TaxiActions
 since the last update. Needs initial information to start from.
 """
-function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vector{Customer})
+function onlineUpdate!(om::IterativeOfflineVariant2, endTime::Float64, newCustomers::Vector{Customer})
 	# Sets the time window for the offline solver
 	tt = TaxiSimulation.traveltimes(om.pb)
 	startOffline = om.startTime
@@ -191,7 +197,17 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-	
+
+	idleTaxiActions = usingDemandPrediction(om.pb, TaxiSolution(om.pb, offlineSolution), startOffline, endTime, om.hCustomers, om.R)
+	for (i, taxiAction) in enumerate(idleTaxiActions)
+		if !isempty(taxiAction.path)
+			append!(onlineTaxiActions[i].path, taxiAction.path)
+			(t, road) = onlineTaxiActions[i].path[end]
+			newt = max(t + om.pb.roadTime[src(road), dst(road)] - endTime, 0.0)
+			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, dst(road), newt)
+		end
+	end
+
 	# Updates the start time for the next time window
 	om.startTime = endTime
 	om.nextAssignedCustomers = nextUpdateAssignedCustomers

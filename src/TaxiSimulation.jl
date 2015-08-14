@@ -5,7 +5,7 @@
 module TaxiSimulation
 
 using JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-SFML, DataStructures, Base.Dates, DataFrames, Base.Test
+SFML, DataStructures, Base.Dates, DataFrames, Base.Test, Clustering
 
 
 #types
@@ -62,6 +62,10 @@ include("online/onlineSimulation.jl")
 include("online/iterativeOffline.jl")
 include("online/fixedAssignment.jl")
 include("online/uber.jl")
+include("online/uber2.jl")
+include("online/iterativeOfflineVariant.jl")
+include("online/iterativeOfflineVariant2.jl")
+include("online/directIdleTaxis.jl")
 
 #visualization
 include("visualization/visualize.jl")
