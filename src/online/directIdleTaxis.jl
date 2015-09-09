@@ -24,7 +24,7 @@ function usingVirtualCustomers(pb::TaxiProblem, solver, startTime::Float64, endT
 			push!(idleTaxis)
 		end
 	end
-	
+
 	newpb.taxis = idleTaxis
 	newpb.custs = customers
 	idleSolution = solver(newpb)
@@ -147,7 +147,7 @@ function usingDemandPrediction(pb::TaxiProblem, sol::TaxiSolution, startTime::Fl
 	for (i, coordinate) in enumerate(pb.positions)
 		index = R.assignments[i]
 		coordinates[index] = TaxiSimulation.Coordinates(coordinates[index].x + coordinate.x / nodeCount[index], coordinates[index].y + coordinate.y / nodeCount[index])
-	end 
+	end
 	closestNode = findClosestNode(pb, coordinates)
 	idleTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
 	for (i, t) in enumerate(pb.taxis)
@@ -157,8 +157,8 @@ function usingDemandPrediction(pb::TaxiProblem, sol::TaxiSolution, startTime::Fl
 				# use Julia distributions instead of max
 				# use arbitraty time limit (not endTIme) for now
 				# LP's
-				if startTime + 0.5 * tt[t.initPos, closestNode[j]] <= endTime
-				if tt[t.initPos, closestNode[j]] <= 200.0
+				if startTime + 0.5 * tt[t.initPos, closestNode[j]] <= endTime &&
+				 tt[t.initPos, closestNode[j]] <= 200.0
 					# println(tt[t.initPos, closestNode[j]])
 					push!(p, (j, score))
 				end
