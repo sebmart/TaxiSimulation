@@ -39,13 +39,9 @@ end
 
 ShortestPaths() = ShortestPaths(Array(Float64,(0,0)), Array(Float64,(0,0)), Array(Int,(0,0)))
 
-
-
-#TEMPORARY FIX
 #Dijkstra algorithm
 
 # define appropriate comparators for heap entries
-<(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 Base.isless(e1::DijkstraEntry, e2::DijkstraEntry) = e1.dist < e2.dist
 
 "Run dijkstra while also running costs"
