@@ -15,17 +15,15 @@ function onlineSimulation(city::TaxiProblem, om::OnlineMethod; verbose=false)
 		c = Customer(c.id, c.orig, c.dest, c.tcall * (1 - noTcallInt) + c.tmin * noTcallInt, c.tmin, c.tmaxt, c.price)
 		push!(customers, c)
 	end
-	pb = copy(city)
-	pb.custs = customers
 
 	# Sorts customers by tcall
-	custs = sort(pb.custs, by = x -> x.tcall)
+	sort!(customers, by = x -> x.tcall)
 
 	# Initializes the online method with the given taxi problem without the customers
 	init = copy(pb)
 	init.custs = Customer[]
 	onlineInitialize!(om, init)
-	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i in 1:length(pb.taxis)]
+	totalTaxiActions = fill(TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]), length(pb.taxis))
 
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})
 		if verbose
@@ -53,30 +51,30 @@ function onlineSimulation(city::TaxiProblem, om::OnlineMethod; verbose=false)
 		end
 	end
 
-	if om.period > 0.
+	#First case : we have an update period defined
+	if :period in fieldnames(om) && om.period > 0.
 		period = om.period
 		# Goes through time, adding customers and updating the online solution
-		currentStep = 1
-		currentIndex = 1
-		while (currentStep-1) * period <= pb.nTime
+		currentStep = 0
+		custIndex = 1
+		while currentStep * period <= pb.nTime
 			newCustomers = Customer[]
-			index = currentIndex
-			while index <= length(custs) && custs[index].tcall <= (currentStep - 1) * period
+			index = custIndex
+			while index <= length(custs) && custs[index].tcall <= currentStep * period
 				index += 1
 			end
-			newCustomers = custs[currentIndex:(index - 1)]
-			currentIndex = index
-			# Selects for customers with tcall in the current time period
-			onlineStep!((currentStep-1)*period, min(pb.nTime,currentStep*period), newCustomers)
+			newCustomers = custs[custIndex:(index - 1)]
+			custIndex = index
+			onlineStep!(currentStep*period, min(pb.nTime,(currentStep+1)*period), newCustomers)
 			currentStep += 1
 		end
-	else
+	else #Second case: we call for an update everytime a new customer calls
 		# Goes through time, adding customers and updating the online solution
 		startIndex = 1
 		while startIndex <= length(custs)
-			# Selects for customers with tcall in the current time period
+			# Selects customers with same tcall (tolerance EPS)
 			newCustomers = Customer[]
-			finishIndex = startIndex
+			finishIndex = startIndex + 1
 			while (finishIndex <= length(custs) && custs[finishIndex].tcall < custs[startIndex].tcall + EPS)
 				finishIndex += 1
 			end
@@ -98,7 +96,7 @@ function onlineSimulation(city::TaxiProblem, om::OnlineMethod; verbose=false)
 		customersNotTaken[customer.id] = false
 	end
 
-	# Coputes the overall cost for the generated taxi actions
+	# Computes the overall cost for the generated taxi actions
 	totalCost = solutionCost(pb, totalTaxiActions)
 
 	# Returns the complete online solution
