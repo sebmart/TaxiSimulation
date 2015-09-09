@@ -1,11 +1,17 @@
 """
-Simulates the online problem by initializing an Online Method, updating customers
-using TCall, then proccesses the returned TaxiActions to produce a TaxiSolution
+Simulates the online problem: send only the online information to an online solver
+(OnlineMethod), in an iterative way. Compiles the taxis' online actions into a
+TaxiSolution object
+
+Parameters of OnlineMethod:
+noTcall : customers are sent at tmin (no "booking" allowed)
+noTmaxt : customers can wait indefinitely for a taxi
 """
 function onlineSimulation(city::TaxiProblem, om::OnlineMethod; verbose=false)
 	customers = Customer[]
-	noTcallInt = Int(om.noTcall)
-	noTmaxtInt = Int(om.noTmaxt)
+
+	noTcallInt = :noTcall in fieldnames(om) ? Int(om.noTcall) : 0
+	noTmaxtInt = :noTmaxt in fieldnames(om) ? Int(om.noTmaxt) : 0
 	for c in city.custs
 		c = Customer(c.id, c.orig, c.dest, c.tcall * (1 - noTcallInt) + c.tmin * noTcallInt, c.tmin, c.tmaxt * (1 - noTmaxtInt) + city.nTime * noTmaxtInt, c.price)
 		push!(customers, c)

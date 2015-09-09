@@ -9,8 +9,6 @@ type IterativeOffline <: OnlineMethod
 	customers::Vector{Customer}
 	notTaken::Dict{Int64, Bool}
 
-	noTcall::Bool
-	noTmaxt::Bool
 	period::Float64
 
 	completeMoves::Bool
@@ -24,8 +22,6 @@ type IterativeOffline <: OnlineMethod
 		offline.solver = solver
 		offline.customers = Customer[]
 		offline.notTaken = Dict{Int64, Bool}()
-		offline.noTcall = false
-		offline.noTmaxt = false
 		offline.period = period
 		offline.completeMoves = completeMoves
 		offline.warmStart = warmStart
@@ -77,12 +73,12 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 					push!(currentCustomers, newCust)
 					if om.warmStart
 						if customer.id in keys(om.nextAssignedCustomers)
-							info = om.nextAssignedCustomers[customer.id]			
+							info = om.nextAssignedCustomers[customer.id]
 							newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 							push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 						else
 							push!(warmStartNotTakenIndices, length(IDtoIndex))
-						end 
+						end
 					end
 				end
 			elseif customer.tmin <= finishOffline
@@ -92,12 +88,12 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 				push!(currentCustomers, newCust)
 				if om.warmStart
 					if customer.id in keys(om.nextAssignedCustomers)
-						info = om.nextAssignedCustomers[customer.id]			
+						info = om.nextAssignedCustomers[customer.id]
 						newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 						push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 					else
 						push!(warmStartNotTakenIndices, length(IDtoIndex))
-					end 
+					end
 				end
 			end
 		end
@@ -191,7 +187,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, newt)
 		end
 	end
-	
+
 	# Updates the start time for the next time window
 	om.startTime = endTime
 	om.nextAssignedCustomers = nextUpdateAssignedCustomers

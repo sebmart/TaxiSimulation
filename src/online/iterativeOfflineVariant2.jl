@@ -10,8 +10,6 @@ type IterativeOfflineVariant2 <: OnlineMethod
 	customers::Vector{Customer}
 	notTaken::Dict{Int64, Bool}
 
-	noTcall::Bool
-	noTmaxt::Bool
 	period::Float64
 
 	completeMoves::Bool
@@ -28,8 +26,6 @@ type IterativeOfflineVariant2 <: OnlineMethod
 		offline.solver = solver
 		offline.customers = Customer[]
 		offline.notTaken = Dict{Int64, Bool}()
-		offline.noTcall = false
-		offline.noTmaxt = false
 		offline.period = period
 		offline.completeMoves = completeMoves
 		offline.warmStart = warmStart
@@ -83,12 +79,12 @@ function onlineUpdate!(om::IterativeOfflineVariant2, endTime::Float64, newCustom
 					push!(currentCustomers, newCust)
 					if om.warmStart
 						if customer.id in keys(om.nextAssignedCustomers)
-							info = om.nextAssignedCustomers[customer.id]			
+							info = om.nextAssignedCustomers[customer.id]
 							newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 							push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 						else
 							push!(warmStartNotTakenIndices, length(IDtoIndex))
-						end 
+						end
 					end
 				end
 			elseif customer.tmin <= finishOffline
@@ -98,12 +94,12 @@ function onlineUpdate!(om::IterativeOfflineVariant2, endTime::Float64, newCustom
 				push!(currentCustomers, newCust)
 				if om.warmStart
 					if customer.id in keys(om.nextAssignedCustomers)
-						info = om.nextAssignedCustomers[customer.id]			
+						info = om.nextAssignedCustomers[customer.id]
 						newAssignedCustomer = AssignedCustomer(length(IDtoIndex), info[2], info[2])
 						push!(warmStartAssignedCustomers[info[1]], newAssignedCustomer)
 					else
 						push!(warmStartNotTakenIndices, length(IDtoIndex))
-					end 
+					end
 				end
 			end
 		end

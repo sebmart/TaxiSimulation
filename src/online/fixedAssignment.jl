@@ -4,14 +4,11 @@ type FixedAssignment <: OnlineMethod
 	sol::IntervalSolution
     startTime::Float64
 
-    noTcall::Bool
-    noTmaxt::Bool
     period::Float64
 	# FixedAssignment() = new()
     function FixedAssignment(;period::Float64=0.)
         offline = new()
-        offline.noTcall = false
-        offline.noTmaxt = false
+
         offline.period = period
         return offline
     end
