@@ -3,7 +3,6 @@ type Uber2 <: OnlineMethod
 	startTime::Float64
 
 	noTcall::Bool
-	noTmaxt::Bool
 	period::Float64
 	R::Clustering.KmeansResult{Float64}
 	hCustomers::Vector{Customer}
@@ -11,7 +10,6 @@ type Uber2 <: OnlineMethod
 		offline = new()
 		offline.startTime = 0.0
 		offline.noTcall = removeTcall
-		offline.noTmaxt = removeTmaxt
 		offline.period = period
 		return offline
 	end
@@ -77,7 +75,7 @@ function onlineUpdate!(om::Uber2, endTime::Float64, newCustomers::Vector{Custome
 	end
 
 	# Customer Prediction
-	
+
 	idleTaxiActions = usingDemandPrediction(om.pb, start, endTime, om.hCustomers, om.R)
 	for (i, taxiAction) in enumerate(idleTaxiActions)
 		if !isempty(taxiAction.path)
@@ -88,7 +86,7 @@ function onlineUpdate!(om::Uber2, endTime::Float64, newCustomers::Vector{Custome
 		end
 	end
 
-	# # Provides virtual customers to better position idle taxis 
+	# # Provides virtual customers to better position idle taxis
 	# for (i, c) in enumerate(virtualCustomers)
 	# 	minPickupTime, index = Inf, 0
 	# 	# initTime = tStart

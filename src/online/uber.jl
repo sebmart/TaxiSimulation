@@ -3,13 +3,11 @@ type Uber <: OnlineMethod
 	startTime::Float64
 
 	noTcall::Bool
-	noTmaxt::Bool
 	period::Float64
-	function Uber(; removeTcall::Bool = true, removeTmaxt::Bool = true, period::Float64 = 0.0)
+	function Uber(; removeTcall::Bool = true, period::Float64 = 0.0)
 		offline = new()
 		offline.startTime = 0.0
 		offline.noTcall = removeTcall
-		offline.noTmaxt = removeTmaxt
 		offline.period = period
 		return offline
 	end

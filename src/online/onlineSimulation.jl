@@ -11,9 +11,8 @@ function onlineSimulation(city::TaxiProblem, om::OnlineMethod; verbose=false)
 	customers = Customer[]
 
 	noTcallInt = :noTcall in fieldnames(om) ? Int(om.noTcall) : 0
-	noTmaxtInt = :noTmaxt in fieldnames(om) ? Int(om.noTmaxt) : 0
 	for c in city.custs
-		c = Customer(c.id, c.orig, c.dest, c.tcall * (1 - noTcallInt) + c.tmin * noTcallInt, c.tmin, c.tmaxt * (1 - noTmaxtInt) + city.nTime * noTmaxtInt, c.price)
+		c = Customer(c.id, c.orig, c.dest, c.tcall * (1 - noTcallInt) + c.tmin * noTcallInt, c.tmin, c.tmaxt, c.price)
 		push!(customers, c)
 	end
 	pb = copy(city)
