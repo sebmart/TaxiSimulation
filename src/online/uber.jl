@@ -26,24 +26,22 @@ Updates OnlineMethod to account for new customers, returns a list of TaxiActions
 since the last update. Needs initial information to start from.
 """
 function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer})
-	start = om.startTime
-
 	# Sets up travel times for later use
 	tt = TaxiSimulation.traveltimes(om.pb)
 
 	# Initializes onlineTaxiActions to update accordingly
-	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for i in 1:length(om.pb.taxis)]
+	onlineTaxiActions = TaxiActions[TaxiActions(Tuple{Float64, Road}[], CustomerAssignment[]) for k in 1:length(om.pb.taxis)]
 
 	# Iterates through all customers and assigns them to the closest free taxi, if available
-	for (i, c) in enumerate(newCustomers)
-		minPickupTime, index = Inf, 0
-		# initTime = tStart
+	for c in newCustomers
+		taxiIndex = 0
+		minPickupTime = Inf
 		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer's appearence
-		for (j, t) in enumerate(onlineTaxiActions)
-			if om.pb.taxis[j].initTime == start && c.tmin <= start + tt[om.pb.taxis[j].initPos, c.orig] <= c.tmaxt
-				pickupTime = start + tt[om.pb.taxis[j].initPos, c.orig]
+		for k = 1:length(om.pb.taxis)
+			if c.tmin <= om.pb.taxis[k].initTime + tt[om.pb.taxis[k].initPos, c.orig] <= c.tmaxt
+				pickupTime = start + tt[om.pb.taxis[k].initPos, c.orig]
 				if pickupTime < minPickupTime
-					minPickupTime, index = pickupTime, j
+					minPickupTime, index = pickupTime, k
 				end
 			end
 		end
@@ -70,9 +68,9 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 	end
 
 	# Updates the remaining taxis
-	for (i, taxiAction) in enumerate(onlineTaxiActions)
-		if om.pb.taxis[i].initTime < endTime
-			om.pb.taxis[i] = Taxi(om.pb.taxis[i].id, om.pb.taxis[i].initPos, endTime)
+	for (k,t) in enumerate(om.pb.taxis)
+		if t.initTime < endTime
+			om.pb.taxis[k] = Taxi(t.id, t.initPos, endTime)
 		end
 	end
 
