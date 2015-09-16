@@ -19,7 +19,7 @@ type SquareCity <: TaxiProblem
     width::Int
 
     #constructor that only create the graph
-    function SquareCity(width::Int=5; discreteTime = false, emptyType=false)
+    function SquareCity(width::Int = 5; discreteTime = false, emptyType=false)
         c = new()
         if emptyType
             return c
@@ -93,6 +93,15 @@ type SquareCity <: TaxiProblem
         c.discreteTime = discreteTime
         return c
     end
+end
+
+"""
+    Returns a "standard" square cityh problem
+"""
+function SquareCityProblem()
+    width = 5; nTaxis = 10; nTime = 150.; nCusts::Int = 80
+    sq = SquareCity(width)
+    generateProblem!(sq, nTaxis, nTime, nCusts)
 end
 
 function generateTaxis!(city::SquareCity, nTaxis::Int)
