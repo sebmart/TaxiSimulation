@@ -60,17 +60,14 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	end
 
 	# Finds the minimal and maximal speeds (as determined by distance / roadTime)
-	function generateScoreBound(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates})
+	function generateScoreBound(city::TaxiProblem, nodeCoordinates::Vector{Coordinates})
 		minscore = Inf; maxscore = -Inf; minedge = Inf
 		for edge in edges(city.network)
-			if flag
-				score = city.distances[src(edge), dst(edge)] / city.roadTime[src(edge), dst(edge)]
-			else
-				xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
-				ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
-				distance = sqrt(xdif * xdif + ydif * ydif)
-				score = distance / city.roadTime[src(edge), dst(edge)]
-			end
+			xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
+			ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
+			distance = sqrt(xdif * xdif + ydif * ydif)
+			score = distance / city.roadTime[src(edge), dst(edge)]
+
 			if score < minscore
 				minscore = score
 			end
@@ -86,7 +83,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	end
 
 	# Creates the roads of the graph
-	function generateRoads(city::TaxiProblem, flag::Bool, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
+	function generateRoads(city::TaxiProblem, nodeCoordinates::Vector{Coordinates}, min::Float64, max::Float64)
 		roads = Line[]
 		for edge in edges(city.network)
 			startNode = src(edge)
@@ -96,13 +93,10 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 			# road = Line(s, e, 1.0)
 			road = Line(s, e, 1.0 * radiusScale)
 			distance = 0
-			if flag
-				distance = city.distances[src(edge), dst(edge)]
-			else
-				xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
-				ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
-				distance = sqrt(xdif * xdif + ydif * ydif)
-			end
+
+			xdif = abs(nodeCoordinates[src(edge)].x - nodeCoordinates[dst(edge)].x)
+			ydif = abs(nodeCoordinates[src(edge)].y - nodeCoordinates[dst(edge)].y)
+			distance = sqrt(xdif * xdif + ydif * ydif)
 			score = distance / city.roadTime[src(edge), dst(edge)]
 			difscore = max - min
 			avg = (max + min)/2
@@ -293,11 +287,11 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	# Calls the above functions to create the necessary objects for the visualization
 	bounds = generateBounds(originalNodes)
 	nodeCoordinates = generateNodeCoordinates(originalNodes, bounds)
-	minEdge = generateScoreBound(city, flag, nodeCoordinates)[3]
+	minEdge = generateScoreBound(city, nodeCoordinates)[3]
 	nodeRadius = max(minEdge / 10, 1.0 * radiusScale)
 	nodes = generateNodes(nodeRadius, nodeCoordinates)
-	scoreBound = generateScoreBound(city, flag, nodeCoordinates)
-	roads = generateRoads(city, flag, nodeCoordinates, scoreBound[1], scoreBound[2])
+	scoreBound = generateScoreBound(city, nodeCoordinates)
+	roads = generateRoads(city, nodeCoordinates, scoreBound[1], scoreBound[2])
 	if !flag
 		taxiRadius = 1.5 * nodeRadius
 		taxis = generateTaxis(city, sol, taxiRadius, nodeCoordinates)
