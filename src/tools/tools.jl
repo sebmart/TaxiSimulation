@@ -165,7 +165,7 @@ function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
         end
         #quick check..
         for c in list
-            if c.tInf > c.tSup + EPS 
+            if c.tInf > c.tSup + EPS
                 error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
         end
@@ -345,3 +345,30 @@ toInt(x::Float64) = round(Int,x)
 traveltimes(pb::TaxiProblem) = traveltimes(pb.paths)
 travelcosts(pb::TaxiProblem) = travelcosts(pb.paths)
 getPath(city::TaxiProblem, startNode::Int, endNode::Int) = getPath(city, city.paths, startNode, endNode)
+
+"""
+Returns a taxi problem with all tcall set to zero
+"""
+function pureOffline(pb::TaxiProblem)
+    pb2 = copy(pb)
+    pb2.custs = Customer[Customer(c.id,c.orig,c.dest, 0., c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    return pb2
+end
+
+"""
+Returns a taxi problem with all tcall set to tmin
+"""
+function pureOnline(pb::TaxiProblem)
+    pb2 = copy(pb)
+    pb2.custs = Customer[Customer(c.id,c.orig,c.dest, c.tmin, c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    return pb2
+end
+
+"""
+Returns a taxi problem with all tmaxt set to nTime
+"""
+function noTmaxt(pb::TaxiProblem)
+    pb2 = copy(pb)
+    pb2.custs = Customer[Customer(c.id,c.orig,c.dest, c.tcall, c.tmin, pb.nTime, c.price) for c in pb.custs]
+    return pb2
+end

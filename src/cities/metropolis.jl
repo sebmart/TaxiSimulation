@@ -190,18 +190,20 @@ end
     Standard "small" Metropolis problem
 """
 function smallMetroProblem()
-    width=4; nSub=4; nTaxis = 5, demand = 1.; tStart=now(); tEnd=(now()+Minute(90))
+    width=4; nSub=4; nTaxis = 5; demand = 0.4; tStart=now(); tEnd=now()+Minute(90)
     pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
     generateProblem!(pb, nTaxis, demand, tStart, tEnd)
+    return pb
 end
 
 """
     Standard "big" Metropolis problem
 """
 function bigMetroProblem()
-    width=8; nSub=8; nTaxis = 25, demand = 0.5; tStart=now(); tEnd=(now()+Hour(2))
+    width=8; nSub=8; nTaxis = 25; demand = 0.4; tStart=now(); tEnd=now()+Hour(2)
     pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
     generateProblem!(pb, nTaxis, demand, tStart, tEnd)
+    return pb
 end
 
 """

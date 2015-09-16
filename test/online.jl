@@ -2,14 +2,14 @@ println("""
     Online: Testing on SquareCity
 """)
 
-city = squareCityProblem()
-generateProblem!(city)
-sol1 = onlineSimulation(city, FixedAssignment())
-sol2 = onlineSimulation(city, FixedAssignment(period = 0.01))
-testSolution(city,sol1)
-testSolution(city,sol2)
+pb = squareCityProblem()
+generateProblem!(pb)
+sol1 = onlineSimulation(pb, FixedAssignment())
+sol2 = onlineSimulation(pb, FixedAssignment(period = 0.01))
+testSolution(pb,sol1)
+testSolution(pb,sol2)
 
-s= intervalOpt(city)
+s= intervalOpt(pb)
 @test s.cost < sol1.cost + 1e-5
 
 #In the limit period => 0, in the case of continuous data, the results should be the same
@@ -20,30 +20,30 @@ s= intervalOpt(city)
 println("""
     Online: Testing on Metropolis
 """)
-city = Metropolis()
-generateProblem!(city)
+#We are testing the iterative offline with different parameters
+pb = smallMetroProblem()
 tUpdate, tHorizon = 5., 60.
 solver = intervalOpt
-sol1 = onlineSimulation(city, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=true))
-testSolution(city,sol1)
+sol = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=true))
+testSolution(pb,sol)
 
+#Test long updates and no completeMoves
 tUpdate, tHorizon = 50., 100.
-solver = pb -> localDescent(pb,1000)
-sol1 = onlineSimulation(city, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=false), verbose=true)
-testSolution(city,sol1)
+sol = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, completeMoves=false))
+testSolution(pb,sol)
 
-# Rest of tests on Metropolis for period = 0.0 and Uber method
-generateProblem!(city)
+#Test localDescent with printing
+tUpdate, tHorizon = 5., 100.
+solver = p -> localDescent(p,1000)
+sol = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=false), verbose=true)
+testSolution(pb,sol)
 
-s1a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false), verbose=true)
-testSolution(city, s1a)
-s1b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = false, warmStart = true), verbose=true)
-testSolution(city, s1b)
+#Test localDescent with warmstart and zero-period
+tUpdate, tHorizon = 0., 100.
+solver = (p,i) -> localDescent(p,10000,i)
+s1b = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, solver, completeMoves = false, warmStart = true))
+testSolution(pb, sol)
 
-s2a = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true))
-testSolution(city, s2a)
-s2b = onlineSimulation(city, IterativeOffline(0.0, 60.0, completeMoves = true, warmStart = true))
-testSolution(city, s2b)
-
-s3 = onlineSimulation(city, Uber(removeTmaxt = false))
-testSolution(city, s3)
+# #test Uber
+# s3 = onlineSimulation(city, Uber(removeTmaxt = false))
+# testSolution(city, s3)

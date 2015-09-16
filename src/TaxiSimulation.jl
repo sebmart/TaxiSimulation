@@ -31,7 +31,8 @@ export onlineSimulation
 #Tools
 export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
 testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
-expandWindows!, dijkstraWithCosts, solutionCost
+expandWindows!, dijkstraWithCosts, solutionCost, pureOffline, pureOnline,
+noTmaxt
 
 #Visualization
 export visualize

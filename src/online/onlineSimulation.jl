@@ -23,7 +23,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 	init = copy(pb)
 	init.custs = Customer[]
 	onlineInitialize!(om, init)
-	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i=1length(pb.taxis)]
+	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i=1:length(pb.taxis)]
 
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})
 		if verbose
