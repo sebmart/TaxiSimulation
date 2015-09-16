@@ -88,7 +88,6 @@ function testSolution(pb::TaxiProblem, sol::TaxiSolution)
         error("NotTaken is not correct")
     end
     @test_approx_eq_eps sol.cost solutionCost(pb,sol.taxis) EPS
-    println("all good!")
 end
 
 "test if interval solution is indeed feasible"
@@ -137,7 +136,6 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     # if abs(sol.cost - cost) > 1e-5
     #     error("Cost is not correct (1e-5 precision)")
     # end
-    println("all good!")
 end
 
 

@@ -4,11 +4,11 @@
 #-- and time intervals to take each customer (continuous or discrete)
 #----------------------------------------
 
-function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 10000)
+function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 10000, verbose = true)
     if pb.discreteTime
-        return intervalOptDiscrete(pb,init,timeLimit=timeLimit)
+        return intervalOptDiscrete(pb,init,timeLimit=timeLimit, verbose = verbose)
     else
-        return intervalOptContinuous(pb,init,timeLimit = timeLimit)
+        return intervalOptContinuous(pb,init,timeLimit = timeLimit, verbose = verbose)
     end
 end
 
@@ -38,7 +38,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1))
+    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag=Int(verbose)))
 
     # =====================================================
     # Decision variables
@@ -224,7 +224,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     return s
 end
 
-function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100, verbose=true)
     taxi = pb.taxis
     cust = pb.custs
     nTime = pb.nTime
@@ -243,7 +243,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1))
+    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag=Int(verbose)))
 
     # =====================================================
     # Decision variables
