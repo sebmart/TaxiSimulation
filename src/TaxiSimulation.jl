@@ -11,7 +11,7 @@ SFML, DataStructures, Base.Dates, DataFrames, Base.Test, Clustering
 #types
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment, 
+IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment,
 Uber
 
 #Cities
@@ -62,10 +62,6 @@ include("online/onlineSimulation.jl")
 include("online/iterativeOffline.jl")
 include("online/fixedAssignment.jl")
 include("online/uber.jl")
-include("online/uber2.jl")
-include("online/iterativeOfflineVariant.jl")
-include("online/iterativeOfflineVariant2.jl")
-include("online/directIdleTaxis.jl")
 
 #visualization
 include("visualization/visualize.jl")
