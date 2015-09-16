@@ -44,6 +44,6 @@ solver = (p,i) -> localDescent(p,10000,i)
 s1b = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, solver, completeMoves = false, warmStart = true))
 testSolution(pb, sol)
 
-# #test Uber
-# s3 = onlineSimulation(city, Uber(removeTmaxt = false))
-# testSolution(city, s3)
+#test Uber
+sol = onlineSimulation(pb, Uber())
+testSolution(pb, sol)
