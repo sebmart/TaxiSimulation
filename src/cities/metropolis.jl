@@ -186,8 +186,27 @@ type Metropolis <: TaxiProblem
     end
 end
 
-#Generate customers and taxis, demand is a parameter correlated to the number of
-# customers
+"""
+    Standard "small" Metropolis problem
+"""
+function smallMetroProblem()
+    width=4; nSub=4; nTaxis = 5, demand = 1.; tStart=now(); tEnd=(now()+Minute(90))
+    pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
+    generateProblem!(pb, nTaxis, demand, tStart, tEnd)
+end
+
+"""
+    Standard "big" Metropolis problem
+"""
+function bigMetroProblem()
+    width=8; nSub=8; nTaxis = 25, demand = 0.5; tStart=now(); tEnd=(now()+Hour(2))
+    pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
+    generateProblem!(pb, nTaxis, demand, tStart, tEnd)
+end
+
+"""
+    Generate customers and taxis, demand is a parameter correlated to the number of customers
+"""
 function generateProblem!(city::Metropolis, nTaxis::Int = 25, demand::Float64 = 0.55,
     tStart::DateTime=now(), tEnd::DateTime=(now()+Hour(2)))
 

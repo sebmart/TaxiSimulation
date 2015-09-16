@@ -16,7 +16,8 @@ Uber
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
-generateCustomers!, generateTaxis!, generateProblem!
+generateCustomers!, generateTaxis!, generateProblem!, squareCityProblem,
+smallMetroProblem, bigMetroProblem
 
 #Offline MILP solvers
 export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous

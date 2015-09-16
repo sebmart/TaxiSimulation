@@ -96,12 +96,13 @@ type SquareCity <: TaxiProblem
 end
 
 """
-    Returns a "standard" square cityh problem
+    Returns a "standard" square city problem
 """
-function SquareCityProblem()
+function squareCityProblem()
     width = 5; nTaxis = 10; nTime = 150.; nCusts::Int = 80
     sq = SquareCity(width)
     generateProblem!(sq, nTaxis, nTime, nCusts)
+    return sq
 end
 
 function generateTaxis!(city::SquareCity, nTaxis::Int)
