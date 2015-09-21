@@ -200,7 +200,7 @@ end
     Standard "big" Metropolis problem
 """
 function bigMetroProblem()
-    width=8; nSub=8; nTaxis = 25; demand = 0.4; tStart=now(); tEnd=now()+Hour(2)
+    width=8; nSub=8; nTaxis = 20; demand = 0.32; tStart=now(); tEnd=now()+Hour(2)
     pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
     generateProblem!(pb, nTaxis, demand, tStart, tEnd)
     return pb

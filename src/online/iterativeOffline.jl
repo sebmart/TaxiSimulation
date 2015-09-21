@@ -48,7 +48,7 @@ function onlineUpdate!(om::IterativeOffline, endTime::Float64, newCustomers::Vec
 	# Sets the time window for the offline solver
 	tt = TaxiSimulation.traveltimes(om.pb)
 	startOffline = om.startTime
-	finishOffline = min(om.nTime,startOffline + om.tHorizon)
+	finishOffline = min(om.nTime,max(startOffline + om.tHorizon, endTime))
 
 	# Adds the new customers to the problem's customers
 	for c in newCustomers

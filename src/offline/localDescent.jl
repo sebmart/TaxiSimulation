@@ -2,20 +2,20 @@
 #-- Local changes on window solution to look for a better one
 #--------------------------------------------------------------
 
-function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb))
+function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb); verbose = true)
     nTaxis = length(pb.taxis)
     #if no customer
     ordered = orderedInsertions(pb)
     if ordered.notTaken == trues(length(pb.custs))
         best = IntervalSolution(pb)
-        print("\nFinal: $(-best.cost) dollars\n")
+        verbose && print("\nFinal: $(-best.cost) dollars\n")
         return best
     end
     if start.notTaken == trues(length(pb.custs))
         start = ordered
     end
 
-    println("Start, $(-start.cost) dollars")
+    verbose && println("Start, $(-start.cost) dollars")
     sol =  copySolution(start)
     best = sol.cost
     success = 0
@@ -33,11 +33,11 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
         if sol.cost < best
             success += 1
             minutes = (time_ns()-startTime)/(60*1.0e9)
-            @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
+            verbose && @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
             best = sol.cost
         end
     end
     expandWindows!(pb, sol)
-    print("\n====Final: $(-sol.cost) dollars \n")
+    verbose && print("\n====Final: $(-sol.cost) dollars \n")
     return sol
 end

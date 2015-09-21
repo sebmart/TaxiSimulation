@@ -220,7 +220,9 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     rev = solutionCost(pb, custs)
     s = IntervalSolution(custs, notTaken, rev)
     expandWindows!(pb,s)
-    println("Final revenue = $(-rev) dollars")
+    if verbose
+        println("Final revenue = $(-getObjectiveValue(m)) dollars")
+    end
     return s
 end
 
@@ -411,6 +413,8 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
-    println("Final revenue = $(-getObjectiveValue(m)) dollars")
+    if verbose
+        println("Final revenue = $(-getObjectiveValue(m)) dollars")
+    end
     return s
 end
