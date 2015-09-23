@@ -370,3 +370,30 @@ function noTmaxt(pb::TaxiProblem)
     pb2.custs = Customer[Customer(c.id,c.orig,c.dest, c.tcall, c.tmin, pb.nTime, c.price) for c in pb.custs]
     return pb2
 end
+
+"""
+Takes a graph and returns positions of the nodes
+"""
+
+function graphPositions(g::Network)
+    stdin, proc = open(`neato -Tplain -o $(path)/outputs/__graphPositions.txt`, "w")
+    to_dot(pb,stdin)
+    close(stdin)
+    fileExists = false
+    while (!fileExists)
+        sleep(1)
+        fileExists = isfile("$(path)/outputs/__graphPositions.txt")
+    end
+    lines = readlines(open("$(path)/outputs/__graphPositions.txt"))
+    rm("$(path)/outputs/__graphPositions.txt")
+    coords = array(Coordinates, nv(g))
+    indices = Int64[]
+    index = 2
+    while(lines[index][1:4] == "node")
+        s = split(lines[index])
+        id =  convert(Int64, float(s[2]))
+        coords[id] = Coordinates(float(s[3]), float(s[4]))
+        index += 1
+    end
+    return coords
+end

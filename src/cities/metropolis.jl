@@ -46,7 +46,7 @@ type Metropolis <: TaxiProblem
         c.hourFare = (t::DateTime -> 150)
         c.driveCost = 30.
         c.waitCost  = 10.
-        c.timeSteptoSecond = 30.
+        c.timeSteptoSecond = 60.
         c.customerTime = 30./c.timeSteptoSecond
         discreteTime && (c.customerTime = round(c.customerTime))
         function cityTrvlTime()
@@ -291,8 +291,8 @@ function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
 
             price = (sim.hourFare(tCurrent)*sim.timeSteptoSecond/3600)*toInt(tt[orig,dest])
             tmin  = i
-            tmaxt = min(sim.nTime, i + rand(1:10))
-            tcall = max(0.0, tmin - rand(1:120))
+            tmaxt = min(sim.nTime, i + round(rand()*5*60 / sim.timeSteptoSecond))
+            tcall = max(0.0, tmin - round(rand()*60*60 / sim.timeSteptoSecond))
             push!(sim.custs,
             Customer(length(sim.custs)+1,orig,dest,tcall,tmin,tmaxt,price))
         end
@@ -341,8 +341,8 @@ function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
         end
         price = (sim.hourFare(tCurrent)/120)*tt[orig,dest]
         tmin  = t
-        tmaxt = min(sim.nTime, t + 10*rand())
-        tcall = max(0., tmin - 120*rand())
+        tmaxt = min(sim.nTime, t + 5*60*rand()/sim.timeSteptoSecond)
+        tcall = max(0., tmin - 60*60*rand()/sim.timeSteptoSecond)
         push!(sim.custs,
         Customer(length(sim.custs)+1,orig,dest,tcall,tmin,tmaxt,price))
 
@@ -372,6 +372,14 @@ function coordToLoc(i::Int, j::Int, c::Int, city::Metropolis)
     else
         return city.width^2 + (c-1)*city.subWidth^2 + j + (i-1)*city.subWidth
     end
+end
+
+
+"Compute _real_ paths (with left turns)"
+function realPaths!(sim::Metropolis, turnTime)
+    # sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
+    # sim.turnTime, sim.turnCost);
+    # return
 end
 
 function Base.copy(city::Metropolis)

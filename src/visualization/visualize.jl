@@ -11,13 +11,6 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	city = c
 	sol = s
 
-	# Output the graph vizualization to pdf file (see GraphViz library)
-	function drawNetwork(pb::TaxiProblem, name::String = "graph")
-	 	stdin, proc = open(`neato -Tplain -o $(path)/outputs/$(name).txt`, "w")
-	 	to_dot(pb,stdin)
-	 	close(stdin)
-	end
-
 	# Create bounds for the graph
 	function generateBounds(nodes::Array{Coordinates,1})
 		minX = Inf; maxX = -Inf; minY = Inf; maxY = -Inf
@@ -258,30 +251,7 @@ function visualize(c::TaxiProblem, s::TaxiSolution = TaxiSolution(); radiusScale
 	try
 		originalNodes = city.positions
 	catch
-		GraphViz = Coordinates[]
-		indices = Int64[]
-		drawNetwork(city, "test1")
-		fileExists = false
-		while (!fileExists)
-			sleep(1)
-			fileExists = isfile("$(path)/outputs/test1.txt")
-		end
-		lines = readlines(open("$(path)/outputs/test1.txt"))
-		rm("$(path)/outputs/test1.txt")
-		index = 2
-		while(split(lines[index])[1] == "node")
-			push!(indices, convert(Int64, float(split(lines[index])[2])))
-			nodeC = Coordinates(float(split(lines[index])[3]), float(split(lines[index])[4]))
-			push!(GraphViz, nodeC)
-			index += 1
-		end
-
-		GraphVizNodes = copy(GraphViz)
-		for i = 1:length(GraphViz)
-			GraphVizNodes[indices[i]] = GraphViz[i]
-		end
-
-		originalNodes = GraphVizNodes
+		originalNodes = graphPositions(city.network)
 	end
 
 	# Calls the above functions to create the necessary objects for the visualization
