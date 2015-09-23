@@ -13,7 +13,7 @@ type Metropolis <: TaxiProblem
     taxis::Array{Taxi,1}
     nTime::Float64
     waitingCost::Float64
-    paths::ShortestPaths
+    paths::Paths
     customerTime::Float64
     discreteTime::Bool
 
@@ -35,6 +35,10 @@ type Metropolis <: TaxiProblem
     hourFare::Function
     "Time step length in seconds"
     timeSteptoSecond::Float64
+    "Left turn time (in time-steps)"
+    turnTime::Float64
+    "Left turn cost (in dollars)"
+    turnCost::Float64
 
 
     function Metropolis(width::Int=8, nSub::Int=8; discreteTime=false, emptyType=false)
@@ -44,11 +48,14 @@ type Metropolis <: TaxiProblem
         end
         #Load the constants
         c.hourFare = (t::DateTime -> 150)
-        c.driveCost = 30.
+        c.driveCost = 20.
         c.waitCost  = 10.
         c.timeSteptoSecond = 60.
         c.customerTime = 30./c.timeSteptoSecond
-        discreteTime && (c.customerTime = round(c.customerTime))
+        c.turnTime = 10/c.timeSteptoSecond
+        c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost / 3600.
+        discreteTime && (c.turnTime = round(c.turnTime))
+        discreteTime && (c.turnTime = round(c.turnTime))
         function cityTrvlTime()
             if discreteTime
                 rand(round(Int,30./c.timeSteptoSecond):round(Int,120./c.timeSteptoSecond))
@@ -339,7 +346,7 @@ function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
             dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
             orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
         end
-        price = (sim.hourFare(tCurrent)/120)*tt[orig,dest]
+        price = (sim.hourFare(tCurrent)/3600)*tt[orig,dest]*sim.timeSteptoSecond
         tmin  = t
         tmaxt = min(sim.nTime, t + 5*60*rand()/sim.timeSteptoSecond)
         tcall = max(0., tmin - 60*60*rand()/sim.timeSteptoSecond)
@@ -376,10 +383,10 @@ end
 
 
 "Compute _real_ paths (with left turns)"
-function realPaths!(sim::Metropolis, turnTime)
-    # sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, sim.positions,
-    # sim.turnTime, sim.turnCost);
-    # return
+function realPaths!(sim::Metropolis)
+    sim.paths = realPaths(sim.network, sim.roadTime, sim.roadCost, graphPositions(sim.network),
+    sim.turnTime, sim.turnCost);
+    return
 end
 
 function Base.copy(city::Metropolis)

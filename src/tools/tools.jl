@@ -222,21 +222,21 @@ end
 "Output the graph vizualization to pdf file (see GraphViz library)"
 function drawNetwork(pb::TaxiProblem, name::String = "graph")
     stdin, proc = open(`neato -Tpdf -o $(path)/outputs/$(name).pdf`, "w")
-    to_dot(pb,stdin)
+    to_dot(pb.network,stdin)
     close(stdin)
 end
 
 "Write dotfile"
 function dotFile(pb::TaxiProblem, name::String = "graph")
     open("$(path)/outputs/$name.dot","w") do f
-        to_dot(pb, f)
+        to_dot(pb.network, f)
     end
 end
 
 "Write the graph in dot format"
-function to_dot(pb::TaxiProblem, stream::IO)
+function to_dot(g::Network, stream::IO)
     write(stream, "digraph  citygraph {\n")
-    for i in vertices(pb.network), j in out_neighbors(pb.network,i)
+    for i in vertices(g), j in out_neighbors(g,i)
         write(stream, "$i -> $j\n")
     end
     write(stream, "}\n")
@@ -374,10 +374,9 @@ end
 """
 Takes a graph and returns positions of the nodes
 """
-
 function graphPositions(g::Network)
     stdin, proc = open(`neato -Tplain -o $(path)/outputs/__graphPositions.txt`, "w")
-    to_dot(pb,stdin)
+    to_dot(g,stdin)
     close(stdin)
     fileExists = false
     while (!fileExists)
@@ -386,7 +385,7 @@ function graphPositions(g::Network)
     end
     lines = readlines(open("$(path)/outputs/__graphPositions.txt"))
     rm("$(path)/outputs/__graphPositions.txt")
-    coords = array(Coordinates, nv(g))
+    coords = Array{Coordinates}(nv(g))
     indices = Int64[]
     index = 2
     while(lines[index][1:4] == "node")

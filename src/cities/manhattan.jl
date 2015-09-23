@@ -43,7 +43,7 @@ type Manhattan <: TaxiProblem
             return c
         end
         #Initialize the constants
-        c.driveCost = 30.
+        c.driveCost = 20.
         c.waitCost  = 10.
         c.timeSteptoSecond = 1.0
         c.customerTime = 30/c.timeSteptoSecond
