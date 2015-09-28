@@ -56,12 +56,12 @@ type Manhattan <: TaxiProblem
         c.network   = data["network"]
         c.distances = data["distances"]
         c.roadType  = data["roadType"]
-        timings = [95.,72.,48.,32.,22.,12.,8.,5.]
+        timings = [95.,72.,48.,32.,22.,12.,8.,5.] # in km/h
         c.roadTime  = spzeros(nv(c.network),nv(c.network))
         for r in edges(c.network)
-            c.roadTime[src(r),dst(r)] = 3.6* c.distances[src(r),dst(r)]/timings[c.roadType[src(r),dst(r)]]
+            c.roadTime[src(r),dst(r)] = 3.6* c.distances[src(r),dst(r)]/timings[c.roadType[src(r),dst(r)]] / c.timeSteptoSecond
         end
-        c.roadCost  = c.roadTime*c.driveCost/3600
+        c.roadCost  = c.roadTime*c.timeSteptoSecond*c.driveCost/3600.
         c.positions = data["positions"]
         if sp
             realPaths!(c)
