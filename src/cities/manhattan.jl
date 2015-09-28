@@ -93,7 +93,7 @@ end
 
 "Generate customers and taxis"
 function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
-    tEnd::DateTime; demand::Float64 = 1.0)
+    tEnd::DateTime, demand::Float64 = 1.0)
     if isempty(traveltimes(city))
         error("shortest paths have to be computed before generating problem")
     end
@@ -109,7 +109,7 @@ function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
 end
 
 "Generate customers in Manhattan using real customer data"
-function generateCustomers!(sim::Manhattan, demand=1.0)
+function generateCustomers!(sim::Manhattan, demand::Float64=1.0)
     #Transform a real time into timesteps
     timeToTs(time::DateTime) = (time - sim.tStart).value/(1000*sim.timeSteptoSecond)
     if Date(sim.tStart) != Date(sim.tEnd)
@@ -126,7 +126,7 @@ function generateCustomers!(sim::Manhattan, demand=1.0)
         if sStart <= df[i, :ptime] <= sEnd && df[i, :pnode] != df[i, :dnode] &&
             tt[df[i,:pnode],df[i,:dnode]] > 60./sim.timeSteptoSecond && rand() <= demand
             tInf = DateTime(df[i, :ptime], "y-m-d H:M:S") + Second(rand(-29:30)) #to make up for database rounding
-            tSup = tInf + Minute(rand(1:15))
+            tSup = tInf + Minute(10)
             tCall = min(sim.tStart, tInf - Minute(rand(1:60)))
             customer = Customer(
             length(sim.custs)+1,
