@@ -93,7 +93,7 @@ end
 
 "Generate customers and taxis"
 function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
-    tEnd::DateTime, demand::Float64 = 1.0)
+    tEnd::DateTime, demand::Float64 = 1.0; waitTime::TimePeriod = Minute(5))
     if isempty(traveltimes(city))
         error("shortest paths have to be computed before generating problem")
     end
@@ -103,7 +103,7 @@ function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
     city.tStart = tStart
     city.tEnd   = tEnd
 
-    generateCustomers!(city, demand)
+    generateCustomers!(city, demand, waitTime=waitTime)
     generateTaxis!(city, nTaxis)
     return city
 end
