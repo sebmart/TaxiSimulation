@@ -46,8 +46,8 @@ type Manhattan <: TaxiProblem
         c.driveCost = 20.
         c.waitCost  = 10.
         c.timeSteptoSecond = 1.0
-        c.customerTime = 30/c.timeSteptoSecond
-        c.turnTime = 10/c.timeSteptoSecond
+        c.customerTime = 30./c.timeSteptoSecond
+        c.turnTime = 10./c.timeSteptoSecond
         c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost / 3600.
         c.waitingCost = c.waitCost * c.timeSteptoSecond / 3600.
 
@@ -109,7 +109,7 @@ function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
 end
 
 "Generate customers in Manhattan using real customer data"
-function generateCustomers!(sim::Manhattan, demand::Float64=1.0)
+function generateCustomers!(sim::Manhattan, demand::Float64=1.0; waitTime::TimePeriod = Minute(5))
     #Transform a real time into timesteps
     timeToTs(time::DateTime) = (time - sim.tStart).value/(1000*sim.timeSteptoSecond)
     if Date(sim.tStart) != Date(sim.tEnd)
@@ -126,7 +126,7 @@ function generateCustomers!(sim::Manhattan, demand::Float64=1.0)
         if sStart <= df[i, :ptime] <= sEnd && df[i, :pnode] != df[i, :dnode] &&
             tt[df[i,:pnode],df[i,:dnode]] > 60./sim.timeSteptoSecond && rand() <= demand
             tInf = DateTime(df[i, :ptime], "y-m-d H:M:S") + Second(rand(-29:30)) #to make up for database rounding
-            tSup = tInf + Minute(10)
+            tSup = tInf + waitTime
             tCall = min(sim.tStart, tInf - Minute(rand(1:60)))
             customer = Customer(
             length(sim.custs)+1,
