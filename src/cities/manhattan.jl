@@ -78,7 +78,7 @@ type Manhattan <: TaxiProblem
 end
 
 "Output the graph vizualization to pdf file (see GraphViz library)"
-function drawNetwork(pb::Manhattan, name::String = "graph")
+function drawNetwork(pb::Manhattan, name::AbstractString = "graph")
     stdin, proc = open(`neato -n2 -Tpdf -o $(path)/outputs/$name.pdf`, "w")
     write(stdin, "digraph  citygraph {\n")
     for i in vertices(pb.network)

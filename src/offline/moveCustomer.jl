@@ -2,8 +2,8 @@
 #-- Insert a non-taken customer into a time-window solution
 #----------------------------------------
 
-"Take an IntervalSolution and insert a not-taken customer"
-function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
+"Take an IntervalSolution and insert a not-taken customer, with minimal cost"
+function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int; earliest::Bool=false)
     #-------------------------
     # Select the taxi to assign
     #-------------------------
@@ -29,6 +29,9 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
             if length(custs) == 0 #if no customer at all
                 cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
                 (tt[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
+                if earliest
+                    cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
+                end
                 if cost < mincost
                     mincost = cost
                     position = 1
@@ -46,6 +49,9 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                     tc[c.dest,c1.orig] - tc[initPos, c1.orig] -
                     (tt[initPos, c.orig] + tt[c.orig, c.dest] +
                     tt[c.dest,c1.orig] - tt[initPos, c1.orig]) * pb.waitingCost
+                    if earliest
+                        cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
+                    end
                     if cost < mincost
                         mincost = cost
                         position = 1
@@ -62,6 +68,10 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                 tt[cLast.dest, c.orig] <= c.tmaxt
                 cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
                 (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
+                if earliest
+                    cost = EPS*cost + max(0., custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
+                        tt[cLast.dest, c.orig] - c.tmin)
+                end
                 if cost < mincost
                     mincost = cost
                     position = length(custs) + 1
@@ -82,6 +92,9 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int)
                     tc[c.dest,cip1.orig] -  tc[ci.dest, cip1.orig] -
                     (tt[ci.dest, c.orig] + tt[c.orig, c.dest] +
                     tt[c.dest, cip1.orig] - tt[ci.dest, cip1.orig]) * pb.waitingCost
+                    if earliest
+                        cost = EPS*cost + max(0., custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] - c.tmin)
+                    end
                     if cost < mincost
                         mincost = cost
                         position = i+1

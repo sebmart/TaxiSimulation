@@ -4,11 +4,13 @@ type Uber <: OnlineMethod
 
 	noTcall::Bool
 	period::Float64
-	function Uber(; period::Float64 = 0.0)
+	freeTaxiOnly::Bool
+	function Uber(; period::Float64 = 0.0, freeTaxiOnly::Bool=true)
 		u = new()
 		u.startTime = 0.0
 		u.noTcall = true
 		u.period = period
+		u.freeTaxiOnly = freeTaxiOnly
 		return u
 	end
 end
@@ -38,7 +40,7 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 		minPickupTime = Inf
 		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer's appearence
 		for k = 1:length(om.pb.taxis)
-			if c.tmin <= om.pb.taxis[k].initTime + tt[om.pb.taxis[k].initPos, c.orig] <= c.tmaxt
+			if (!om.freeTaxiOnly || om.pb.taxis[k].initTime == om.startTime) && c.tmin <= om.pb.taxis[k].initTime + tt[om.pb.taxis[k].initPos, c.orig] <= c.tmaxt
 				pickupTime = om.pb.taxis[k].initTime + tt[om.pb.taxis[k].initPos, c.orig]
 				if pickupTime < minPickupTime
 					minPickupTime, taxiIndex = pickupTime, k
@@ -67,7 +69,7 @@ function onlineUpdate!(om::Uber, endTime::Float64, newCustomers::Vector{Customer
 		end
 	end
 
-	# Updates the remaining taxis
+	# Updates the remaining taxis (stay at the same place)
 	for (k,t) in enumerate(om.pb.taxis)
 		if t.initTime < endTime
 			om.pb.taxis[k] = Taxi(t.id, t.initPos, endTime)

@@ -210,24 +210,24 @@ function getPath(city::TaxiProblem, startNode::Int, endNode::Int, startTime::Flo
     return path
 end
 
-function saveTaxiPb(pb::TaxiProblem, name::String; compress=false)
+function saveTaxiPb(pb::TaxiProblem, name::AbstractString; compress=false)
     save("$(path)/.cache/$name.jld", "pb", pb, compress=compress)
 end
 
-function loadTaxiPb(name::String)
+function loadTaxiPb(name::AbstractString)
     pb = load("$(path)/.cache/$name.jld","pb")
     return pb
 end
 
 "Output the graph vizualization to pdf file (see GraphViz library)"
-function drawNetwork(pb::TaxiProblem, name::String = "graph")
+function drawNetwork(pb::TaxiProblem, name::AbstractString = "graph")
     stdin, proc = open(`neato -Tpdf -o $(path)/outputs/$(name).pdf`, "w")
     to_dot(pb.network,stdin)
     close(stdin)
 end
 
 "Write dotfile"
-function dotFile(pb::TaxiProblem, name::String = "graph")
+function dotFile(pb::TaxiProblem, name::AbstractString = "graph")
     open("$(path)/outputs/$name.dot","w") do f
         to_dot(pb.network, f)
     end
@@ -395,4 +395,11 @@ function graphPositions(g::Network)
         index += 1
     end
     return coords
+end
+
+"Update the call times"
+function updateTcall(pb::TaxiProblem, time)
+    pb2 = copy(pb)
+    pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    return pb2
 end
