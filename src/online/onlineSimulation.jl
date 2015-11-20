@@ -70,6 +70,9 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 		end
 	else #Second case: we call for an update everytime a new customer calls
 		# Goes through time, adding customers and updating the online solution
+		if customers[1].tcall > 0.0
+			onlineStep!(0., customers[1].tcall, Customer[])
+		end
 		startIndex = 1
 		while startIndex <= length(customers)
 			# Selects customers with same tcall (tolerance EPS)
