@@ -2,8 +2,11 @@
 #-- Insert a non-taken customer into a time-window solution
 #----------------------------------------
 
-"Take an IntervalSolution and insert a not-taken customer, with minimal cost"
-function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int; earliest::Bool=false)
+"""
+    Take an IntervalSolution and insert a not-taken customer, with minimal cost
+    - !! do not update solution cost !!
+"""
+function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis = 1:length(pb.taxis); earliest::Bool=false)
     #-------------------------
     # Select the taxi to assign
     #-------------------------
@@ -21,7 +24,8 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int; earli
     tc = travelcosts(pb)
 
     #We test the new customer for each taxi
-    for (k,custs) in enumerate(sol.custs)
+    for k in taxis
+        custs = sol.custs[k]
         initPos = pb.taxis[k].initPos
         initTime = pb.taxis[k].initTime
         #First Case: taking customer before all the others
@@ -155,167 +159,152 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int; earli
     return mincost, mintaxi, position
 end
 
-"Split a customer list and exchange with another taxi. Returns the best between this solution and the previous one"
-function splitAndMove!(pb::TaxiProblem, sol2::IntervalSolution, k::Int, i::Int, k2::Int)
+
+"""
+    split a taxi timeline and tries to switch the last part with another taxi's
+    returns either the previous solution, or construct a new one and returns it
+    suppose that no other customer can be inserted in current solution
+    the new solution is returned even if its cost is not as good as the previous one
+"""
+function switchCustomers!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int)
+    #Step 1: find the best taxi.
+    # criterion: minimum "insertcost"
+    bestCost = Inf
+    bestPos  = -1
+    bestK    = -1
+    for k2 in 1:length(pb.taxis)
+        if k2==k
+            continue
+        end
+        cost, pos = insertCost(pb, sol, k2, sol2.custs[k][i])
+        if cost < bestCost
+            bestCost = cost
+            bestPos  = pos
+            bestK    = k2
+        end
+    end
+    if bestCost == Inf
+        return sol
+    end
+
+    priorNotTaken = copy(sol.notTaken)
+
+    #Step 2: switch the two timelines at the given position
+    switchTimelines!(pb,sol,k,i-1,bestK,bestPos)
+
+    #Step3: tries to insert all customers
+    for c in 1:length(pb.custs)
+        if priorNotTaken[c]
+            insertCustomer!(pb, sol, c, [k, bestK])
+        elseif sol2.notTaken[c]
+            insertCustomer!(pb, sol, c)
+        end
+    end
+    sol.cost = solutionCost(pb, sol.custs)
+end
+
+"""
+    Performs a timeline switch between k1 and k2, at positions i1 and i2
+    - but k1 may not be able to take all of k2's customers (in this case, we reject them)
+    - and same with k2 for k1 customers
+    - i1 and i2 are positions of the customer right before the switch (0 if whole switch)
+"""
+function switchTimelines!(pb::TaxiProblem, s::IntervalSolution, k1::Int, i1::Int, k2::Int, i2::Int)
+    tt = traveltimes(pb)
+    c1 = s.custs[k1][(i1+1):end]
+    c2 = s.custs[k2][(i2+2):end]
+
+
+
+    # First step: insert k2's customers into k1 (reject customers until we can insert them)
+    s.custs[k1] = s.custs[k1][1:i1]
+    if isempty(s.custs[k1])
+        t = pb.taxis[k1]
+        freeTime = t.initTime
+        freeLoc  = t.initPos
+    else
+        c  = s.cust[k1][end]
+        c0 = pb.custs[c.id]
+        freeTime = c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest]
+        freeLoc  = c0.dest
+    end
+    firstCust = length(c2) + 1
+    for i,c in enumerate(c2)
+        c0 = custs[c.id]
+        if freeTime + tt[freeLoc, c0.orig] <= c.tSup
+            firstCust = i
+            break
+        end
+    end
+    for i in 1:(firstCust-1) #reject the customers
+        s.notTaken[c2[i].id] = true
+    end
+    append!(s.custs[k1],c2[firstCust:end])
+    updateTimeWindows!(pb,s,k1)
+
+
+    #Second step: insert k1's customers into k2 (reject customers until we can insert them)
+    s.custs[k2] = s.custs[k2][1:i2]
+    if isempty(s.custs[k2])
+        t = pb.taxis[k2]
+        freeTime = t.initTime
+        freeLoc  = t.initPos
+    else
+        c  = s.cust[k2][end]
+        c0 = pb.custs[c.id]
+        freeTime = c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest]
+        freeLoc  = c0.dest
+    end
+    firstCust = length(c1) + 1
+    for i,c in enumerate(c1)
+        c0 = custs[c.id]
+        if freeTime + tt[freeLoc, c0.orig] <= c.tSup
+            firstCust = i
+            break
+        end
+    end
+    for i in 1:(firstCust-1) #reject the customers
+        s.notTaken[c1[i].id] = true
+    end
+    append!(s.custs[k2],c1[firstCust:end])
+    updateTimeWindows!(pb,s,k2)
+
+end
+
+
+"""
+    helper function: compute the cost of inserting customer c and the followers into taxi
+    two conditions:
+    - tries to keep as many of the previous customers as possible
+    - has to be able to pick-up all the following customers too
+    The cost can be computed different ways.
+    - travel time from last place.
+    - ==> total time from last action.
+    - same with costs
+"""
+function insertCost(pb::TaxiProblem, sol::IntervalSolution, k::Int, newC::AssignedCustomer)
     tt = traveltimes(pb)
     custs = pb.custs
-    custTime = pb.customerTime
-    sol = copySolution(sol2)
-
-    #-------------------------
-    # UPDATE TAXI B
-    #-------------------------
-
-    #Look for the first place we can insert it in k2
-    custsA = sol.custs[k][i:end]
-    #Extract the list to move from k
-    sol.custs[k] = sol.custs[k][1:i-1]
-
-    while !isempty(custsA) && pb.taxis[k2].initTime + tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig] > custsA[1].tSup
-        sol.notTaken[custsA[1].id] = true
-        deleteat!(custsA, 1)
+    nC = custs[newC.id]
+    t = pb.taxis[k]
+    if t.initTime + tt[t.initPos, nC.orig] > newC.tSup
+        return (Inf, -1)
     end
-
-    #if just impossible to assign it => stop
-
-    if !isempty(custsA)
-        i2 = 1
-        for (j,c) in enumerate(sol.custs[k2])
-            if c.tInf + 2*custTime + tt[custs[c.id].orig, custs[c.id].dest] +
-                tt[custs[c.id].dest, custs[custsA[1].id].orig] <=
-                custsA[1].tSup
-                i2 = j+1
-            else
-                break
-            end
-        end
-
-        #Extract the list to move from k2
-        custsB = sol.custs[k2][i2:end]
-        sol.custs[k2] = sol.custs[k2][1:i2-1]
-
-        #Update the windows of custsA
-        if isempty(sol.custs[k2])
-            custsA[1].tInf = max(custs[custsA[1].id].tmin, pb.taxis[k2].initTime +
-            tt[pb.taxis[k2].initPos, custs[custsA[1].id].orig])
+    i = 0
+    for c in sol.custs[k]
+        c0 = custs[c.id]
+        if c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest] + tt[c0.dest, nC.orig] > newC.tSup
+            break
         else
-            custsA[1].tInf = max(custs[custsA[1].id].tmin, 2*custTime+
-            sol.custs[k2][end].tInf + tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
-            + tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig])
-        end
-        for j = 2: length(custsA)
-            custsA[j].tInf = max(custs[custsA[j].id].tmin, 2*custTime +
-            custsA[j-1].tInf + tt[custs[custsA[j-1].id].orig, custs[custsA[j-1].id].dest]
-            + tt[custs[custsA[j-1].id].dest, custs[custsA[j].id].orig])
-        end
-        #update the windows of k2
-        if !isempty(sol.custs[k2])
-            sol.custs[k2][end].tSup = min(custs[sol.custs[k2][end].id].tmaxt,
-            custsA[1].tSup - tt[custs[sol.custs[k2][end].id].orig, custs[sol.custs[k2][end].id].dest]
-            - tt[custs[sol.custs[k2][end].id].dest, custs[custsA[1].id].orig] - 2*custTime)
-            for j = (length(sol.custs[k2])-1):-1:1
-                sol.custs[k2][j].tSup = min(custs[sol.custs[k2][j].id].tmaxt,
-                sol.custs[k2][j+1].tSup - tt[custs[sol.custs[k2][j].id].orig, custs[sol.custs[k2][j].id].dest] -
-                tt[custs[sol.custs[k2][j].id].dest, custs[sol.custs[k2][j+1].id].orig] - 2*custTime)
-            end
-        end
-        #reconstruct k2 customers
-        append!(sol.custs[k2], custsA)
-
-
-        #-------------------------
-        # UPDATE TAXI A
-        #-------------------------
-
-        #Removing customers we cannot take anymore
-
-        i2 = 1
-        if isempty(sol.custs[k])
-            pos = pb.taxis[k].initPos
-            initTime = pb.taxis[k].initTime
-            for (j,c) in enumerate(custsB)
-                if initTime + tt[pos, custs[c.id].orig] <= c.tSup
-                    break
-                else
-                    i2 = j + 1
-                end
-            end
-
-        else
-            for (j,c) in enumerate(custsB)
-                pc = sol.custs[k][end]
-                if pc.tInf + tt[custs[pc.id].orig, custs[pc.id].dest] +
-                    tt[custs[pc.id].dest, custs[c.id].orig] + 2*custTime<= c.tSup
-                    break
-                else
-                    i2 = j+1
-                end
-            end
-        end
-        #We delete those we cannot take
-        for j in 1:(i2 - 1)
-            sol.notTaken[custsB[j].id] = true
-        end
-
-        custsB = custsB[i2: length(custsB)]
-
-        if isempty(custsB)
-            #Just update the window of taxi k
-            if !isempty(sol.custs[k])
-                sol.custs[k][end].tSup = custs[sol.custs[k][end].id].tmaxt
-                for j = (length(sol.custs[k])-1):-1:1
-                    sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
-                    sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
-                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig] - 2*custTime)
-                end
-            end
-        else
-            #Update the windows of custsB
-            if isempty(sol.custs[k])
-                custsB[1].tInf = max(custs[custsB[1].id].tmin, pb.taxis[k].initTime +
-                tt[pb.taxis[k].initPos, custs[custsB[1].id].orig])
-            else
-                custsB[1].tInf = max(custs[custsB[1].id].tmin,
-                sol.custs[k][end].tInf + tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
-                + tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig] + 2*custTime)
-            end
-            for j = 2: length(custsB)
-                custsB[j].tInf = max(custs[custsB[j].id].tmin,
-                custsB[j-1].tInf + tt[custs[custsB[j-1].id].orig, custs[custsB[j-1].id].dest]
-                + tt[custs[custsB[j-1].id].dest, custs[custsB[j].id].orig] + 2*custTime)
-            end
-            #update the windows of taxi k
-            if !isempty(sol.custs[k])
-                sol.custs[k][end].tSup = min(custs[sol.custs[k][end].id].tmaxt,
-                custsB[1].tSup - tt[custs[sol.custs[k][end].id].orig, custs[sol.custs[k][end].id].dest]
-                - tt[custs[sol.custs[k][end].id].dest, custs[custsB[1].id].orig] - 2*custTime)
-                for j = (length(sol.custs[k])-1):-1:1
-                    sol.custs[k][j].tSup = min(custs[sol.custs[k][j].id].tmaxt,
-                    sol.custs[k][j+1].tSup - tt[custs[sol.custs[k][j].id].orig, custs[sol.custs[k][j].id].dest]
-                    - tt[custs[sol.custs[k][j].id].dest, custs[sol.custs[k][j+1].id].orig] - 2*custTime)
-                end
-            end
-            #reconstruct k customers
-            append!(sol.custs[k], custsB)
+            i += 1
         end
     end
-    #-------------------------
-    # INSERT other customers (can be made more efficient)
-    #-------------------------
-    freeCusts = collect(1: length(custs))[sol.notTaken]
-    order = randomOrder( length(freeCusts))
-    #For each free customer
-    for i in 1:length(freeCusts)
-        c = freeCusts[order[i]]
-        insertCustomer!(pb,sol,c)
-    end
-
-    #compute the costs
-    cost = solutionCost(pb, sol.custs)
-    if cost <= sol.cost
-        sol.cost = cost
-        return sol
+    if i == 0
+        return (max(t.initTime + tt[t.initPos, nC.orig], nC.tmin) - t.initTime, 0)
     else
-        return sol2
+        c = sol.custs[k][i]
+        c0 = custs[c.id]
+        return (max(c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest] + tt[c0.dest, nC.orig], nC.tmin) -
+                c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest],i)
     end
 end

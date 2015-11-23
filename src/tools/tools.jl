@@ -403,3 +403,26 @@ function updateTcall(pb::TaxiProblem, time)
     pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
     return pb2
 end
+
+"""
+Updates the time windows of a taxi timeline
+"""
+function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k2::Int)
+    l = s[k2]
+    tt = traveltimes(pb)
+
+    if length(l) >= 1
+        l[1].tInf = max(l[1].tInf, tt[pb.taxis[k].initPos, pb.custs[l[1].id].orig])
+    end
+    for i = 2:(length(cust))
+        l[i].tInf = max(l[i].tInf, l[i-1].tInf+
+        tt[pb.custs[l[i-1].id].orig, pb.custs[l[i-1].id].dest]+
+        tt[pb.custs[l[i-1].id].dest, pb.custs[l[i].id].orig]+ 2*pb.customerTime)
+    end
+    for i = (length(l) - 1):(-1):1
+        l[i].tSup = min(l[i].tSup, l[i+1].tSup-
+        tt[pb.custs[l[i].id].orig, pb.custs[l[i].id].dest]-
+        tt[pb.custs[l[i].id].dest, pb.custs[l[i+1].id].orig] - 2*pb.customerTime)
+    end
+
+end
