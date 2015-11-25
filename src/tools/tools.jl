@@ -130,7 +130,8 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
         end
     end
     if sol.notTaken != nt
-        error("NotTaken is not correct")
+        errors = (1:length(pb.custs))[sol.notTaken $ nt]
+        error("NotTaken is not correct for customers: $errors")
     end
     # cost = solutionCost(pb,sol.custs)
     # if abs(sol.cost - cost) > 1e-5
@@ -407,14 +408,14 @@ end
 """
 Updates the time windows of a taxi timeline
 """
-function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k2::Int)
-    l = s[k2]
+function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k::Int)
+    l = s.custs[k]
     tt = traveltimes(pb)
 
-    if length(l) >= 1
+    if !isempty(l)
         l[1].tInf = max(l[1].tInf, tt[pb.taxis[k].initPos, pb.custs[l[1].id].orig])
     end
-    for i = 2:(length(cust))
+    for i = 2:(length(l))
         l[i].tInf = max(l[i].tInf, l[i-1].tInf+
         tt[pb.custs[l[i-1].id].orig, pb.custs[l[i-1].id].dest]+
         tt[pb.custs[l[i-1].id].dest, pb.custs[l[i].id].orig]+ 2*pb.customerTime)

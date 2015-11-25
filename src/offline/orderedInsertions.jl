@@ -7,7 +7,7 @@ function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCust
     nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
     custs = [CustomerAssignment[] for k in 1:nTaxis]
-    sol = IntervalSolution(custs, trues( length(pb.custs)), 0.)
+    sol = IntervalSolution(pb)
     for i in 1:nCusts
         c = order[i]
         insertCustomer!(pb, sol, c)
