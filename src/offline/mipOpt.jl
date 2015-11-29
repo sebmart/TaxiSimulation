@@ -153,9 +153,7 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
         seconds = time()-tstart
         push!(benchData, BenchmarkPoint(seconds,-cost,-bestbound))
     end
-    if benchmark
-        addInfoCallback(m,infocallback)
-    end
+    benchmark && addInfoCallback(m,infocallback)
 
 
     status = solve(m)
@@ -209,8 +207,6 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
-    if benchmark
-        return (s,benchData)
-    end
+    benchmark && return (s,benchData)
     return s
 end

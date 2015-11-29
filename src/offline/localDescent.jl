@@ -2,7 +2,7 @@
 #-- Local changes on window solution to look for a better one
 #--------------------------------------------------------------
 
-function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb); verbose = true, random = false)
+function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = orderedInsertions(pb); verbose = true, random = false, benchmark = false)
     nTaxis = length(pb.taxis)
     #if no customer
     if start.notTaken == trues(length(pb.custs))
@@ -18,7 +18,9 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
     verbose && println("Start, $(-start.cost) dollars")
     sol =  copySolution(start)
     success = 0
-    startTime = time_ns()
+
+    benchmark && benchData = BenchmarkPoint[BenchmarkPoint(0.,-best.cost,Inf)]
+    initT = time()
     for trys in 1:maxTry
         k = rand(1:nTaxis)
         while isempty(sol.custs[k])
@@ -39,7 +41,8 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
         if tempSol.cost < sol.cost
             sol = tempSol
             success += 1
-            minutes = (time_ns()-startTime)/(60*1.0e9)
+            minutes = (time()-initT)/60
+            benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
             verbose && @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, 100*success/trys)
         end
     end

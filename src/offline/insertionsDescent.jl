@@ -2,11 +2,12 @@
 #-- Random "gradient descent"
 #----------------------------------------
 include("orderedInsertions.jl")
-function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOrderedCustomers(pb))
+function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOrderedCustomers(pb); benchmark=false)
     order = start
 
-    startTime = time_ns()
+    initT = time()
     best = orderedInsertions(pb, order)
+    benchmark && benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,-best.cost,Inf)]
 
     #if no customer
     if best.notTaken == trues(length(pb.custs))
@@ -33,8 +34,9 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOr
         sol = orderedInsertions(pb, order)
         if sol.cost <= best.cost
             if sol.cost < best.cost
+                benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
                 success += 1
-                minutes = (time_ns()-startTime)/(60*1.0e9)
+                minutes = (time()-initT)/60
                 @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)   ",trys, -sol.cost, minutes, trys/minutes, success/(trys-1)*100)
             end
             best = sol
@@ -44,5 +46,6 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOr
     end
     print("\nFinal: $(-best.cost) dollars\n")
     expandWindows!(pb,best)
+    benchmark && return (best,benchData)
     return best
 end
