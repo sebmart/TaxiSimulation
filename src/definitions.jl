@@ -126,6 +126,14 @@ immutable Coordinates
     y::Float64
 end
 
+"Benchmark points for offline solvers"
+immutable BenchmarkPoint
+    time::Float64
+    revenue::Float64
+    bound::Float64
+end
+
+
 
 """
 Type used to solve online simulation problems

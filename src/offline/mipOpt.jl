@@ -4,11 +4,11 @@
 #-- and time intervals to take each customer (continuous or discrete)
 #----------------------------------------
 
-mipOpt(pb::TaxiProblem, init::TaxiSolution; solverArgs...) =
-mipOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)
+mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
+mipOpt(pb, IntervalSolution(pb,init), args...)
 
 
-function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); solverArgs...)
+function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); benchmark=false, solverArgs...)
     taxi = pb.taxis
     cust = pb.custs
     nTime = pb.nTime
@@ -144,6 +144,20 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     @addConstraint(m, c8[k=1:nTaxis,c=1:nCusts],
     i[c] - tt[taxi[k].initPos, cust[c].orig] - taxi[k].initTime >= M*(y[k, c] - 1))
 
+    #to get information
+    tstart = time()
+    benchData = BenchmarkPoint[]
+    function infocallback(cb)
+        cost = MathProgBase.cbgetobj(cb)
+        bestbound = MathProgBase.cbgetbestbound(cb)
+        seconds = time()-tstart
+        push!(benchData, BenchmarkPoint(seconds,-cost,-bestbound))
+    end
+    if benchmark
+        addInfoCallback(m,infocallback)
+    end
+
+
     status = solve(m)
     if status == :Infeasible
         error("Model is infeasible")
@@ -195,5 +209,8 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
+    if benchmark
+        return (s,benchData)
+    end
     return s
 end
