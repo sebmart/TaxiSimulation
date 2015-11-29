@@ -10,7 +10,7 @@ function randomInsertions(pb::TaxiProblem, n::Int; benchmark=false)
     order = randomOrder(pb)
     best = orderedInsertions(pb, order)
     println("Try: 1, $(-best.cost) dollars")
-    benchmark && benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,-best.cost,Inf)]
+    benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,-best.cost,Inf)])
     for trys in 2:n
         sol = orderedInsertions(pb, order)
 

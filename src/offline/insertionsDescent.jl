@@ -7,7 +7,7 @@ function insertionsDescent(pb::TaxiProblem, n::Int, start::Vector{Int} =  timeOr
 
     initT = time()
     best = orderedInsertions(pb, order)
-    benchmark && benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,-best.cost,Inf)]
+    benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,-best.cost,Inf)])
 
     #if no customer
     if best.notTaken == trues(length(pb.custs))

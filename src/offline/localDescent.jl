@@ -19,7 +19,7 @@ function localDescent(pb::TaxiProblem, maxTry::Int, start::IntervalSolution = or
     sol =  copySolution(start)
     success = 0
 
-    benchmark && benchData = BenchmarkPoint[BenchmarkPoint(0.,-best.cost,Inf)]
+    benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(0.,-best.cost,Inf)])
     initT = time()
     for trys in 1:maxTry
         k = rand(1:nTaxis)

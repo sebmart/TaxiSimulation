@@ -5,7 +5,7 @@
 #----------------------------------------
 
 mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
-mipOpt(pb, IntervalSolution(pb,init), args...)
+mipOpt(pb, IntervalSolution(pb,init); args...)
 
 
 function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); benchmark=false, solverArgs...)
@@ -27,7 +27,7 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(MIPFocus=1, Method=1, solverArgs...))
+    m = Model(solver= GurobiSolver(MIPFocus=1, Method=1; solverArgs...))
 
     # =====================================================
     # Decision variables
