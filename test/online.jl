@@ -9,7 +9,7 @@ sol2 = onlineSimulation(pb, FixedAssignment(period = 0.01))
 testSolution(pb,sol1)
 testSolution(pb,sol2)
 
-s= intervalOpt(pb)
+s= mipOpt(pb)
 @test s.cost < sol1.cost + 1e-5
 
 #In the limit period => 0, in the case of continuous data, the results should be the same
@@ -23,7 +23,7 @@ println("""
 #We are testing the iterative offline with different parameters
 pb = smallMetroProblem()
 tUpdate, tHorizon = 5., 60.
-solver = intervalOpt
+solver = mipOpt
 sol = onlineSimulation(pb, IterativeOffline(tUpdate, tHorizon, solver, completeMoves=true))
 testSolution(pb,sol)
 

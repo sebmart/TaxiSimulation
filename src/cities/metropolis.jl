@@ -15,8 +15,6 @@ type Metropolis <: TaxiProblem
     waitingCost::Float64
     paths::Paths
     customerTime::Float64
-    discreteTime::Bool
-
     #--------------
     #Specific attributes
     width::Int
@@ -41,7 +39,7 @@ type Metropolis <: TaxiProblem
     turnCost::Float64
 
 
-    function Metropolis(width::Int=8, nSub::Int=8; discreteTime=false, emptyType=false)
+    function Metropolis(width::Int=8, nSub::Int=8; emptyType=false)
         c = new()
         if emptyType
             return c
@@ -54,21 +52,11 @@ type Metropolis <: TaxiProblem
         c.customerTime = 30./c.timeSteptoSecond
         c.turnTime = 10/c.timeSteptoSecond
         c.turnCost = c.turnTime * c.timeSteptoSecond * c.driveCost / 3600.
-        discreteTime && (c.turnTime = round(c.turnTime))
-        discreteTime && (c.turnTime = round(c.turnTime))
         function cityTrvlTime()
-            if discreteTime
-                rand(round(Int,30./c.timeSteptoSecond):round(Int,120./c.timeSteptoSecond))
-            else
-                (30+90*rand())/c.timeSteptoSecond
-            end
+            (30+90*rand())/c.timeSteptoSecond
         end
         function longTrvlTime()
-            if discreteTime
-                rand(round(Int,150./c.timeSteptoSecond):round(Int,450./c.timeSteptoSecond))
-            else
-                (150+300*rand())/c.timeSteptoSecond
-            end
+            (150+300*rand())/c.timeSteptoSecond
         end
         cityTrvlCost(trvltime) = trvltime * c.driveCost*c.timeSteptoSecond/3600
         longTrvlCost(trvltime) = trvltime * c.driveCost*c.timeSteptoSecond/3600
@@ -187,7 +175,6 @@ type Metropolis <: TaxiProblem
         c.custs = Customer[]
         c.taxis = Taxi[]
         c.nTime = 0.
-        c.discreteTime = discreteTime
 
         return c
     end
@@ -198,7 +185,7 @@ end
 """
 function smallMetroProblem()
     width=4; nSub=4; nTaxis = 5; demand = 0.4; tStart=now(); tEnd=now()+Minute(90)
-    pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
+    pb = Metropolis(width, nSub)
     generateProblem!(pb, nTaxis, demand, tStart, tEnd)
     return pb
 end
@@ -208,7 +195,7 @@ end
 """
 function bigMetroProblem()
     width=8; nSub=8; nTaxis = 20; demand = 0.32; tStart=now(); tEnd=now()+Hour(2)
-    pb = Metropolis(width, nSub, discreteTime=false, emptyType=false)
+    pb = Metropolis(width, nSub)
     generateProblem!(pb, nTaxis, demand, tStart, tEnd)
     return pb
 end
@@ -221,11 +208,8 @@ function generateProblem!(city::Metropolis, nTaxis::Int = 25, demand::Float64 = 
 
     city.tStart = tStart
     city.tEnd   = tEnd
-    if city.discreteTime
-        city.nTime  = floor( (tEnd-tStart).value/(city.timeSteptoSecond *1000))
-    else
-        city.nTime  = (tEnd-tStart).value/(city.timeSteptoSecond *1000)
-    end
+    city.nTime  = (tEnd-tStart).value/(city.timeSteptoSecond *1000)
+
     if city.nTime < 1
         error("Time of simulation too small !")
     end
@@ -249,68 +233,6 @@ end
 
 #to generate the customers
 function generateCustomers!(sim::Metropolis, demand::Float64)
-    if sim.discreteTime
-        generateCustomersDiscrete!(sim,demand)
-    else
-        generateCustomersContinuous!(sim,demand)
-    end
-end
-
-#Discrete case (poisson law)
-function generateCustomersDiscrete!(sim::Metropolis, demand::Float64)
-    sim.custs = Customer[]
-    tCurrent = sim.tStart
-    tt = traveltimes(sim)
-    for i = 0:sim.nTime
-        meanPerHour, catProb = metroDemand(sim, tCurrent, demand)
-
-        nCusts = rand(Poisson(meanPerHour*sim.timeSteptoSecond/3600))
-        for j in 1:nCusts
-            category = rand(Categorical(catProb))
-            orig, dest = 0, 0
-            #-------------
-            #-- city=>city
-            if category == 1
-                orig = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
-                dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
-                while orig == dest
-                    dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
-                end
-                #-------------
-                #-- sub=>sub
-            elseif category == 2
-                orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
-                dest = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
-                while orig == dest
-                    dest = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
-                end
-                #-------------
-                #-- city=>sub
-            elseif category == 3
-                orig = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
-                dest = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
-                #-------------
-                #-- sub=>city
-            else
-                dest = coordToLoc(rand(1:sim.width), rand(1:sim.width), 0, sim)
-                orig = coordToLoc(rand(1:sim.subWidth), rand(1:sim.subWidth), rand(1:sim.nSub), sim)
-            end
-
-            price = (sim.hourFare(tCurrent)*sim.timeSteptoSecond/3600)*toInt(tt[orig,dest])
-            tmin  = i
-            tmaxt = min(sim.nTime, i + round(rand()*5*60 / sim.timeSteptoSecond))
-            tcall = max(0.0, tmin - round(rand()*60*60 / sim.timeSteptoSecond))
-            push!(sim.custs,
-            Customer(length(sim.custs)+1,orig,dest,tcall,tmin,tmaxt,price))
-        end
-        #First, get the number of customers to generate
-        tCurrent += Second(sim.timeSteptoSecond)
-    end
-end
-
-
-#Continuous case (Exponential intervals)
-function generateCustomersContinuous!(sim::Metropolis, demand::Float64)
     sim.custs = Customer[]
     tCurrent = sim.tStart
     tt = traveltimes(sim)

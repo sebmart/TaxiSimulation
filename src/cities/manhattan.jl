@@ -9,7 +9,6 @@ type Manhattan <: TaxiProblem
     waitingCost::Float64
     paths::Paths
     customerTime::Float64
-    discreteTime::Bool
 
     #--------------
     #Specific attributes
@@ -72,7 +71,6 @@ type Manhattan <: TaxiProblem
         c.custs = Customer[]
         c.taxis = Taxi[]
         c.nTime = 0.
-        c.discreteTime = false
         return c
     end
 end

@@ -12,14 +12,13 @@ type SquareCity <: TaxiProblem
     waitingCost::Float64
     paths::ShortestPaths
     customerTime::Float64
-    discreteTime::Bool
 
     #-----------------------------------------
     #Specific attributes
     width::Int
 
     #constructor that only create the graph
-    function SquareCity(width::Int = 5; discreteTime = false, emptyType=false)
+    function SquareCity(width::Int = 5; emptyType=false)
         c = new()
         if emptyType
             return c
@@ -50,11 +49,7 @@ type SquareCity <: TaxiProblem
 
         #return travel time to take one link
         function traveltime()
-            if discreteTime
-                return rand(1:4)
-            else
-                return 1+3*rand()
-            end
+            return 1+3*rand()
         end
         function travelcost(trvltime)
             trvltime * (1 + rand())/4
@@ -90,7 +85,6 @@ type SquareCity <: TaxiProblem
         c.custs = Customer[]
         c.taxis = Taxi[]
         c.nTime = 0
-        c.discreteTime = discreteTime
         return c
     end
 end
@@ -143,15 +137,10 @@ function generateCustomers!(city::SquareCity, nCusts = -1)
         end
 
         price = (5+rand())*clienttime
-        if city.discreteTime
-            tmaxt = rand(0:city.nTime)
-            tmin = max(0, tmaxt - rand(1:10))
-            tcall = max(0,tmin - rand(1:80))
-        else
-            tmaxt = rand()*(city.nTime)
-            tmin = max(0.0, tmaxt - (EPS+10*rand()))
-            tcall = max(0.0,tmin- (EPS + 80*rand()))
-        end
+
+        tmaxt = rand()*(city.nTime)
+        tmin = max(0.0, tmaxt - (EPS+10*rand()))
+        tcall = max(0.0,tmin- (EPS + 80*rand()))
 
         customers[c] = Customer(c,orig,dest,tcall,tmin,tmaxt,price)
     end

@@ -20,7 +20,7 @@ generateCustomers!, generateTaxis!, generateProblem!, squareCityProblem,
 smallMetroProblem, bigMetroProblem
 
 #Offline MILP solvers
-export fixedTimeOpt, intervalOpt, intervalOptDiscrete, intervalOptContinuous
+export mipOpt
 
 #Offline heuristics
 export orderedInsertions, randomInsertions, insertionsDescent, localDescent
@@ -56,8 +56,7 @@ include("offline/moveCustomer.jl")
 include("offline/randomInsertions.jl")
 include("offline/insertionsDescent.jl")
 include("offline/localDescent.jl")
-include("offline/fixedTimeOpt.jl")
-include("offline/intervalOpt.jl")
+include("offline/mipOpt.jl")
 
 #online
 include("online/onlineSimulation.jl")

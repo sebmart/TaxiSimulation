@@ -15,7 +15,7 @@ type IterativeOffline <: OnlineMethod
 
 	warmStart::Bool
 	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=intervalOpt; completeMoves::Bool=false, warmStart::Bool = false)
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver=mipOpt; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
 		offline.startTime = 0.0

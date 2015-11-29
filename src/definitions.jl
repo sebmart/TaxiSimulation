@@ -45,8 +45,6 @@ taxis::Array{Taxi,1} (taxis)
 nTime::Float64 last possible pickup time
 waitingCost::Float64 cost of waiting
 customerTime::Float64 time to pickup or dropoff a customer
-discreteTime::Bool if time is discrete
-
 """
 abstract TaxiProblem
 
