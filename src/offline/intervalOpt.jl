@@ -4,18 +4,18 @@
 #-- and time intervals to take each customer (continuous or discrete)
 #----------------------------------------
 
-function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 10000, verbose = true)
+function intervalOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); solverArgs...)
     if pb.discreteTime
-        return intervalOptDiscrete(pb,init,timeLimit=timeLimit, verbose = verbose)
+        return intervalOptDiscrete(pb,init,solverArgs...)
     else
-        return intervalOptContinuous(pb,init,timeLimit = timeLimit, verbose = verbose)
+        return intervalOptContinuous(pb,init, solverArgs...)
     end
 end
 
 intervalOpt(pb::TaxiProblem, init::TaxiSolution; timeLimit = 100) =
 intervalOpt(pb, IntervalSolution(pb,init), timeLimit = timeLimit)
 
-function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100)
+function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); solverArgs...)
     if length(pb.custs) == 0.
         return IntervalSolution(pb)
     end
@@ -38,7 +38,7 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
 
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag=Int(verbose)))
+    m = Model(solver= GurobiSolver(MIPFocus=1, Method=1))
 
     # =====================================================
     # Decision variables
@@ -220,13 +220,10 @@ function intervalOptDiscrete(pb::TaxiProblem, init::IntervalSolution =IntervalSo
     rev = solutionCost(pb, custs)
     s = IntervalSolution(custs, notTaken, rev)
     expandWindows!(pb,s)
-    if verbose
-        println("Final revenue = $(-getObjectiveValue(m)) dollars")
-    end
     return s
 end
 
-function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); timeLimit = 100, verbose=true)
+function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector{AssignedCustomer}[],Bool[],0.); solverArgs...)
     taxi = pb.taxis
     cust = pb.custs
     nTime = pb.nTime
@@ -245,7 +242,7 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     pCusts, nextCusts = customersCompatibility(pb::TaxiProblem)
 
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(TimeLimit=timeLimit, MIPFocus=1, Method=1, OutputFlag=Int(verbose)))
+    m = Model(solver= GurobiSolver(MIPFocus=1, Method=1, solverArgs...))
 
     # =====================================================
     # Decision variables
@@ -413,8 +410,5 @@ function intervalOptContinuous(pb::TaxiProblem, init::IntervalSolution =Interval
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
-    if verbose
-        println("Final revenue = $(-getObjectiveValue(m)) dollars")
-    end
     return s
 end
