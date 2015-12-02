@@ -207,6 +207,12 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     end
     s = IntervalSolution(custs,notTaken, getObjectiveValue(m) )
     expandWindows!(pb,s)
+    if benchmark
+        o = -s.cost - benchData[end].revenue
+        for (i,p) in enumerate(benchData)
+            benchData[i] = BenchmarkPoint(p.time,p.revenue + o, p.bound + o)
+        end
+    end
     benchmark && return (s,benchData)
     return s
 end

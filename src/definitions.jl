@@ -147,4 +147,4 @@ Needs to implement initialize!(om::OnlineMethod, pb::TaxiProblem), update!(om::O
 abstract OnlineMethod
 
 #time epsilon for float comparisons
-const EPS = 1e-5
+const EPS = 1e-4

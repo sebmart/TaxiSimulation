@@ -3,8 +3,8 @@
 #----------------------------------------
 include("orderedInsertions.jl")
 function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCustomers(pb); benchmark=false, verbose=true, maxTime=Inf, iterations=typemax(Int))
-    if maxTime = Inf && iterations == typemax(Int)
-        maxTime = 5.
+    if maxTime == Inf && iterations == typemax(Int)
+        maxTime == 5.
     end
 
     order = start

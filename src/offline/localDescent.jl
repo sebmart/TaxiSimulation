@@ -3,7 +3,7 @@
 #--------------------------------------------------------------
 
 function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertions(pb); verbose = true, random = false, benchmark = false, iterations=typemax(Int), maxTime=Inf)
-    if maxTime = Inf && iterations == typemax(Int)
+    if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
     nTaxis = length(pb.taxis)
@@ -54,6 +54,7 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
     end
     expandWindows!(pb, sol)
     verbose && print("\n====Final: $(-sol.cost) dollars \n")
+    benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
     benchmark && return (sol,benchData)
     return sol
 end

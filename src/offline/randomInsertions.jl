@@ -3,7 +3,7 @@
 #----------------------------------------
 include("orderedInsertions.jl")
 function randomInsertions(pb::TaxiProblem; benchmark=false, verbose=true, maxTime= Inf, iterations=typemax(Int))
-    if maxTime = Inf && iterations == typemax(Int)
+    if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
     initT = time()
@@ -29,6 +29,7 @@ function randomInsertions(pb::TaxiProblem; benchmark=false, verbose=true, maxTim
     end
     verbose && print("\r====Final: $(-best.cost) dollars              \n")
     expandWindows!(pb,best)
+    benchmark && push!(benchData, BenchmarkPoint(time()-initT,-best.cost,Inf))
     benchmark && return (best,benchData)
     return best
 end

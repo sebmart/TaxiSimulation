@@ -12,7 +12,7 @@ SFML, DataStructures, Base.Dates, DataFrames, Base.Test, MathProgBase
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
 IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment,
-Uber
+Uber, BenchmarkPoint
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
