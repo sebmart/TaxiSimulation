@@ -5,6 +5,7 @@
 """
     Take an IntervalSolution and insert a not-taken customer, with minimal cost
     - !! do not update solution cost !!
+    - returns instruction to revert to previous solution
 """
 function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis = 1:length(pb.taxis); earliest::Bool=false)
     #-------------------------
@@ -108,7 +109,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis
             end
         end
     end
-
+    solUpdates = SolutionUpdate[]
     #-------------------------
     # Insert customer into selected taxi's assignments
     #-------------------------
@@ -116,8 +117,10 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis
 
     #If customer can be assigned
     if mintaxi != 0
+
         t = pb.taxis[mintaxi]
         custs = sol.custs[mintaxi]
+        push!(solUpdates, SolutionUpdate(mintaxi,deepcopy(custs)))
         #If customer is to be inserted in first position
         if i == 1
             tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
@@ -156,17 +159,16 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis
         end
         sol.notTaken[cId] = false
     end
-    return mincost, mintaxi, position
+    return solUpdates
 end
 
 
 """
-    split a taxi timeline and tries to switch the last part with another taxi's
-    returns either the previous solution, or construct a new one and returns it
-    suppose that no other customer can be inserted in current solution
-    the new solution is returned even if its cost is not as good as the previous one
+- split a taxi timeline and tries to switch the last part with another taxi's
+- updates solution, and returns instructions to revert
 """
 function switchCustomers!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, bestK::Int = -1)
+    solUpdates = SolutionUpdate[]
     #Step 1: find the best taxi (if not given)
     # criterion: minimum "insertcost"
     if bestK == -1
@@ -189,23 +191,25 @@ function switchCustomers!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int
         bestCost, bestPos = insertCost(pb,sol,bestK, sol.custs[k][i])
     end
     if bestCost == Inf
-        return sol
+        return solUpdates
     end
 
-    priorNotTaken = copy(sol.notTaken)
+
+    priorNotTaken = deepcopy(sol.notTaken)
 
     #Step 2: switch the two timelines at the given position
-    switchTimelines!(pb,sol,k,i-1,bestK,bestPos)
+    append!(solUpdates,switchTimelines!(pb,sol,k,i-1,bestK,bestPos))
 
     #Step3: tries to insert all customers
     for c in 1:length(pb.custs)
         if priorNotTaken[c]
-            insertCustomer!(pb, sol, c, [k, bestK])
+            append!(solUpdates,insertCustomer!(pb, sol, c, [k, bestK]))
         elseif sol.notTaken[c]
-            insertCustomer!(pb, sol, c)
+            append!(solUpdates,insertCustomer!(pb, sol, c))
         end
     end
     sol.cost = solutionCost(pb, sol.custs)
+    return solUpdates
 end
 
 """
@@ -213,12 +217,14 @@ end
     - but k1 may not be able to take all of k2's customers (in this case, we reject them)
     - and same with k2 for k1 customers
     - i1 and i2 are positions of the customer right before the switch (0 if whole switch)
+    - returns instructions to revert
 """
 function switchTimelines!(pb::TaxiProblem, s::IntervalSolution, k1::Int, i1::Int, k2::Int, i2::Int)
     tt = traveltimes(pb)
     c1 = s.custs[k1][(i1+1):end]
     c2 = s.custs[k2][(i2+1):end]
 
+    solUpdates = SolutionUpdate[SolutionUpdate(k1,deepcopy(s.custs[k1])), SolutionUpdate(k2,deepcopy(s.custs[k2]))]
 
     # First step: insert k2's customers into k1 (reject customers until we can insert them)
     s.custs[k1] = s.custs[k1][1:i1]
@@ -273,7 +279,7 @@ function switchTimelines!(pb::TaxiProblem, s::IntervalSolution, k1::Int, i1::Int
     end
     append!(s.custs[k2],c1[firstCust:end])
     updateTimeWindows!(pb,s,k2)
-
+    return solUpdates
 end
 
 

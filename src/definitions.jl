@@ -106,18 +106,24 @@ immutable DijkstraEntry{Float64}
     cost::Float64
 end
 
-"Represent the pickup time window of a customer"
+"Represents the pickup time window of a customer"
 type AssignedCustomer
     id::Int
     tInf::Float64
     tSup::Float64
 end
 
-"represent a time-window solution (only work with fixed timings)"
+"represents a time-window solution (only work with fixed timings)"
 type IntervalSolution
     custs::Vector{Vector{AssignedCustomer}}
     notTaken::BitVector
     cost::Float64
+end
+
+"represents update to an Interval Solution"
+type SolutionUpdate
+    taxi::Int
+    custs::Vector{AssignedCustomer}
 end
 
 "x and y coordinates, to represent ENU positions"

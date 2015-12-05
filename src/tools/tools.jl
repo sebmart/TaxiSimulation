@@ -19,21 +19,27 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
     return cost
 end
 
+"compute costs of one taxi"
+function taxiCost(pb::TaxiProblem,custs::Vector{AssignedCustomer},k::Int)
+    tt = traveltimes(pb)
+    tc = travelcosts(pb)
+    pos = pb.taxis[k].initPos
+    drivingTime = 0
+    for c in custs
+        c1 = pb.custs[c.id]
+        cost += tc[pos,c1.orig] + tc[c1.orig,c1.dest] - c1.price
+        drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
+        pos = c1.dest
+    end
+    cost += (pb.nTime - drivingTime)*pb.waitingCost
+end
+
 "compute the cost of a solution just using customers"
 function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
     cost = 0.0
-    tt = traveltimes(pb)
-    tc = travelcosts(pb)
+
     for (k,custs) in enumerate(t)
-        pos = pb.taxis[k].initPos
-        drivingTime = 0
-        for c in custs
-            c1 = pb.custs[c.id]
-            cost += tc[pos,c1.orig] + tc[c1.orig,c1.dest] - c1.price
-            drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
-            pos = c1.dest
-        end
-        cost += (pb.nTime - drivingTime)*pb.waitingCost
+        cost+= taxiCost(pb,custs,k)
     end
     return cost
 end
@@ -433,4 +439,21 @@ function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k::Int)
         tt[pb.custs[l[i].id].dest, pb.custs[l[i+1].id].orig] - 2*pb.customerTime)
     end
 
+end
+
+"""
+Updates in place an IntervalSolution, given a list of changes (do not update cost!)
+"""
+function updateSolution!(sol::IntervalSolution, updateSol::Vector{SolutionUpdate})
+    costDifference =
+    for i in length(updateSol):-1:1
+        u = updateSol[i]
+        for c in sol.custs[u.taxi]
+            sol.notTaken[c.id] = !sol.notTaken[c.id]
+        end
+        for c in u.custs
+            sol.notTaken[c.id] = !sol.notTaken[c.id]
+        end
+        sol.custs[u.taxi] = u.custs
+    end
 end
