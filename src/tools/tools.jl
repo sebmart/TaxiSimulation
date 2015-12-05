@@ -98,10 +98,13 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     custTime = pb.customerTime
 
     for k = 1:length(pb.taxis)
-        list = copy(sol.custs[k])
+        ref = sol.custs[k]
+        list = deepcopy(ref)
         if length(list) >= 1
             list[1].tInf = max(custs[list[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
+            @test_approx_eq_eps list[1].tInf ref[1].tInf EPS
             list[end].tSup = custs[list[end].id].tmaxt
+            @test_approx_eq_eps list[end].tSup ref[end].tSup EPS
             if nt[list[1].id]
                 nt[list[1].id] = false
             else
@@ -112,6 +115,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
             list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
             tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
             tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig] + 2*custTime)
+            @test_approx_eq_eps list[i].tInf ref[i].tInf EPS
             if nt[list[i].id]
                 nt[list[i].id] = false
             else
@@ -122,6 +126,7 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
             list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
             tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
             tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig]- 2*custTime)
+            @test_approx_eq_eps list[i].tSup ref[i].tSup EPS
         end
         for c in list
             if c.tInf > c.tSup + EPS
@@ -288,17 +293,18 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
 
     for (k,cust) = enumerate(res)
         if length(cust) >= 1
-            cust[1].tInf = max(cust[1].tInf, tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
+            cust[1].tInf = max(pb.custs[cust[1].id].tmin, tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
+            cust[end].tSup = pb.custs[cust[end].id].tmaxt
             nt[cust[1].id] = false
         end
         for i = 2:(length(cust))
-            cust[i].tInf = max(cust[i].tInf, cust[i-1].tInf+
+            cust[i].tInf = max(pb.custs[cust[i].id].tmin, cust[i-1].tInf+
             tt[pb.custs[cust[i-1].id].orig, pb.custs[cust[i-1].id].dest]+
             tt[pb.custs[cust[i-1].id].dest, pb.custs[cust[i].id].orig]+ 2*pb.customerTime)
             nt[cust[i].id] = false
         end
         for i = (length(cust) - 1):(-1):1
-            cust[i].tSup = min(cust[i].tSup, cust[i+1].tSup-
+            cust[i].tSup = min(pb.custs[cust[i].id].tmaxt, cust[i+1].tSup-
             tt[pb.custs[cust[i].id].orig,pb.custs[cust[i].id].dest]-
             tt[pb.custs[cust[i].id].dest, pb.custs[cust[i+1].id].orig] - 2*pb.customerTime)
         end
@@ -413,15 +419,16 @@ function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k::Int)
     tt = traveltimes(pb)
 
     if !isempty(l)
-        l[1].tInf = max(l[1].tInf, tt[pb.taxis[k].initPos, pb.custs[l[1].id].orig])
+        l[1].tInf = max(pb.custs[l[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[l[1].id].orig])
+        l[end].tSup = pb.custs[l[end].id].tmaxt
     end
     for i = 2:(length(l))
-        l[i].tInf = max(l[i].tInf, l[i-1].tInf+
+        l[i].tInf = max(pb.custs[l[i].id].tmin, l[i-1].tInf+
         tt[pb.custs[l[i-1].id].orig, pb.custs[l[i-1].id].dest]+
         tt[pb.custs[l[i-1].id].dest, pb.custs[l[i].id].orig]+ 2*pb.customerTime)
     end
     for i = (length(l) - 1):(-1):1
-        l[i].tSup = min(l[i].tSup, l[i+1].tSup-
+        l[i].tSup = min(pb.custs[l[i].id].tmaxt, l[i+1].tSup-
         tt[pb.custs[l[i].id].orig, pb.custs[l[i].id].dest]-
         tt[pb.custs[l[i].id].dest, pb.custs[l[i+1].id].orig] - 2*pb.customerTime)
     end

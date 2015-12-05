@@ -15,13 +15,10 @@ type IterativeOffline <: OnlineMethod
 
 	warmStart::Bool
 	nextAssignedCustomers::Dict{Int64, Tuple{Int64, Float64}}
-	function IterativeOffline(period::Float64, tHorizon::Float64, solver=mipOpt; completeMoves::Bool=false, warmStart::Bool = false)
+	function IterativeOffline(period::Float64, tHorizon::Float64, solver::Function=mipOpt; completeMoves::Bool=false, warmStart::Bool = false)
 		offline = new()
 		offline.tHorizon = tHorizon
-		offline.startTime = 0.0
 		offline.solver = solver
-		offline.customers = Customer[]
-		offline.notTaken = Dict{Int64, Bool}()
 		offline.period = period
 		offline.completeMoves = completeMoves
 		offline.warmStart = warmStart
@@ -37,7 +34,10 @@ function onlineInitialize!(om::IterativeOffline, pb::TaxiProblem)
 	om.nTime = pb.nTime
 	om.pb.taxis = copy(om.pb.taxis)
 	om.pb.custs = Customer[]
+	om.customers = Customer[]
+	om.notTaken = Dict{Int64, Bool}()
 	om.nextAssignedCustomers = Dict{Int64, Tuple{Int64, Float64}}()
+	om.startTime = 0.0
 end
 
 """

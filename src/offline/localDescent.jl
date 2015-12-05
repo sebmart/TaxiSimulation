@@ -2,7 +2,11 @@
 #-- Local changes on window solution to look for a better one
 #--------------------------------------------------------------
 
-function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertions(pb); verbose = true, random = false, benchmark = false, iterations=typemax(Int), maxTime=Inf)
+function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertions(pb);
+     verbose::Bool = true, random::Bool = false, benchmark::Bool = false, iterations=typemax(Int),
+      maxTime::Float64=Inf)
+    initT = time()
+
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
@@ -23,7 +27,6 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
     success = 0
 
     benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(0.,-start.cost,Inf)])
-    initT = time()
     for trys in 1:iterations
         if time()-initT > maxTime
             break
@@ -37,9 +40,7 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
         tempSol = copySolution(sol)
         if random
              k2 = rand(1:(nTaxis-1))
-             if k2 >= k
-                 k2 +=1
-             end
+             k2 >= k && (k2 +=1)
              switchCustomers!(pb, tempSol, k, i,k2)
         else
             switchCustomers!(pb, tempSol, k, i)

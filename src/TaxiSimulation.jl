@@ -12,7 +12,7 @@ SFML, DataStructures, Base.Dates, DataFrames, Base.Test, MathProgBase
 export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
 TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
 IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment,
-Uber, BenchmarkPoint
+Uber, BenchmarkPoint, LimitedSearch
 
 #Cities
 export Manhattan, Metropolis, SquareCity,
@@ -61,6 +61,7 @@ include("offline/mipOpt.jl")
 #online
 include("online/onlineSimulation.jl")
 include("online/iterativeOffline.jl")
+include("online/limitedSearch.jl")
 include("online/fixedAssignment.jl")
 include("online/uber.jl")
 
