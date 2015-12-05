@@ -25,6 +25,7 @@ function taxiCost(pb::TaxiProblem,custs::Vector{AssignedCustomer},k::Int)
     tc = travelcosts(pb)
     pos = pb.taxis[k].initPos
     drivingTime = 0
+    cost = 0.
     for c in custs
         c1 = pb.custs[c.id]
         cost += tc[pos,c1.orig] + tc[c1.orig,c1.dest] - c1.price
@@ -442,18 +443,46 @@ function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k::Int)
 end
 
 """
+add an update to a Partial solution
+- Only store if not stored before
+"""
+function addPartialSolution!(sol::PartialSolution, k::Int, u::Vector{AssignedCustomer})
+    if !haskey(sol,k)
+        sol[k] = deepcopy(u)
+    end
+end
+function addPartialSolution!(sol::PartialSolution, sol2::PartialSolution)
+    for (k,u) in sol2
+        addPartialSolution!(sol,k,u)
+    end
+end
+
+
+
+"""
 Updates in place an IntervalSolution, given a list of changes (do not update cost!)
 """
-function updateSolution!(sol::IntervalSolution, updateSol::Vector{SolutionUpdate})
-    costDifference =
-    for i in length(updateSol):-1:1
-        u = updateSol[i]
-        for c in sol.custs[u.taxi]
+function updateSolution!(sol::IntervalSolution, updateSol::PartialSolution)
+    for (k,u) in updateSol
+        for c in sol.custs[k]
             sol.notTaken[c.id] = !sol.notTaken[c.id]
         end
-        for c in u.custs
+        for c in u
             sol.notTaken[c.id] = !sol.notTaken[c.id]
         end
-        sol.custs[u.taxi] = u.custs
+        sol.custs[k] = u
     end
+end
+
+"""
+Updates in place an IntervalSolution, given a list of changes (do not update cost!)
+last updates are supposed to be the last ones
+"""
+function updateCost(pb, sol::IntervalSolution, updateSol::PartialSolution)
+    cost = 0.
+    for (k,u) in updateSol
+        cost += taxiCost(pb,u,k)
+        cost -= taxiCost(pb,sol.custs[k],k)
+    end
+    return cost
 end

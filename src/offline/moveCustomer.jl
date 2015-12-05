@@ -109,7 +109,7 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis
             end
         end
     end
-    solUpdates = SolutionUpdate[]
+    solUpdates = EmptyUpdate
     #-------------------------
     # Insert customer into selected taxi's assignments
     #-------------------------
@@ -117,10 +117,10 @@ function insertCustomer!(pb::TaxiProblem, sol::IntervalSolution, cId::Int, taxis
 
     #If customer can be assigned
     if mintaxi != 0
-
         t = pb.taxis[mintaxi]
         custs = sol.custs[mintaxi]
-        push!(solUpdates, SolutionUpdate(mintaxi,deepcopy(custs)))
+        solUpdates = PartialSolution()
+        addPartialSolution!(solUpdates, mintaxi, custs)
         #If customer is to be inserted in first position
         if i == 1
             tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
@@ -168,7 +168,7 @@ end
 - updates solution, and returns instructions to revert
 """
 function switchCustomers!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int, bestK::Int = -1)
-    solUpdates = SolutionUpdate[]
+    solUpdates = PartialSolution()
     #Step 1: find the best taxi (if not given)
     # criterion: minimum "insertcost"
     if bestK == -1
@@ -198,17 +198,16 @@ function switchCustomers!(pb::TaxiProblem, sol::IntervalSolution, k::Int, i::Int
     priorNotTaken = deepcopy(sol.notTaken)
 
     #Step 2: switch the two timelines at the given position
-    append!(solUpdates,switchTimelines!(pb,sol,k,i-1,bestK,bestPos))
+    addPartialSolution!(solUpdates,switchTimelines!(pb,sol,k,i-1,bestK,bestPos))
 
     #Step3: tries to insert all customers
     for c in 1:length(pb.custs)
         if priorNotTaken[c]
-            append!(solUpdates,insertCustomer!(pb, sol, c, [k, bestK]))
+            addPartialSolution!(solUpdates,insertCustomer!(pb, sol, c, [k, bestK]))
         elseif sol.notTaken[c]
-            append!(solUpdates,insertCustomer!(pb, sol, c))
+            addPartialSolution!(solUpdates,insertCustomer!(pb, sol, c))
         end
     end
-    sol.cost = solutionCost(pb, sol.custs)
     return solUpdates
 end
 
@@ -224,7 +223,9 @@ function switchTimelines!(pb::TaxiProblem, s::IntervalSolution, k1::Int, i1::Int
     c1 = s.custs[k1][(i1+1):end]
     c2 = s.custs[k2][(i2+1):end]
 
-    solUpdates = SolutionUpdate[SolutionUpdate(k1,deepcopy(s.custs[k1])), SolutionUpdate(k2,deepcopy(s.custs[k2]))]
+    solUpdates = PartialSolution()
+    addPartialSolution!(solUpdates,k1,s.custs[k1])
+    addPartialSolution!(solUpdates,k2,s.custs[k2])
 
     # First step: insert k2's customers into k1 (reject customers until we can insert them)
     s.custs[k1] = s.custs[k1][1:i1]

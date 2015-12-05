@@ -101,8 +101,8 @@ function generateProblem!(city::Manhattan, nTaxis::Int, tStart::DateTime,
     city.tStart = tStart
     city.tEnd   = tEnd
 
-    generateCustomers!(city, demand, waitTime=waitTime)
-    generateTaxis!(city, nTaxis)
+    df = generateCustomers!(city, demand, waitTime=waitTime)
+    generateTaxis!(city, nTaxis, data=df)
     return city
 end
 
@@ -141,15 +141,22 @@ function generateCustomers!(sim::Manhattan, demand::Float64=1.0; waitTime::TimeP
         sim.nTime = maxTime + EPS
     end
     println("$(length(sim.custs)) NYC customers extracted!")
-
+    return df
 end
 
 "Generate taxis in Manhattan"
-function generateTaxis!(sim::Manhattan, nTaxis::Int)
+function generateTaxis!(sim::Manhattan, nTaxis::Int; data::DataFrame=DataFrame())
     empty!(sim.taxis)
     sim.taxis = Array(Taxi,nTaxis);
-    for k in 1:nTaxis
-        sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)), 0.0);
+
+    if isempty(data)
+        for k in 1:nTaxis
+            sim.taxis[k] = Taxi(k,rand(1:nv(sim.network)), 0.0);
+        end
+    else
+        for k in 1:nTaxis
+            sim.taxis[k] = Taxi(k,data[rand(1:nrow(data)),:pnode], 0.0)
+        end
     end
 end
 

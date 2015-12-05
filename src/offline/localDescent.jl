@@ -37,7 +37,6 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
         end
         i = rand(1:length(sol.custs[k]))
 
-        bestCost = sol.cost
         revertSol = SolutionUpdate[]
         if random
             k2 = rand(1:(nTaxis-1))
@@ -46,17 +45,19 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
         else
             revertSol = switchCustomers!(pb, sol, k, i)
         end
-        if sol.cost < bestCost
+        costDiff = updateCost(pb,sol,revertSol)
+        if costDiff > 0.
             success += 1
             minutes = (time()-initT)/60
+            sol.cost -= costDiff
             benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
             verbose && @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, 100*success/trys)
         else
             updateSolution!(sol,revertSol)
-            sol.cost = bestCost
         end
     end
     expandWindows!(pb, sol)
+    sol.cost = solutionCost(pb,sol.custs)
     verbose && print("\n====Final: $(-sol.cost) dollars \n")
     benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
     benchmark && return (sol,benchData)

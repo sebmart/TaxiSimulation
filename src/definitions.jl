@@ -126,6 +126,9 @@ type SolutionUpdate
     custs::Vector{AssignedCustomer}
 end
 
+"represents updates to an Interval Solution"
+typealias PartialSolution Dict{Int,Vector{AssignedCustomer}}
+
 "x and y coordinates, to represent ENU positions"
 immutable Coordinates
     x::Float64
@@ -139,6 +142,7 @@ immutable BenchmarkPoint
     bound::Float64
 end
 
+const EmptyUpdate = PartialSolution()
 
 
 """
