@@ -7,7 +7,7 @@ type LimitedSearch <: OnlineMethod
 	sol::IntervalSolution
     startTime::Float64
 	solver::Function
-	updateTime::Float64
+	timePerTs::Float64
 	updateFreq::Float64
 	lastSearch::Float64
 	custId::Vector{Int}
@@ -18,14 +18,14 @@ type LimitedSearch <: OnlineMethod
     function LimitedSearch(;
 		period::Float64=0.,
 		solver::Function=(pb,init,t)->localDescent(pb,init,maxTime=t,random=true,verbose=false),
-		updateTime::Float64=1.,   #In seconds
+		timePerTs::Float64=1.,   #In seconds
 		updateFreq::Float64=0.  #In timesteps (often minutes)
 	)
         offline = new()
         offline.period = period
         offline.solver = solver
+		offline.timePerTs = timePerTs
         offline.updateFreq = updateFreq
-        offline.updateTime = updateTime
         return offline
     end
 end
@@ -89,7 +89,7 @@ function onlineUpdate!(om::LimitedSearch, endTime::Float64, newCustomers::Vector
 		end
 		om.validCust = trues(length(pb.custs))
 		expandWindows!(pb,om.sol)
-		om.sol = om.solver(pb, om.sol, om.updateTime)
+		om.sol = om.solver(pb, om.sol, (om.startTime - om.lastSearch) * om.timePerTs)
 		om.lastSearch = om.startTime
 	end
 

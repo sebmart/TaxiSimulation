@@ -25,11 +25,14 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 	onlineInitialize!(om, init)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i=1:length(pb.taxis)]
 
+	verbose && (percent = 0)
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})
 		if verbose
-			l = string([c.id for c in newCustomers])
-			println("================================")
-			@printf("Online Step -- time %.2f => %.2f (%.2f%%), customer(s) : %s\n", tStart, tEnd, 100*tEnd/pb.nTime, l)
+			p = floor(Int, 100*tStart/pb.nTime)
+			if p > percent
+		 		@printf("\r%.2d%%, Timestep : %.2f", p, tStart)
+				percent = p
+			end
 		end
 		# Updates the online method, selecting for taxi actions within the given time period
 		newTaxiActions = onlineUpdate!(om, tEnd, newCustomers)
