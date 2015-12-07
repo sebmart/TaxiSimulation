@@ -33,7 +33,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 		if verbose
 			p = floor(Int, 100*tStart/maxTime)
 			if p > percent
-		 		@printf(" %02d%%, Timestep : %.2f   \r", p, tStart)
+		 		@printf("=> %02d%%, Timestep : %.2f   \r", p, tStart)
 				flush(STDOUT)
 				percent = p
 			end
@@ -114,5 +114,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 	totalCost = solutionCost(pb, totalTaxiActions)
 
 	# Returns the complete online solution
-	return TaxiSolution(totalTaxiActions, customersNotTaken, totalCost)
+	sol = TaxiSolution(totalTaxiActions, customersNotTaken, totalCost)
+	testSolution(pb,sol)
+	return sol
 end

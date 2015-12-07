@@ -12,6 +12,7 @@ type LimitedSearch <: OnlineMethod
 	lastSearch::Float64
 	custId::Vector{Int}
 	validCust::Vector{Bool}
+	earliest::Bool
 
     period::Float64
 	# FixedAssignment() = new()
@@ -19,13 +20,15 @@ type LimitedSearch <: OnlineMethod
 		period::Float64=0.,
 		solver::Function=(pb,init,t)->localDescent(pb,init,maxTime=t,random=true,verbose=false),
 		timePerTs::Float64=1.,   #In seconds
-		updateFreq::Float64=0.  #In timesteps (often minutes)
+		updateFreq::Float64=0.,  #In timesteps (often minutes)
+		earliest::Bool=false
 	)
         offline = new()
         offline.period = period
         offline.solver = solver
 		offline.timePerTs = timePerTs
         offline.updateFreq = updateFreq
+		offline.earliest = earliest
         return offline
     end
 end
@@ -58,7 +61,7 @@ function onlineUpdate!(om::LimitedSearch, endTime::Float64, newCustomers::Vector
 		push!(om.custId, c.id)
 
         if c.tmaxt >= om.startTime
-            insertCustomer!(pb,om.sol,length(pb.custs))
+            insertCustomer!(pb,om.sol,length(pb.custs),earliest=earliest)
 		else
 			error("WTF")
 		end

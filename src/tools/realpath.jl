@@ -20,6 +20,9 @@ function getPath(city::TaxiProblem, p::RealPaths, i::Int, j::Int)
     end
     lastNode = prev
   end
+  if !isempty(wait)
+    wait[end] = 0.0 # to take into account special case when only one road that turns left
+  end
   reverse(path), reverse(wait)
 end
 
@@ -117,20 +120,37 @@ function realPaths(n::Network, roadTime::AbstractArray{Float64, 2},
 
   previous = Array(Int, (nLocs,nnLocs))
 
+  nodeMappingRev = zeros(Int, nnLocs)
+  for (i, a) in enumerate(nodeMapping), j in a
+    nodeMappingRev[j] = i
+  end
+
   for i in 1:nLocs
+    # Special case when only links with turn at origin
+    saveTimes = [newRoadTime[ni,:] for ni in nodeMapping[i]]
+    saveCosts = [newRoadCost[ni,:] for ni in nodeMapping[i]]
+    for ni in nodeMapping[i], nj in out_neighbors(newGraph,ni)
+        newRoadTime[ni,nj] = roadTime[i, nodeMappingRev[nj]]
+        newRoadCost[ni,nj] = roadCost[i, nodeMappingRev[nj]]
+    end
+
     parents, times, costs = dijkstraWithCosts(newGraph, nodeMapping[i], newRoadTime, newRoadCost)
     previous[i,:] = parents
     for node = 1:nLocs
         pathTime[i,node], index = findmin(times[nodeMapping[node]])
         newDest[i,node] = index + nodeMapping[node][1] - 1
         pathCost[i,node] = costs[newDest[i,node]]
+
+    end
+
+    #Special case follow-up
+    for (k,ni) in enumerate(nodeMapping[i])
+        newRoadTime[ni,:] = saveTimes[k]
+        newRoadCost[ni,:] = saveCosts[k]
     end
   end
 
-  nodeMappingRev = zeros(Int, nnLocs)
-  for (i, array) in enumerate(nodeMapping), j in array
-    nodeMappingRev[j] = i
-  end
+
 
   return RealPaths(pathTime, pathCost, newRoadTime, newRoadCost, previous, newDest, nodeMappingRev)
 end
