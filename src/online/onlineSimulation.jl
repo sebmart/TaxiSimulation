@@ -26,7 +26,7 @@ function onlineSimulation(pb::TaxiProblem, om::OnlineMethod; verbose=false)
 	totalTaxiActions = TaxiActions[TaxiActions(Tuple{ Float64, Road}[], CustomerAssignment[]) for i=1:length(pb.taxis)]
 
 	if verbose
-		percent = 0
+		percent = -1
 	end
 
 	function onlineStep!(tStart::Float64, tEnd::Float64, newCustomers::Vector{Customer})

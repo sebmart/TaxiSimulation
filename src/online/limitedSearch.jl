@@ -61,7 +61,7 @@ function onlineUpdate!(om::LimitedSearch, endTime::Float64, newCustomers::Vector
 		push!(om.custId, c.id)
 
         if c.tmaxt >= om.startTime
-            insertCustomer!(pb,om.sol,length(pb.custs),earliest=earliest)
+            insertCustomer!(pb,om.sol,length(pb.custs),earliest=om.earliest)
 		else
 			error("WTF")
 		end

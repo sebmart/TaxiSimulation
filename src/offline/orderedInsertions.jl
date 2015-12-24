@@ -3,14 +3,14 @@
 #----------------------------------------
 
 #Only return cost and list of assignment, given problem and order on customers
-function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb))
+function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb); earliest::Bool=false)
     nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
     custs = [CustomerAssignment[] for k in 1:nTaxis]
     sol = IntervalSolution(pb)
     for i in 1:nCusts
         c = order[i]
-        insertCustomer!(pb, sol, c)
+        insertCustomer!(pb, sol, c, earliest=earliest)
     end
     sol.cost = solutionCost(pb,sol.custs)
     return sol

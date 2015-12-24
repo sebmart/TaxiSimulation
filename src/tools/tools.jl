@@ -317,7 +317,7 @@ function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
         end
         for c in cust
             if c.tSup < c.tInf
-                error("Solution not feasible")
+                error("Solution not feasible, customer $c:  tSup = $(c.tSup) and tInf=$(c.tInf)")
             end
         end
     end
@@ -412,9 +412,13 @@ function graphPositions(g::Network)
 end
 
 "Update the call times"
-function updateTcall(pb::TaxiProblem, time)
+function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
     pb2 = copy(pb)
-    pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    if random
+        pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-rand()*time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    else
+        pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
+    end
     return pb2
 end
 
