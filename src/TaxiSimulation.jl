@@ -10,14 +10,15 @@ using RoutingNetworks
 # SFML, DataStructures, Base.Dates, DataFrames, Base.Test, MathProgBase
 
 
-#taxi problem
+# main
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 
-#Constants
+# Constants
 const PATH = string(Pkg.dir("TaxiSimulation"))
-#time epsilon
+# time epsilon
 const EPS = 1e-4
 
+# main
 include("taxiproblem.jl")
 
 

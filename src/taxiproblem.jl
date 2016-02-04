@@ -24,7 +24,7 @@ immutable Customer
 end
 
 function Base.show(io::IO, c::Customer)
-    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), p=%.2f", c.id, c.orig, c.dest, c.tcall, c.tmin, d.tmaxt, c.price)
+    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), p=%.2f", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmaxt, c.price)
 end
 
 """
@@ -37,7 +37,7 @@ immutable Taxi
 end
 
 function Base.show(io::IO, t::Taxi)
-    @printf(io,"Taxi %d, init: loc=%d time=%.2f", t.id, t.initPos, t.initTime)
+    @printf(io,"Taxi %d, init-loc=%d init-time=%.2f", t.id, t.initPos, t.initTime)
 end
 
 """
@@ -63,7 +63,7 @@ type TaxiProblem
     "last possible pick-up time (seconds)"
     nTime::Float64
     "cost of waiting one second (dollars)"
-    waitingCost::Float64 cost of waiting
+    waitingCost::Float64
     "time to pickup or dropoff a customer (seconds)"
     customerTime::Float64
 end
@@ -95,7 +95,7 @@ immutable CustomerAssignment
 end
 
 function Base.show(io::IO, t::CustomerAssignment)
-    @printf(io,"T. %d serves c. %d during [%.2f,%.2f]", t.custID, t.taxiID, t.timeIn, t.timeOut)
+    @printf(io,"Taxi %d serves customer %d during [%.2f,%.2f]", t.custID, t.taxiID, t.timeIn, t.timeOut)
 end
 
 """
