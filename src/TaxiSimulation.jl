@@ -4,68 +4,21 @@
 
 module TaxiSimulation
 
-using JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
-SFML, DataStructures, Base.Dates, DataFrames, Base.Test, MathProgBase
+using RoutingNetworks
+# JuMP, Gurobi, Base.Test,
+# using JLD, LightGraphs, Distributions, JuMP, Gurobi, Base.Collections,
+# SFML, DataStructures, Base.Dates, DataFrames, Base.Test, MathProgBase
 
 
-#types
-export Network, Road, Customer, Taxi, TaxiProblem, CustomerAssignment,
-TaxiActions, TaxiSolution, Path, ShortestPaths, RealPaths, AssignedCustomer,
-IntervalSolution, Coordinates, OnlineMethod, IterativeOffline, FixedAssignment,
-Uber, BenchmarkPoint, LimitedSearch
+#taxi problem
+export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 
-#Cities
-export Manhattan, Metropolis, SquareCity,
-generateCustomers!, generateTaxis!, generateProblem!, squareCityProblem,
-smallMetroProblem, bigMetroProblem
+#Constants
+const PATH = string(Pkg.dir("TaxiSimulation"))
+#time epsilon
+const EPS = 1e-4
 
-#Offline MILP solvers
-export mipOpt
+include("taxiproblem.jl")
 
-#Offline heuristics
-export orderedInsertions, randomInsertions, insertionsDescent, localDescent
-
-#Online
-export onlineSimulation
-
-#Tools
-export printSolution, shortestPaths!, shortestPaths, realPaths!, realPaths,
-testSolution, saveTaxiPb, loadTaxiPb, drawNetwork, dotFile, copySolution,
-expandWindows!, dijkstraWithCosts, solutionCost, pureOffline, pureOnline,
-noTmaxt, graphPositions, updateTcall
-
-#Visualization
-export visualize
-
-path = string(Pkg.dir("TaxiSimulation"))
-include("definitions.jl")
-
-#tools
-include("tools/print.jl")
-include("tools/shortestpath.jl")
-include("tools/realpath.jl")
-include("tools/tools.jl")
-
-#cities
-include("cities/squareCity.jl")
-include("cities/metropolis.jl")
-include("cities/manhattan.jl")
-
-#offline
-include("offline/moveCustomer.jl")
-include("offline/randomInsertions.jl")
-include("offline/insertionsDescent.jl")
-include("offline/localDescent.jl")
-include("offline/mipOpt.jl")
-
-#online
-include("online/onlineSimulation.jl")
-include("online/iterativeOffline.jl")
-include("online/limitedSearch.jl")
-include("online/fixedAssignment.jl")
-include("online/uber.jl")
-
-#visualization
-include("visualization/visualize.jl")
 
 end

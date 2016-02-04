@@ -106,30 +106,11 @@ function printLong(s::TaxiSolution, io::IO = STDOUT)
   end
 end
 
-function Base.show(io::IO, sol::TaxiSolution)
-    nt= count(i->i, sol.notTaken)
-    println(io, "TaxiSolution")
-    println(io, "Revenue : $(-sol.cost) dollars")
-    println(io, "$nt customers not served. ")
-end
+
 
 function Base.show(io::IO, sol::IntervalSolution)
     nt= count(i->i, sol.notTaken)
     println(io, "IntervalSolution")
     println(io, "Revenue : $(-sol.cost) dollars")
     println(io, "$nt customers not served. ")
-end
-
-#Print a City
-function Base.show(io::IO, pb::TaxiProblem)
-    nLocs = nv(pb.network)
-    nRoads = ne(pb.network)
-    println(io, "Taxi Problem")
-    println(io, "City with $nLocs locations and $nRoads roads")
-    if pb.nTime == 0
-        println(io, "No simulation created yet")
-    else
-        @printf(io, "Simulation with %i customers and %i taxis for %.2f units of time\n",
-            length(pb.custs), length(pb.taxis), pb.nTime)
-    end
 end
