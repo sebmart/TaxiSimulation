@@ -2,43 +2,7 @@
 
 
 
-"Represents the pickup time window of a customer"
-type AssignedCustomer
-    id::Int
-    tInf::Float64
-    tSup::Float64
-end
 
-"represents a time-window solution (only work with fixed timings)"
-type IntervalSolution
-    custs::Vector{Vector{AssignedCustomer}}
-    notTaken::BitVector
-    cost::Float64
-end
-
-"represents update to an Interval Solution"
-type SolutionUpdate
-    taxi::Int
-    custs::Vector{AssignedCustomer}
-end
-
-"represents updates to an Interval Solution"
-typealias PartialSolution Dict{Int,Vector{AssignedCustomer}}
-
-"x and y coordinates, to represent ENU positions"
-immutable Coordinates
-    x::Float64
-    y::Float64
-end
-
-"Benchmark points for offline solvers"
-immutable BenchmarkPoint
-    time::Float64
-    revenue::Float64
-    bound::Float64
-end
-
-const EmptyUpdate = PartialSolution()
 
 
 """

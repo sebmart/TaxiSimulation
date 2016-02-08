@@ -37,7 +37,6 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
         end
         i = rand(1:length(sol.custs[k]))
 
-        revertSol = SolutionUpdate[]
         if random
             k2 = rand(1:(nTaxis-1))
             k2 >= k && (k2 +=1)

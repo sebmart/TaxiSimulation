@@ -121,8 +121,8 @@ type TaxiSolution
     pb::TaxiProblem
     "actions of each taxi"
     actions::Vector{TaxiActions}
-    "customers not taken"
-    notTaken::BitVector
+    "rejected customers"
+    isRejected::BitVector
     "solution's profit"
     profit::Float64
 end
@@ -131,5 +131,5 @@ function Base.show(io::IO, sol::TaxiSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
     println(io, "TaxiSolution, problem with $nCusts and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
-    println(io, "$nt customers not served. ")
+    println(io, "$(sum(sol.isRejected)) customers not served. ")
 end

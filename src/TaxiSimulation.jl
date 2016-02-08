@@ -12,14 +12,17 @@ using RoutingNetworks, Distributions
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 export addRandomCustomers!, addRandomTaxis!
+#offline
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint
 # Constants
 const PATH = string(Pkg.dir("TaxiSimulation"))
-# time epsilon
 const EPS = 1e-4
 
 # main
 include("taxiproblem/taxiproblem.jl")
 include("taxiproblem/randomproblem.jl")
+#Offline
+include("offline/offline.jl")
 
 
 end
