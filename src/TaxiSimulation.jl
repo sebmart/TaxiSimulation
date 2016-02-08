@@ -12,6 +12,7 @@ using RoutingNetworks, Distributions
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 export addRandomCustomers!, addRandomTaxis!
+
 #offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint
 # Constants
@@ -23,6 +24,7 @@ include("taxiproblem/taxiproblem.jl")
 include("taxiproblem/randomproblem.jl")
 #Offline
 include("offline/offline.jl")
+include("offline/timewindows.jl")
 
 
 end

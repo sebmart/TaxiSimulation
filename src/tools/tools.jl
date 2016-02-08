@@ -147,111 +147,6 @@ function testSolution(pb::TaxiProblem, sol::IntervalSolution)
     # end
 end
 
-
-"expand the time windows of an interval solution"
-function expandWindows!(pb::TaxiProblem, sol::IntervalSolution)
-    custs = pb.custs
-    tt = traveltimes(pb)
-    custTime = pb.customerTime
-
-    for k = 1:length(pb.taxis)
-        list = sol.custs[k]
-        if length(list) >= 1
-            list[1].tInf = max(custs[list[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[list[1].id].orig])
-            list[end].tSup = custs[list[end].id].tmaxt
-        end
-        for i = 2:(length(list))
-            list[i].tInf = max(pb.custs[list[i].id].tmin, list[i-1].tInf+
-            tt[pb.custs[list[i-1].id].orig, pb.custs[list[i-1].id].dest]+
-            tt[pb.custs[list[i-1].id].dest, pb.custs[list[i].id].orig]+2*custTime)
-        end
-        for i = (length(list) - 1):(-1):1
-            list[i].tSup = min(pb.custs[list[i].id].tmaxt, list[i+1].tSup-
-            tt[pb.custs[list[i].id].orig,pb.custs[list[i].id].dest]-
-            tt[pb.custs[list[i].id].dest, pb.custs[list[i+1].id].orig]-2*custTime)
-        end
-        #quick check..
-        for c in list
-            if c.tInf > c.tSup + EPS
-                error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
-            end
-        end
-    end
-end
-
-"""
-Reconstruct all of a taxi's actions from its assigned customers
-The rule is to wait _before_ going to the next customer if the taxi has to wait
-"""
-function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
-    tt = traveltimes(pb)
-    path = Tuple{Float64,Road}[]
-
-    initPos = pb.taxis[id_taxi].initPos
-    for c in custs
-        cust = pb.custs[c.id]
-
-        #travels to customer origin
-        p = getPath(pb, initPos, cust.orig, c.timeIn - tt[initPos, cust.orig])
-        append!(path,p)
-
-        #travels with customer
-        p = getPath(pb, cust.orig, cust.dest, c.timeIn + pb.customerTime)
-        append!(path,p)
-
-        initPos = cust.dest
-    end
-    return TaxiActions(path,custs)
-end
-
-"""
-Return a path with timings given a starting time, an origin and a destination
-"""
-function getPath(city::TaxiProblem, startNode::Int, endNode::Int, startTime::Float64)
-    path = Tuple{Float64,Road}[]
-    p, wait = getPath(city, startNode, endNode)
-    t = startTime
-    for i in 1:length(p)
-        t += wait[i]
-        push!(path, (t, p[i]))
-        t += city.roadTime[src(p[i]), dst(p[i])]
-    end
-    return path
-end
-
-function saveTaxiPb(pb::TaxiProblem, name::AbstractString; compress=false)
-    save("$(path)/.cache/$name.jld", "pb", pb, compress=compress)
-end
-
-function loadTaxiPb(name::AbstractString)
-    pb = load("$(path)/.cache/$name.jld","pb")
-    return pb
-end
-
-"Output the graph vizualization to pdf file (see GraphViz library)"
-function drawNetwork(pb::TaxiProblem, name::AbstractString = "graph")
-    stdin, proc = open(`neato -Tpdf -o $(path)/outputs/$(name).pdf`, "w")
-    to_dot(pb.network,stdin)
-    close(stdin)
-end
-
-"Write dotfile"
-function dotFile(pb::TaxiProblem, name::AbstractString = "graph")
-    open("$(path)/outputs/$name.dot","w") do f
-        to_dot(pb.network, f)
-    end
-end
-
-"Write the graph in dot format"
-function to_dot(g::Network, stream::IO)
-    write(stream, "digraph  citygraph {\n")
-    for i in vertices(g), j in out_neighbors(g,i)
-        write(stream, "$i -> $j\n")
-    end
-    write(stream, "}\n")
-    return stream
-end
-
 "returns a random permutation"
 function randomOrder(n::Int)
     order = collect(1:n)
@@ -285,60 +180,7 @@ function customersCompatibility(pb::TaxiProblem)
     return pCusts, nextCusts
 end
 
-"Given a solution, returns the time-windows"
-function IntervalSolution(pb::TaxiProblem, sol::TaxiSolution)
-    res = Array(Vector{AssignedCustomer}, length(pb.taxis))
-    nt = trues(length(pb.custs))
-    for k =1:length(sol.taxis)
-        res[k] = [AssignedCustomer(c.id, pb.custs[c.id].tmin, pb.custs[c.id].tmaxt) for c in sol.taxis[k].custs]
-    end
-    tt = traveltimes(pb)
 
-    for (k,cust) = enumerate(res)
-        if length(cust) >= 1
-            cust[1].tInf = max(pb.custs[cust[1].id].tmin, tt[pb.taxis[k].initPos, pb.custs[cust[1].id].orig])
-            cust[end].tSup = pb.custs[cust[end].id].tmaxt
-            nt[cust[1].id] = false
-        end
-        for i = 2:(length(cust))
-            cust[i].tInf = max(pb.custs[cust[i].id].tmin, cust[i-1].tInf+
-            tt[pb.custs[cust[i-1].id].orig, pb.custs[cust[i-1].id].dest]+
-            tt[pb.custs[cust[i-1].id].dest, pb.custs[cust[i].id].orig]+ 2*pb.customerTime)
-            nt[cust[i].id] = false
-        end
-        for i = (length(cust) - 1):(-1):1
-            cust[i].tSup = min(pb.custs[cust[i].id].tmaxt, cust[i+1].tSup-
-            tt[pb.custs[cust[i].id].orig,pb.custs[cust[i].id].dest]-
-            tt[pb.custs[cust[i].id].dest, pb.custs[cust[i+1].id].orig] - 2*pb.customerTime)
-        end
-        for c in cust
-            if c.tSup < c.tInf
-                error("Solution not feasible, customer $c:  tSup = $(c.tSup) and tInf=$(c.tInf)")
-            end
-        end
-    end
-    return IntervalSolution(res, nt, solutionCost(pb,res))
-end
-
-"""
-Transform Interval solution into regular solution
-rule: pick up customers as early as possible
-"""
-function TaxiSolution(pb::TaxiProblem, sol::IntervalSolution)
-
-    nTaxis, nCusts = length(pb.taxis), length(pb.custs)
-    actions = Array(TaxiActions, nTaxis)
-    tt = traveltimes(pb)
-    for k in 1:nTaxis
-        custs = CustomerAssignment[]
-        for c in sol.custs[k]
-            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest] + 2*pb.customerTime))
-        end
-        actions[k] = TaxiActions(pb,k,custs)
-    end
-    return TaxiSolution(actions, sol.notTaken, sol.cost)
-
-end
 
 TaxiSolution() = TaxiSolution(TaxiActions[], trues(0), 0.0)
 IntervalSolution() = IntervalSolution(Vector{CustomerAssignment}[], trues(0), 0.0)
@@ -381,32 +223,6 @@ function noTmaxt(pb::TaxiProblem)
     return pb2
 end
 
-"""
-Takes a graph and returns positions of the nodes
-"""
-function graphPositions(g::Network)
-    stdin, proc = open(`neato -Tplain -o $(path)/outputs/__graphPositions.txt`, "w")
-    to_dot(g,stdin)
-    close(stdin)
-    fileExists = false
-    while (!fileExists)
-        sleep(1)
-        fileExists = isfile("$(path)/outputs/__graphPositions.txt")
-    end
-    lines = readlines(open("$(path)/outputs/__graphPositions.txt"))
-    rm("$(path)/outputs/__graphPositions.txt")
-    coords = Array{Coordinates}(nv(g))
-    indices = Int64[]
-    index = 2
-    while(lines[index][1:4] == "node")
-        s = split(lines[index])
-        id =  convert(Int64, float(s[2]))
-        coords[id] = Coordinates(float(s[3]), float(s[4]))
-        index += 1
-    end
-    return coords
-end
-
 "Update the call times"
 function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
     pb2 = copy(pb)
@@ -418,29 +234,7 @@ function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
     return pb2
 end
 
-"""
-Updates the time windows of a taxi timeline
-"""
-function updateTimeWindows!(pb::TaxiProblem,s::IntervalSolution,k::Int)
-    l = s.custs[k]
-    tt = traveltimes(pb)
 
-    if !isempty(l)
-        l[1].tInf = max(pb.custs[l[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, pb.custs[l[1].id].orig])
-        l[end].tSup = pb.custs[l[end].id].tmaxt
-    end
-    for i = 2:(length(l))
-        l[i].tInf = max(pb.custs[l[i].id].tmin, l[i-1].tInf+
-        tt[pb.custs[l[i-1].id].orig, pb.custs[l[i-1].id].dest]+
-        tt[pb.custs[l[i-1].id].dest, pb.custs[l[i].id].orig]+ 2*pb.customerTime)
-    end
-    for i = (length(l) - 1):(-1):1
-        l[i].tSup = min(pb.custs[l[i].id].tmaxt, l[i+1].tSup-
-        tt[pb.custs[l[i].id].orig, pb.custs[l[i].id].dest]-
-        tt[pb.custs[l[i].id].dest, pb.custs[l[i+1].id].orig] - 2*pb.customerTime)
-    end
-
-end
 
 """
 add an update to a Partial solution

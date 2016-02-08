@@ -18,13 +18,13 @@ immutable Customer
     "Earliest time for pickup (seconds)"
     tmin::Float64
     "Latest time for pickup (seconds)"
-    tmaxt::Float64
+    tmax::Float64
     "Fare paid by customer for the ride (dollars)"
     fare::Float64
 end
 
 function Base.show(io::IO, c::Customer)
-    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmaxt, c.fare)
+    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare)
 end
 
 """
@@ -79,12 +79,11 @@ end
 
 """
     `CustomerAssignment`:  assignement of a customer to a taxi
+    - Order: timeIn - wait - trip - wait - timeOut
 """
 immutable CustomerAssignment
     "customer's ID"
-    custID::Int
-    "taxi's ID"
-    taxiID::Int
+    id::Int
     "pickup time"
     timeIn::Float64
     "dropoff time"
@@ -92,7 +91,7 @@ immutable CustomerAssignment
 end
 
 function Base.show(io::IO, t::CustomerAssignment)
-    @printf(io,"Taxi %d serves customer %d during [%.2f,%.2f]", t.custID, t.taxiID, t.timeIn, t.timeOut)
+    @printf(io,"Customer %d is picked-up between %.2f and %.2f", t.id, t.timeIn, t.timeOut)
 end
 
 """
@@ -103,8 +102,8 @@ type TaxiActions
     taxiID::Int
     "path in the network (list of nodes)"
     path::Vector{Int}
-    "times of each road travel"
-    times::Vector{Float64}
+    "times of each road travel (length(time) = length(path) - 1"
+    times::Vector{Tuple{Float64, Float64}}
     "customers assigned to taxi, sorted by pick-up time"
     custs::Vector{CustomerAssignment}
 end

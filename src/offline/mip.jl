@@ -1,8 +1,7 @@
-#----------------------------------------
-#-- mixed integer optimisation,
-#-- "taxi k takes customer c after customer d"
-#-- and time intervals to take each customer (continuous or discrete)
-#----------------------------------------
+###################################################
+## offline/mip.jl
+## mixed integer optimisation, time-window based
+###################################################
 
 mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
 mipOpt(pb, IntervalSolution(pb,init); args...)

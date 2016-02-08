@@ -1,6 +1,6 @@
 ###################################################
 ## offline/offline.jl
-## types for offline problem solving
+## basics of offline problem solving
 ###################################################
 
 """
@@ -55,4 +55,5 @@ immutable BenchmarkPoint
     bound::Float64
 end
 
+"EmptyUpdate object, to avoid constructing it"
 const EmptyUpdate = PartialSolution()
