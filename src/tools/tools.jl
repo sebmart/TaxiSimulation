@@ -1,7 +1,3 @@
-#----------------------------------------
-#-- Useful functions to deal with TaxiProblem and TaxiSolution objects
-#----------------------------------------
-
 "Compute the cost of a solution (depreciated if turning penalties..)"
 function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
     cost = 0.

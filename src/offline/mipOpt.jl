@@ -34,7 +34,7 @@ function mipOpt(pb::TaxiProblem, init::IntervalSolution =IntervalSolution(Vector
     # =====================================================
 
     #Taxi k takes customer c, right after customer c0
-    @defVar(m, x[c=1:nCusts, c0= 1:length(pCusts[c]) ], Bin)
+    @defVar(m, x[c=1:nCusts, c0= 1:length(pCusts[c])], Bin)
     #Taxi k takes customer c, as a first customer
     @defVar(m, y[k=1:nTaxis,c=1:nCusts], Bin)
     #Lower bound of pick-up time window
