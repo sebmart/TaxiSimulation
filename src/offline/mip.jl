@@ -9,8 +9,10 @@
     `mipOpt`: MIP formulation of offline taxi assignment
     can be warmstarted with a solution
 """
+mipOpt(pb::TaxiProblem, init::OfflineSolution; arg...) =
+mipOpt(pb, Nullable{init}, arg...)
 mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
-mipOpt(pb, IntervalSolution(init); args...)
+mipOpt(pb, IntervalSolution(init), args...)
 
 
 function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, solverArgs...)

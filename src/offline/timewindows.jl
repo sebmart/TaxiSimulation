@@ -66,19 +66,18 @@ end
     `TaxiSolution(OfflineSolution)`, transform offline solution into full solution
     - rule: pick up customers as early as possible
 """
-function TaxiSolution(sol::OfflineSolution)
-
-    nTaxis, nCusts = length(pb.taxis), length(pb.custs)
+function TaxiSolution(s::OfflineSolution)
+    nTaxis, nCusts = length(s.pb.taxis), length(s.pb.custs)
     actions = Array(TaxiActions, nTaxis)
-    tt = traveltimes(pb)
+    tt(i::Int, j::Int) = traveltime(s.pb.times,i,j)
     for k in 1:nTaxis
         custs = CustomerAssignment[]
-        for c in sol.custs[k]
-            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt[pb.custs[c.id].orig, pb.custs[c.id].dest] + 2*pb.customerTime))
+        for c in s.custs[k]
+            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt(s.pb.custs[c.id].orig, s.pb.custs[c.id].dest) + 2*s.pb.customerTime))
         end
-        actions[k] = TaxiActions(pb,k,custs)
+        actions[k] = TaxiActions(s.pb,k,custs)
     end
-    return TaxiSolution(sol.pb, actions, sol.isRejected, sol.profit)
+    return TaxiSolution(s.pb, actions, s.isRejected, s.profit)
 
 end
 
@@ -88,7 +87,7 @@ end
     - The rule is to wait _before_ going to the next customer if the taxi has to wait
 """
 function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
-    tt(i::Int, j::Int) = traveltime(s.pb.times,i,j)
+    tt(i::Int, j::Int) = traveltime(pb.times,i,j)
     times = Float64[]
     prevPos = pb.taxis[id_taxi].initPos
     pos = pb.taxis[id_taxi].initPos
