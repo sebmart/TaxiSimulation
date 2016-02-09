@@ -158,35 +158,11 @@ function randomOrder(n::Int)
 end
 randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
 
-"Return customers that can be taken before other customers"
-function customersCompatibility(pb::TaxiProblem)
-    cust = pb.custs
-    tt = traveltimes(pb)
-    nCusts = length(cust)
-    pCusts = Array( Array{Int,1}, nCusts)
-    nextCusts = Array( Array{Tuple{Int,Int},1},nCusts)
-    for i=1:nCusts
-        nextCusts[i] = Tuple{Int,Int}[]
-    end
-
-    for (i,c1) in enumerate(cust)
-        pCusts[i]= filter(c2->c2 != i && cust[c2].tmin + 2*pb.customerTime +
-        tt[cust[c2].orig, cust[c2].dest] + tt[cust[c2].dest, c1.orig] <= c1.tmaxt,
-        collect(1:nCusts))
-        for (id,j) in enumerate(pCusts[i])
-            push!(nextCusts[j], (i,id))
-        end
-    end
-    return pCusts, nextCusts
-end
 
 
 
 TaxiSolution() = TaxiSolution(TaxiActions[], trues(0), 0.0)
 IntervalSolution() = IntervalSolution(Vector{CustomerAssignment}[], trues(0), 0.0)
-IntervalSolution(pb::TaxiProblem) =
-IntervalSolution([CustomerAssignment[] for k in 1:length(pb.taxis)],
-trues(length(pb.custs)), pb.nTime * length(pb.taxis) * pb.waitingCost)
 
 copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)
 

@@ -35,7 +35,7 @@ end
     update all time windows, check for feasibility and updates `isRejected`
 """
 function updateTimeWindows!(s::OfflineSolution)
-    s.isRejected = trues(length(pb.custs))
+    s.isRejected = trues(length(s.pb.custs))
     for k in eachindex(s.pb.taxis)
         updateTimeWindows!(s,k)
         for c in s.custs[k]

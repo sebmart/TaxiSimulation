@@ -17,6 +17,7 @@ end
 
 """
     `OfflineSolution` : compact representation of offline solution
+    - `profit = Inf` when not computed
 """
 type OfflineSolution
     "corresponding TaxiProblem"
@@ -31,11 +32,17 @@ end
 
 function Base.show(io::IO, sol::OfflineSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
-    println(io, "Offline Solution, problem with $nCusts and $nTaxis taxis")
+    println(io, "Offline Solution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
-    println(io, "$(sum(sol.isRejected)) customers not served. ")
+    println(io, "$(sum(sol.isRejected)) customers rejected. ")
 end
 
+"by default, all taxis wait"
+OfflineSolution(pb::TaxiProblem) =
+    OfflineSolution(pb,
+                    [CustomerAssignment[] for k in 1:length(pb.taxis)],
+                    trues(length(pb.custs)),
+                    -pb.simTime * length(pb.taxis) * pb.waitingCost)
 """
     `PartialSolution`: selected taxis assigned customers
     (used to sparsily represent solution changes)
