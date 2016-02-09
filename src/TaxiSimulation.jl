@@ -4,10 +4,11 @@
 
 module TaxiSimulation
 
-using RoutingNetworks, Distributions, JuMP, Gurobi
+using RoutingNetworks, Distributions, JuMP, Gurobi, SFML
 import MathProgBase
+import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualize
 # using JLD, LightGraphs, Base.Collections,
-# SFML, DataStructures, Base.Dates, DataFrames, Base.Test
+# DataStructures, Base.Dates, DataFrames, Base.Test
 
 
 # taxiproblem
