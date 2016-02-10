@@ -25,7 +25,7 @@ type OfflineSolution
     "assignments to each taxi"
     custs::Vector{Vector{CustomerTimeWindow}}
     "rejected customers"
-    isRejected::BitVector
+    rejected::IntSet
     "solution's profit"
     profit::Float64
 end
@@ -34,7 +34,7 @@ function Base.show(io::IO, sol::OfflineSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
     println(io, "Offline Solution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
-    println(io, "$(sum(sol.isRejected)) customers rejected. ")
+    println(io, "$(length(sol.rejected)) customers rejected. ")
 end
 
 "by default, all taxis wait"

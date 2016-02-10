@@ -1,12 +1,13 @@
-#--------------------------------------------------
-#-- All the Taxi Simulation tools in a Module
-#--------------------------------------------------
+###################################################
+## TaxiSimulation.jl
+## Module: usings, exports, includes
+###################################################
 
 module TaxiSimulation
 
-using RoutingNetworks, Distributions, JuMP, Gurobi, SFML
+using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees
 import MathProgBase
-import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualize
+import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualScale, visualize
 # using JLD, LightGraphs, Base.Collections,
 # DataStructures, Base.Dates, DataFrames, Base.Test
 
@@ -14,9 +15,10 @@ import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualize
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 export addRandomCustomers!, addRandomTaxis!
-
-#offline
+# offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt
+# visual
+export NetworkVisualizer, visualize
 # Constants
 const PATH = string(Pkg.dir("TaxiSimulation"))
 const EPS = 1e-4
@@ -28,6 +30,6 @@ include("taxiproblem/randomproblem.jl")
 include("offline/offline.jl")
 include("offline/timewindows.jl")
 include("offline/mip.jl")
-
-
+#visualization
+include("visualization/taxivisualizer.jl")
 end

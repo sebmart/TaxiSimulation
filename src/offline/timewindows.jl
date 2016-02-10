@@ -32,17 +32,17 @@ end
 
 """
     `updateTimeWindow!(OfflineSolution)`
-    update all time windows, check for feasibility and updates `isRejected`
+    update all time windows, check for feasibility and updates `rejected`
 """
 function updateTimeWindows!(s::OfflineSolution)
-    s.isRejected = trues(length(s.pb.custs))
+    s.rejected = IntSet(1:length(s.pb.custs))
     for k in eachindex(s.pb.taxis)
         updateTimeWindows!(s,k)
         for c in s.custs[k]
             if c.tInf > c.tSup + EPS
                 error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
             end
-            s.isRejected[c.id] = false
+            delete!(s.rejected, c.id)
         end
     end
     s
@@ -53,7 +53,7 @@ end
     (compute max time windows)
 """
 function OfflineSolution(s::TaxiSolution)
-    tw = Array(Vector{CustomerTimeWindow}, length(pb.taxis))
+    tw = Array(Vector{CustomerTimeWindow}, length(s.pb.taxis))
     rejected = trues(length(s.pb.custs))
     for k in eachindex(s.pb.taxis)
         tw[k] = [CustomerTimeWindow(c.id, s.pb.custs[c.id].tmin, s.pb.custs[c.id].tmax) for c in sol.actions[k].custs]
@@ -77,7 +77,7 @@ function TaxiSolution(s::OfflineSolution)
         end
         actions[k] = TaxiActions(s.pb,k,custs)
     end
-    return TaxiSolution(s.pb, actions, s.isRejected, s.profit)
+    return TaxiSolution(s.pb, actions, s.rejected, s.profit)
 
 end
 

@@ -10,9 +10,9 @@
     can be warmstarted with a solution
 """
 mipOpt(pb::TaxiProblem, init::OfflineSolution; arg...) =
-mipOpt(pb, Nullable{init}, arg...)
+mipOpt(pb, Nullable{OfflineSolution}(init), arg...)
 mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
-mipOpt(pb, IntervalSolution(init), args...)
+mipOpt(pb, OfflineSolution(init), args...)
 
 
 function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, solverArgs...)
@@ -56,9 +56,6 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     if !isnull(init)
         init = get(init)
-        if init.pb != pb
-            error("solution not corresponding to problem")
-        end
         for c=1:nCusts, c0 =1:length(pCusts[c])
             setValue(x[c,c0],0)
         end
@@ -195,15 +192,15 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
         end
     end
 
-    isRejected = trues(nCusts)
+    rejected = IntSet(1:nCusts)
     for k= 1:nTaxis
         if first[k] > 0
-            isRejected[first[k]] = false
+            delete!(rejected, first[k])
         end
     end
     for c= 1:nCusts
         if chain[c] > 0
-            isRejected[chain[c]] = false
+            delete!(rejected, chain[c])
         end
     end
 
@@ -216,7 +213,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
             end
         end
     end
-    s = OfflineSolution(pb,custs,isRejected, - getObjectiveValue(m) )
+    s = OfflineSolution(pb,custs, rejected, - getObjectiveValue(m) )
 
     if benchmark
         o = -s.cost - benchData[end].revenue
