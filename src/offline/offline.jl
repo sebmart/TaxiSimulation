@@ -41,14 +41,8 @@ end
 OfflineSolution(pb::TaxiProblem) =
     OfflineSolution(pb,
                     [CustomerAssignment[] for k in 1:length(pb.taxis)],
-                    trues(length(pb.custs)),
+                    IntSet(eachindex(pb.custs)),
                     -pb.simTime * length(pb.taxis) * pb.waitingCost)
-"""
-    `PartialSolution`: selected taxis assigned customers
-    (used to sparsily represent solution changes)
-"""
-typealias PartialSolution Dict{Int,Vector{CustomerTimeWindow}}
-
 
 """
     `BenchmarkPoint`, Benchmark points for offline solvers
@@ -61,6 +55,3 @@ immutable BenchmarkPoint
     "upper-bound on profit"
     bound::Float64
 end
-
-"EmptyUpdate object, to avoid constructing it"
-const EmptyUpdate = PartialSolution()

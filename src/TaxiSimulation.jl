@@ -16,7 +16,7 @@ import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualScale, visu
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 export printSolution, addRandomCustomers!, addRandomTaxis!
 # offline
-export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions
 # visual
 export NetworkVisualizer, visualize
 # Constants
@@ -32,6 +32,9 @@ include("taxiproblem/tools.jl")
 include("offline/offline.jl")
 include("offline/timewindows.jl")
 include("offline/mip.jl")
+include("offline/partialsolutions.jl")
+include("offline/solutionupdates.jl")
+include("offline/insertionsheuristics.jl")
 #visualization
 include("visualization/taxivisualizer.jl")
 end

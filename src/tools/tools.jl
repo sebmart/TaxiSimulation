@@ -15,31 +15,6 @@ function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
     return cost
 end
 
-"compute costs of one taxi"
-function taxiCost(pb::TaxiProblem,custs::Vector{AssignedCustomer},k::Int)
-    tt = traveltimes(pb)
-    tc = travelcosts(pb)
-    pos = pb.taxis[k].initPos
-    drivingTime = 0
-    cost = 0.
-    for c in custs
-        c1 = pb.custs[c.id]
-        cost += tc[pos,c1.orig] + tc[c1.orig,c1.dest] - c1.price
-        drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
-        pos = c1.dest
-    end
-    cost += (pb.nTime - drivingTime)*pb.waitingCost
-end
-
-"compute the cost of a solution just using customers"
-function solutionCost(pb::TaxiProblem, t::Vector{Vector{AssignedCustomer}})
-    cost = 0.0
-
-    for (k,custs) in enumerate(t)
-        cost+= taxiCost(pb,custs,k)
-    end
-    return cost
-end
 
 
 """
@@ -208,51 +183,4 @@ function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
         pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.price) for c in pb.custs]
     end
     return pb2
-end
-
-
-
-"""
-add an update to a Partial solution
-- Only store if not stored before
-"""
-function addPartialSolution!(sol::PartialSolution, k::Int, u::Vector{AssignedCustomer})
-    if !haskey(sol,k)
-        sol[k] = deepcopy(u)
-    end
-end
-function addPartialSolution!(sol::PartialSolution, sol2::PartialSolution)
-    for (k,u) in sol2
-        addPartialSolution!(sol,k,u)
-    end
-end
-
-
-
-"""
-Updates in place an IntervalSolution, given a list of changes (do not update cost!)
-"""
-function updateSolution!(sol::IntervalSolution, updateSol::PartialSolution)
-    for (k,u) in updateSol
-        for c in sol.custs[k]
-            sol.notTaken[c.id] = !sol.notTaken[c.id]
-        end
-        for c in u
-            sol.notTaken[c.id] = !sol.notTaken[c.id]
-        end
-        sol.custs[k] = u
-    end
-end
-
-"""
-Updates in place an IntervalSolution, given a list of changes (do not update cost!)
-last updates are supposed to be the last ones
-"""
-function updateCost(pb, sol::IntervalSolution, updateSol::PartialSolution)
-    cost = 0.
-    for (k,u) in updateSol
-        cost += taxiCost(pb,u,k)
-        cost -= taxiCost(pb,sol.custs[k],k)
-    end
-    return cost
 end

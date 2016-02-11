@@ -104,7 +104,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     #Busy time during "first customer"
     @defExpr(firstBusyTime, sum{
     (tt(taxi[k].initPos, cust[c].orig) +
-    tt(cust[c].orig, cust[c].dest) )*(-pb.waitingCost)*y[k,c],
+    tt(cust[c].orig, cust[c].dest))*(-pb.waitingCost)*y[k,c],
     k=1:nTaxis, c=1:nCusts})
 
     @setObjective(m,Min, customerCost + firstCustomerCost +
