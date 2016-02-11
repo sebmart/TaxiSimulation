@@ -107,8 +107,7 @@ function visualUpdate(v::TaxiVisualizer, frameTime::Float64)
 
 	# change time
 	!v.simPaused && (v.simTime += frameTime*v.simSpeed)
-	minutes = floor(Int,v.simTime/60)
-	seconds = floor(Int, v.simTime-60*minutes)
+	minutes, seconds = minutesSeconds(v.simTime)
 	set_title(v.window, "Simulation time : $(minutes)m$(seconds)s")
 
 	# Iterate through taxis to plot

@@ -14,7 +14,7 @@ import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualScale, visu
 
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
-export addRandomCustomers!, addRandomTaxis!
+export printSolution, addRandomCustomers!, addRandomTaxis!
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt
 # visual
@@ -25,7 +25,9 @@ const EPS = 1e-4
 
 # main
 include("taxiproblem/taxiproblem.jl")
+include("taxiproblem/print.jl")
 include("taxiproblem/randomproblem.jl")
+include("taxiproblem/tools.jl")
 #Offline
 include("offline/offline.jl")
 include("offline/timewindows.jl")

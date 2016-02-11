@@ -62,8 +62,8 @@ type TaxiProblem
     customerTime::Float64
 end
 
-TaxiProblem(n::Network, t::RoutingPaths, c::RoutingPaths) =
-TaxiProblem(n, t, c, Customer[], Taxi[], 0., 0., 0.)
+TaxiProblem(n::Network, t::RoutingPaths, c::RoutingPaths; customerTime::Float64 = 10., waitingCost = 5./3600.) =
+TaxiProblem(n, t, c, Customer[], Taxi[], 0., waitingCost, customerTime)
 
 function Base.show(io::IO, pb::TaxiProblem)
     nLocs = nNodes(pb.network); nRoad = nRoads(pb.network)
