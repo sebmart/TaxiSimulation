@@ -142,7 +142,7 @@ function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb
             if i > length(custs) #If inserted in last position
                 push!(custs, CustomerTimeWindow(c.id, tmin, c.tmax))
             else
-                tmaxt = min(c.tmax,custs[i].tSup - tt(c.orig, c.dest) -
+                tmax = min(c.tmax,custs[i].tSup - tt(c.orig, c.dest) -
                 tt(c.dest, cDesc[custs[i].id].orig) - 2*custTime)
                 insert!(custs, i, CustomerTimeWindow(c.id, tmin, tmax))
             end

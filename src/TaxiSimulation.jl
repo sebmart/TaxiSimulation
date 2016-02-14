@@ -17,7 +17,7 @@ export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolutio
 export printSolution, addRandomCustomers!, addRandomTaxis!
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions,
-testSolution
+testSolution, insertionsDescent
 # visual
 export NetworkVisualizer, visualize
 # Constants
