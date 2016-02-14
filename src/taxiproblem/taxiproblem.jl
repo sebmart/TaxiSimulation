@@ -132,3 +132,14 @@ function Base.show(io::IO, sol::TaxiSolution)
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
     println(io, "$(length(sol.rejected)) customers not served. ")
 end
+
+
+"""
+    `testSolution`, Tests if a TaxiSolution is feasible
+    - The paths must be feasible paths (time to cross roads, no jumping..)
+    - The customers must correspond to the path, and be driven directly as soon
+     as picked-up, using the ehortest path available
+"""
+function testSolution(sol::TaxiSolution)
+    testSolution(OfflineSolution(sol))
+end

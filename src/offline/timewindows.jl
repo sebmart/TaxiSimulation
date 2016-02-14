@@ -54,11 +54,10 @@ end
 """
 function OfflineSolution(s::TaxiSolution)
     tw = Array(Vector{CustomerTimeWindow}, length(s.pb.taxis))
-    rejected = trues(length(s.pb.custs))
     for k in eachindex(s.pb.taxis)
-        tw[k] = [CustomerTimeWindow(c.id, s.pb.custs[c.id].tmin, s.pb.custs[c.id].tmax) for c in sol.actions[k].custs]
+        tw[k] = [CustomerTimeWindow(c.id, s.pb.custs[c.id].tmin, s.pb.custs[c.id].tmax) for c in s.actions[k].custs]
     end
-    sol = OfflineSolution(tw, rejected, s.profit)
+    sol = OfflineSolution(s.pb, tw, s.rejected, solutionProfit(s.pb,tw))
     return updateTimeWindows!(sol)
 end
 
@@ -141,4 +140,38 @@ function solutionProfit(pb::TaxiProblem, t::Vector{Vector{CustomerTimeWindow}})
         profit += taxiProfit(pb,custs,k)
     end
     return profit
+end
+
+"""
+    `testSolution(OfflineSolution)`, test if offline solution is feasible
+"""
+function testSolution(sol::OfflineSolution)
+    pb = sol.pb
+    custs = pb.custs
+    rejected = IntSet(eachindex(pb.custs))
+    tt(i::Int, j::Int) = traveltime(pb.times,i,j)
+    custTime = pb.customerTime
+
+    for k in eachindex(pb.taxis)
+        prevPos = pb.taxis[k].initPos
+        prevInf = pb.taxis[k].initTime
+        prevSup = pb.taxis[k].initTime
+        for tw in sol.custs[k]
+            c = custs[tw.id]
+            @test prevInf + tt(prevPos, c.orig) <= tw.tInf + EPS
+            @test prevSup + tt(prevPos, c.orig) <= tw.tSup + EPS
+            @test c.tmin  <= tw.tInf + EPS
+            @test tw.tInf <= tw.tSup + EPS
+            @test tw.tSup <= c.tmax  + EPS
+
+            prevPos = c.dest
+            prevInf = tw.tInf + tt(prevPos, c.orig)
+            delete!(rejected, tw.id)
+        end
+    end
+    if sol.rejected != rejected
+        error("Rejected customers do not match")
+    end
+    @test sol.profit - EPS <= solutionProfit(sol.pb,sol.custs) <= sol.profit + EPS
+    println("Solution is feasible!")
 end
