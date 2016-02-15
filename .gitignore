@@ -1,9 +1,1 @@
-*.csv
-*.pdf
-*.jld
-*.osm
-*.sh
-todo.md
 *.DS_Store
-*.sh
-!src/cities/manhattan/manhattan.jld
