@@ -1,33 +1,3 @@
-"Compute the cost of a solution (depreciated if turning penalties..)"
-function solutionCost(pb::TaxiProblem, taxis::Array{TaxiActions, 1})
-    cost = 0.
-    for (k,t) in enumerate(taxis)
-        totaltime = 0.
-        for (i,(time,road)) in enumerate(t.path)
-            cost += pb.roadCost[ src(road), dst(road)]
-            totaltime += pb.roadTime[ src(road), dst(road)]
-        end
-        cost += pb.waitingCost * (pb.nTime - totaltime)
-        for c in t.custs
-            cost -= pb.custs[c.id].price
-        end
-    end
-    return cost
-end
-
-
-
-
-
-
-TaxiSolution() = TaxiSolution(TaxiActions[], trues(0), 0.0)
-IntervalSolution() = IntervalSolution(Vector{CustomerAssignment}[], trues(0), 0.0)
-
-copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), copy(sol.notTaken), sol.cost)
-
-toInt(x::Float64) = round(Int,x)
-
-getPath(city::TaxiProblem, startNode::Int, endNode::Int) = getPath(city, city.paths, startNode, endNode)
 
 """
 Returns a taxi problem with all tcall set to zero
