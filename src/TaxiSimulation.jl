@@ -6,12 +6,9 @@
 module TaxiSimulation
 
 using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees
-using Base.Test, Base.Dates, NearestNeighbors
+using Base.Test, Base.Dates, NearestNeighbors, JLD
 import MathProgBase
 import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualScale, visualize
-# using JLD, LightGraphs, Base.Collections,
-# DataStructures, DataFrames, Base.Test
-
 
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
@@ -20,7 +17,7 @@ export printSolution, addRandomCustomers!, addRandomTaxis!
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions,
 testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
 # data
-export RealCustomer, loadManhattanCustomers
+export RealCustomer, loadManhattanCustomers, saveByDate
 # visual
 export NetworkVisualizer, visualize
 # Constants
