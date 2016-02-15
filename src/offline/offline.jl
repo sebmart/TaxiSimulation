@@ -55,3 +55,5 @@ immutable BenchmarkPoint
     "upper-bound on profit"
     bound::Float64
 end
+
+copySolution(sol::OfflineSolution) = OfflineSolution( sol.pb, deepcopy(sol.custs), copy(sol.rejected), sol.profit)

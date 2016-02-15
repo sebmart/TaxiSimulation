@@ -30,33 +30,33 @@ sort(collect(1:length(pb.custs)), by = i -> pb.custs[i].tmin)
 """
 function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCustomers(pb);
                     benchmark::Bool=false, verbose::Bool=true, maxTime::Float64=Inf,
-                    iterations::Int=typemax(Int))
+                    iterations::Int=typemax(Int), earliest::Bool = false)
     if benchmark
-        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations)
+        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations, earliest)
     else
-        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations)[1]
+        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations, earliest)[1]
     end
 end
 
 function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchmark::Bool,
-                                verbose::Bool, maxTime::Float64, iterations::Int)
+                                verbose::Bool, maxTime::Float64, iterations::Int, earliest::Bool)
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 10.
     end
     order = start
 
     initT = time()
-    best = orderedInsertions(pb, order)
+    best = orderedInsertions(pb, order, earliest=earliest)
     benchData = BenchmarkPoint[]
     benchmark && (push!(benchData, BenchmarkPoint(time()-initT,best.profit,Inf)))
 
     #if no customer or only one in problem: stop
     if best.rejected == IntSet(eachindex(pb.custs)) || length(pb.custs) == 1
-        verbose && print("\nFinal profit: $(best.profit) dollars\n")
+        verbose && println("Final profit: $(best.profit) dollars")
         return best
     end
 
-    verbose && println("Try: 1, $(best.profit) dollars\n")
+    verbose && println("Try: 1, $(best.profit) dollars")
     success = 0.
     for trys in 2:iterations
         if time()-initT > maxTime
@@ -69,7 +69,7 @@ function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchma
 
         order[i], order[j] = order[j], order[i]
 
-        sol = orderedInsertions(pb, order)
+        sol = orderedInsertions(pb, order, earliest=earliest)
         if sol.profit >= best.profit # in case of equality, update order
             if sol.profit > best.profit
                 benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
@@ -84,7 +84,39 @@ function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchma
         end
         order[i], order[j] = order[j], order[i]
     end
-    verbose && print("\nFinal profit: $(best.profit) dollars\n")
+    verbose && println("\nFinal profit: $(best.profit) dollars")
     benchmark && push!(benchData, BenchmarkPoint(time()-initT, best.profit,Inf))
     return (best,benchData)
+end
+
+"""
+    `randomInsertions`, tries random insertions order and keep the best
+"""
+function randomInsertions(pb::TaxiProblem; benchmark=false, verbose=true, maxTime= Inf, iterations=typemax(Int))
+    if maxTime == Inf && iterations == typemax(Int)
+        maxTime = 5.
+    end
+    initT = time()
+    order = shuffle(collect(eachindex(pb.custs))) # random order
+    best = orderedInsertions(pb, order)
+    verbose && println("Try: 1, $(best.profit) dollars")
+    benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(time()-initT,best.profit,Inf)])
+    for trys in 2:iterations
+        if time()-initT > maxTime
+            break
+        end
+        sol = orderedInsertions(pb, order)
+
+        if sol.profit > best.profit
+            verbose && print("\r====Try: $(trys), $(sol.profit) dollars                  ")
+            benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
+            best = sol
+        end
+
+        order = shuffle(collect(eachindex(pb.custs)))
+    end
+    verbose && println("\r====Final: $(best.profit) dollars              ")
+    benchmark && push!(benchData, BenchmarkPoint(time()-initT,best.profit,Inf))
+    benchmark && return (best,benchData)
+    return best
 end

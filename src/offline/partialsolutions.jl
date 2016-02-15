@@ -29,23 +29,23 @@ function addPartialSolution!(sol::PartialSolution, sol2::PartialSolution)
 end
 
 """
-    `updateSolution!`, reverts an IntervalSolution to a previous state
+    `updateSolution!`, reverts an OfflineSolution to a previous state
     Updates in place an OfflineSolution, given a list of changes (do not update cost!)
 """
 function updateSolution!(sol::OfflineSolution, updateSol::PartialSolution)
     for (k,u) in updateSol
         for c in sol.custs[k]
-            if c.id in rejected
-                delete!(rejected,c.id)
+            if c.id in sol.rejected
+                delete!(sol.rejected,c.id)
             else
-                push!(rejected,c.id)
+                push!(sol.rejected,c.id)
             end
         end
         for c in u
-            if c.id in rejected
-                delete!(rejected,c.id)
+            if c.id in sol.rejected
+                delete!(sol.rejected,c.id)
             else
-                push!(rejected,c.id)
+                push!(sol.rejected,c.id)
             end
         end
         sol.custs[k] = u
@@ -60,7 +60,7 @@ end
 function profitDiff(sol::OfflineSolution, updateSol::PartialSolution)
     profit = 0.
     for (k,u) in updateSol
-        profit += taxiProfit(sol.pb,u,k) - taxiProfit(sol.pb,sol.custs[k],k)
+        profit +=  taxiProfit(sol.pb,sol.custs[k],k)- taxiProfit(sol.pb,u,k)
     end
-    return cost
+    return profit
 end

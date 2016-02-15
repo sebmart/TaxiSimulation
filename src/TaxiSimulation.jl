@@ -17,7 +17,7 @@ export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolutio
 export printSolution, addRandomCustomers!, addRandomTaxis!
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions,
-testSolution, insertionsDescent
+testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
 # visual
 export NetworkVisualizer, visualize
 # Constants
@@ -36,6 +36,7 @@ include("offline/mip.jl")
 include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
+include("offline/localdescent.jl")
 #visualization
 include("visualization/taxivisualizer.jl")
 end

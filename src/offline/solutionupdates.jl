@@ -165,3 +165,169 @@ function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb
     end
     return solUpdates
 end
+
+
+
+
+"""
+    `switchCustomers!`,   split a taxi timeline and tries to switch the last part with another taxi's
+    - updates solution, and returns instructions to revert
+"""
+function switchCustomers!(sol::OfflineSolution, k::Int, i::Int, bestK::Int = -1)
+    pb = sol.pb
+
+    #Step 1: find the best taxi (if not given)
+    # criterion: minimum "insertcost"
+    if bestK == -1
+        bestCost = Inf
+        bestPos  = -1
+
+        for k2 in eachindex(pb.taxis)
+            if k2==k
+                continue
+            end
+            cost, pos = insertCost(sol, k2, sol.custs[k][i])
+            if cost < bestCost
+                bestCost = cost
+                bestPos  = pos
+                bestK    = k2
+            end
+        end
+
+    else
+        bestCost, bestPos = insertCost(sol,bestK, sol.custs[k][i])
+    end
+    if bestCost == Inf
+        return EmptyUpdate
+    end
+
+    solUpdates = PartialSolution()
+    priorRejected = deepcopy(sol.rejected)
+
+    #Step 2: switch the two timelines at the given position
+    addPartialSolution!(solUpdates,switchTimelines!(sol,k,i-1,bestK,bestPos))
+
+    #Step3: tries to insert all customers
+    for c in eachindex(pb.custs)
+        if c in priorRejected
+            addPartialSolution!(solUpdates,insertCustomer!(sol, c, [k, bestK]))
+        elseif c in sol.rejected
+            addPartialSolution!(solUpdates,insertCustomer!(sol, c))
+        end
+    end
+    return solUpdates
+end
+
+
+"""
+    `switchTimelines!(s,k1,i1,k2,i2)`, Performs a timeline switch between k1 and k2,
+     at positions i1 and i2
+    - but k1 may not be able to take all of k2's customers (in this case, we reject them)
+    - and same with k2 for k1 customers
+    - i1 and i2 are positions of the customer right before the switch (0 if whole switch)
+    - returns instructions to revert
+"""
+function switchTimelines!(s::OfflineSolution, k1::Int, i1::Int, k2::Int, i2::Int)
+    pb = s.pb
+    tt(i::Int, j::Int) = traveltime(pb.times,i,j)
+    c1 = s.custs[k1][(i1+1):end]
+    c2 = s.custs[k2][(i2+1):end]
+
+    solUpdates = PartialSolution()
+    addPartialSolution!(solUpdates,k1,s.custs[k1])
+    addPartialSolution!(solUpdates,k2,s.custs[k2])
+
+    # First step: insert k2's customers into k1 (reject customers until we can insert them)
+    s.custs[k1] = s.custs[k1][1:i1]
+    if isempty(s.custs[k1])
+        t = pb.taxis[k1]
+        freeTime = t.initTime
+        freeLoc  = t.initPos
+    else
+        c  = s.custs[k1][end]
+        c0 = pb.custs[c.id]
+        freeTime = c.tInf + 2*pb.customerTime + tt(c0.orig, c0.dest)
+        freeLoc  = c0.dest
+    end
+    firstCust = length(c2) + 1
+    for (i,c) in enumerate(c2)
+        c0 = pb.custs[c.id]
+        if freeTime + tt(freeLoc, c0.orig) <= c.tSup
+            firstCust = i
+            break
+        end
+    end
+    for i in 1:(firstCust-1) #reject the customers
+        push!(s.rejected, c2[i].id)
+    end
+    append!(s.custs[k1],c2[firstCust:end])
+    updateTimeWindows!(s,k1)
+
+
+    #Second step: insert k1's customers into k2 (reject customers until we can insert them)
+    s.custs[k2] = s.custs[k2][1:i2]
+    if isempty(s.custs[k2])
+        t = pb.taxis[k2]
+        freeTime = t.initTime
+        freeLoc  = t.initPos
+    else
+        c  = s.custs[k2][end]
+        c0 = pb.custs[c.id]
+        freeTime = c.tInf + 2*pb.customerTime + tt(c0.orig, c0.dest)
+        freeLoc  = c0.dest
+    end
+    firstCust = length(c1) + 1
+    for (i,c) in enumerate(c1)
+        c0 = pb.custs[c.id]
+        if freeTime + tt(freeLoc, c0.orig) <= c.tSup
+            firstCust = i
+            break
+        end
+    end
+
+    for i in 1:(firstCust-1) #reject the customers
+        push!(s.rejected, c1[i].id)
+    end
+    append!(s.custs[k2],c1[firstCust:end])
+    updateTimeWindows!(s,k2)
+    return solUpdates
+end
+
+
+"""
+    `insertCost`, helper function: compute the cost of inserting customer c and the followers into taxi
+    two conditions:
+    - tries to keep as many of the previous customers as possible
+    - has to be able to pick-up all the following customers too
+    The cost can be computed different ways.
+    - travel time from last place.
+    - ==> total time from last action.
+    - same with costs
+"""
+function insertCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
+    pb = sol.pb
+    tt(i::Int, j::Int) = traveltime(pb.times,i,j)
+    custs = pb.custs
+    nC = custs[newC.id]
+    t = pb.taxis[k]
+    if t.initTime + tt(t.initPos, nC.orig) > newC.tSup
+        return (Inf, -1)
+    end
+    i = 0
+    for c in sol.custs[k]
+        c0 = custs[c.id]
+        if c.tInf + 2*pb.customerTime + tt(c0.orig, c0.dest) + tt(c0.dest, nC.orig) > newC.tSup
+            break
+        else
+            i += 1
+        end
+    end
+    if i == 0
+        return (max(t.initTime + tt(t.initPos, nC.orig), nC.tmin) - t.initTime, 0)
+    else
+        c = sol.custs[k][i]
+        c0 = custs[c.id]
+        return (max(c.tInf + 2*pb.customerTime + tt(c0.orig, c0.dest) + tt(c0.dest, nC.orig), nC.tmin) -
+                (c.tInf + 2*pb.customerTime + tt(c0.orig, c0.dest)),i)
+    end
+end

@@ -19,19 +19,6 @@ end
 
 
 
-"returns a random permutation"
-function randomOrder(n::Int)
-    order = collect(1:n)
-    for i = n:-1:2
-        j = rand(1:i)
-        order[i], order[j] = order[j], order[i]
-    end
-    return order
-end
-randomOrder(pb::TaxiProblem) = randomOrder(length(pb.custs))
-
-
-
 
 TaxiSolution() = TaxiSolution(TaxiActions[], trues(0), 0.0)
 IntervalSolution() = IntervalSolution(Vector{CustomerAssignment}[], trues(0), 0.0)
@@ -40,8 +27,6 @@ copySolution(sol::IntervalSolution) = IntervalSolution( deepcopy(sol.custs), cop
 
 toInt(x::Float64) = round(Int,x)
 
-traveltimes(pb::TaxiProblem) = traveltimes(pb.paths)
-travelcosts(pb::TaxiProblem) = travelcosts(pb.paths)
 getPath(city::TaxiProblem, startNode::Int, endNode::Int) = getPath(city, city.paths, startNode, endNode)
 
 """

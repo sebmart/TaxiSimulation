@@ -1,32 +1,48 @@
-#-------------------------------------------------------------
-#-- Local changes on window solution to look for a better one
-#--------------------------------------------------------------
+###################################################
+## offline/localdescent.jl
+## introduce local changes in solution to find a better one
+###################################################
 
-function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertions(pb);
-     verbose::Bool = true, random::Bool = false, benchmark::Bool = false, iterations=typemax(Int),
+"""
+    `localDescent`: switches two taxis timelines to locally optimize a solution
+     (fast on large instances)
+     - parameter `random = true` to try any combination, = false to do the best one
+"""
+function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb);
+     verbose::Bool = true, random::Bool = false, benchmark::Bool = false, iterations::Int=typemax(Int),
       maxTime::Float64=Inf)
+    if benchmark
+        return localDescentWithBench(pb, start, verbose, random, benchmark, iterations, maxTime)
+    else
+        return localDescentWithBench(pb, start, verbose, random, benchmark, iterations, maxTime)[1]
+    end
+end
+
+function localDescentWithBench(pb::TaxiProblem, start::OfflineSolution, verbose::Bool,
+            random::Bool, benchmark::Bool, iterations::Int, maxTime::Float64)
     initT = time()
 
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
+
     nTaxis = length(pb.taxis)
     #if no customer
-    if start.notTaken == trues(length(pb.custs))
+    if length(start.rejected) == length(pb.custs)
         ordered = orderedInsertions(pb)
-        if ordered.notTaken == trues(length(pb.custs))
-            best = IntervalSolution(pb)
-            verbose && print("\nFinal: $(-best.cost) dollars\n")
-            return best
+        if length(ordered.rejected) == length(pb.custs)
+            verbose && println("Final: $(ordered.profit) dollars")
+            return ordered
         end
         start = ordered
     end
 
-    verbose && println("Start, $(-start.cost) dollars")
+    verbose && println("Start, $(start.profit) dollars")
     sol =  copySolution(start)
     success = 0
 
-    benchmark && (benchData = BenchmarkPoint[BenchmarkPoint(0.,-start.cost,Inf)])
+    benchData = BenchmarkPoint[]
+    benchmark && (push!(benchData, BenchmarkPoint(0.,start.profit,Inf)))
     for trys in 1:iterations
         if time()-initT > maxTime
             break
@@ -40,25 +56,26 @@ function localDescent(pb::TaxiProblem, start::IntervalSolution = orderedInsertio
         if random
             k2 = rand(1:(nTaxis-1))
             k2 >= k && (k2 +=1)
-            revertSol = switchCustomers!(pb, sol, k, i,k2)
+            revertSol = switchCustomers!(sol, k, i,k2)
         else
-            revertSol = switchCustomers!(pb, sol, k, i)
+            revertSol = switchCustomers!(sol, k, i)
         end
-        costDiff = updateCost(pb,sol,revertSol)
-        if costDiff > 0.
+        updateProfit = profitDiff(sol,revertSol)
+        if updateProfit > 0.
+            sol.profit += updateProfit
             success += 1
-            minutes = (time()-initT)/60
-            sol.cost -= costDiff
-            benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
-            verbose && @printf("\r====Try: %i, %.2f dollars (%.2fmin, %.2f tests/min, %.3f%% successful)      ",trys, -sol.cost, minutes, trys/minutes, 100*success/trys)
+            t = time()-initT
+            min,sec = minutesSeconds(t)
+            verbose && (@printf("\r====Try: %i, %.2f dollars (%dm%ds, %.2f tests/min, %.3f%% successful)   ",
+            trys, sol.profit, min, sec, 60.*trys/t, success/(trys-1.)*100.))
+            benchmark && push!(benchData, BenchmarkPoint(t,sol.profit,Inf))
         else
             updateSolution!(sol,revertSol)
         end
     end
-    expandWindows!(pb, sol)
-    sol.cost = solutionCost(pb,sol.custs)
-    verbose && print("\n====Final: $(-sol.cost) dollars \n")
-    benchmark && push!(benchData, BenchmarkPoint(time()-initT,-sol.cost,Inf))
-    benchmark && return (sol,benchData)
-    return sol
+    updateTimeWindows!(sol)
+    sol.profit = solutionProfit(pb,sol.custs)
+    verbose && println("====Final: $(sol.profit) dollars")
+    benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
+    return sol, benchData
 end
