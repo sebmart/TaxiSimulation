@@ -10,27 +10,79 @@
     - only consider the given taxis
 """
 function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb.taxis); earliest::Bool=false)
-    #-------------------------
-    # Select the taxi to assign
-    #-------------------------
-@inbounds begin
     if ! (cId in sol.rejected)
         error("Customer already inserted")
     end
-    pb = sol.pb
-    c = pb.custs[cId]
-    cDesc = pb.custs
-    custTime = pb.customerTime
-    mincost = Inf
-    mintaxi = 0
-    position = 0
-    #We need the shortestPaths
-    tt = getPathTimes(pb.times)
-    tc = getPathTimes(pb.costs)
 
-
-    #We test the new customer for each taxi
+    #We test the new customer for each taxi in the least, and we keep the best candidate
+    bestCost = Inf
+    bestPos  = -1
+    bestTaxi = -1
     for k in taxis
+        pos, cost = insertCost(sol.pb, cId, k, sol.custs[k])
+        if pos != -1 && cost < bestCost # if insertion is possible and better
+            bestCost = cost
+            bestPos  = pos
+            bestTaxi = k
+        end
+    end
+
+    #If customer can be inserted, we insert it and return the revert update
+    if bestTaxi == -1
+        return EmptyUpdate
+    else
+        forceInsert!(sol.pb, cId, sol.custs[bestTaxi], bestPos)
+        solUpdates = PartialSolution()
+        addPartialSolution!(solUpdates, bestTaxi, custs)
+        return solUpdate
+    end
+end
+
+        #If customer is to be inserted in first position
+        if i == 1
+            tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
+            if length(custs) == 0
+                push!( custs, CustomerTimeWindow(c.id, tmin, c.tmax))
+            else
+                tmax = min(c.tmax, custs[1].tSup - tt[c.orig,c.dest] -
+                tt[c.dest,cDesc[custs[1].id].orig] - 2*custTime)
+                insert!(custs, 1, CustomerTimeWindow(c.id, tmin, tmax))
+            end
+        else
+            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime +
+            tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
+            tt[cDesc[custs[i-1].id].dest, c.orig])
+            if i > length(custs) #If inserted in last position
+                push!(custs, CustomerTimeWindow(c.id, tmin, c.tmax))
+            else
+                tmax = min(c.tmax,custs[i].tSup - tt[c.orig, c.dest] -
+                tt[c.dest, cDesc[custs[i].id].orig] - 2*custTime)
+                insert!(custs, i, CustomerTimeWindow(c.id, tmin, tmax))
+            end
+        end
+
+        #-------------------------
+        # Update the freedom intervals of the other assigned customers
+        #-------------------------
+        for j = (i-1) :(-1):1
+            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime -
+            tt[cDesc[custs[j].id].orig, cDesc[custs[j].id].dest] -
+            tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
+        end
+        for j = (i+1) :length(custs)
+            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime +
+            tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
+            tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
+        end
+        delete!(sol.rejected,cId)
+        return solUpdates
+    end
+    end #inbounds
+end
+
+
+
+
         custs = sol.custs[k]
         initPos = pb.taxis[k].initPos
         initTime = pb.taxis[k].initTime
@@ -188,7 +240,7 @@ function switchCustomers!(sol::OfflineSolution, k::Int, i::Int, bestK::Int = -1)
             if k2==k
                 continue
             end
-            cost, pos = insertCost(sol, k2, sol.custs[k][i])
+            cost, pos = switchCost(sol, k2, sol.custs[k][i])
             if cost < bestCost
                 bestCost = cost
                 bestPos  = pos
@@ -197,7 +249,7 @@ function switchCustomers!(sol::OfflineSolution, k::Int, i::Int, bestK::Int = -1)
         end
 
     else
-        bestCost, bestPos = insertCost(sol,bestK, sol.custs[k][i])
+        bestCost, bestPos = switchCost(sol,bestK, sol.custs[k][i])
     end
     if bestCost == Inf
         return EmptyUpdate
@@ -297,7 +349,7 @@ end
 
 
 """
-    `insertCost`, helper function: compute the cost of inserting customer c and the followers into taxi
+    `switchCost`, helper function: compute the cost of inserting customer c and the followers into taxi
     two conditions:
     - tries to keep as many of the previous customers as possible
     - has to be able to pick-up all the following customers too
@@ -306,7 +358,7 @@ end
     - ==> total time from last action.
     - same with costs
 """
-function insertCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
+function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
 @inbounds begin
 
     pb = sol.pb
