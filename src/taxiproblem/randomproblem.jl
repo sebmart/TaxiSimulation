@@ -46,3 +46,15 @@ function addRandomTaxis!(pb::TaxiProblem, nTaxis::Int = div(nNodes(pb.network),4
     pb.taxis = [Taxi(i,rand(1:nNodes(pb.network)), 0.) for i = 1:nTaxis]
     pb
 end
+
+"""
+    `addDistributedTaxis!`: adds random taxis to a TaxiProblem, respecting the distribution of customers
+    - adds `nTaxis` 0 initial time, customers must be pre-loaded
+"""
+function addDistributedTaxis!(pb::TaxiProblem, nTaxis::Int = div(nNodes(pb.network),4))
+    if isempty(pb.custs)
+        error("customers have to be added before!")
+    end
+    pb.taxis = [Taxi(i,pb.custs[rand(1:end)].orig, 0.) for i = 1:nTaxis]
+    pb
+end

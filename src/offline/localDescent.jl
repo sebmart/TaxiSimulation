@@ -75,6 +75,7 @@ function localDescentWithBench(pb::TaxiProblem, start::OfflineSolution, verbose:
     end
     updateTimeWindows!(sol)
     sol.profit = solutionProfit(pb,sol.custs)
+    verbose && println("\n====Final: $(sol.profit) dollars")
     benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
     return sol, benchData
 end
