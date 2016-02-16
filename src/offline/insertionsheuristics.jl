@@ -6,11 +6,13 @@
 """
     `orderedInsertions`, create solution by inserting customers with given order
 """
-function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb); earliest::Bool=false)
+function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb);
+     earliest::Bool=false, verbose::Bool=false)
     nTaxis, nCusts = length(pb.taxis), length(pb.custs)
 
     sol = OfflineSolution(pb)
     for i in 1:nCusts
+        verbose && @printf("\r%.2f%% customers inserted", 100 * i/nCusts)
         c = order[i]
         insertCustomer!(sol, c, earliest=earliest)
     end

@@ -17,7 +17,7 @@ export printSolution, addRandomCustomers!, addRandomTaxis!
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions,
 testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
 # data
-export RealCustomer, loadManhattanCustomers, saveByDate
+export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
 export NetworkVisualizer, visualize
 # Constants
@@ -40,6 +40,7 @@ include("offline/localdescent.jl")
 #data
 include("realdata/realdata.jl")
 include("realdata/nyctaxidata.jl")
+include("realdata/dataproblem.jl")
 #visualization
 include("visualization/taxivisualizer.jl")
 end
