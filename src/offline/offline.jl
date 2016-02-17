@@ -4,7 +4,7 @@
 ###################################################
 
 """
-    `CustTimeWindow`, the pickup time window of a customer
+    `CustomerTimeWindow`, the pickup time window of a customer
 """
 type CustomerTimeWindow
     "customer's ID"

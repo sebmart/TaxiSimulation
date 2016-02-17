@@ -9,8 +9,8 @@
     - returns instruction to revert to previous solution
     - only consider the given taxis
 """
-function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb.taxis); earliest::Bool=false)
-    if ! (cId in sol.rejected)
+function insertCustomer!(sol::OfflineSolution, cID::Int, taxis = 1:length(sol.pb.taxis); earliest::Bool=false)
+    if ! (cID in sol.rejected)
         error("Customer already inserted")
     end
 
@@ -19,7 +19,7 @@ function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb
     bestPos  = -1
     bestTaxi = -1
     for k in taxis
-        pos, cost = insertCost(sol.pb, cId, k, sol.custs[k])
+        pos, cost = insertCost(sol.pb, cID, k, sol.custs[k], earliest)
         if pos != -1 && cost < bestCost # if insertion is possible and better
             bestCost = cost
             bestPos  = pos
@@ -31,86 +31,31 @@ function insertCustomer!(sol::OfflineSolution, cId::Int, taxis = 1:length(sol.pb
     if bestTaxi == -1
         return EmptyUpdate
     else
-        forceInsert!(sol.pb, cId, sol.custs[bestTaxi], bestPos)
         solUpdates = PartialSolution()
-        addPartialSolution!(solUpdates, bestTaxi, custs)
+        addPartialSolution!(solUpdates, bestTaxi, sol.custs[bestTaxi])
+        forceInsert!(sol.pb, cID, bestTaxi, sol.custs[bestTaxi], bestPos)
+        delete!(sol.rejected,cId)
         return solUpdate
     end
 end
 
-        #If customer is to be inserted in first position
-        if i == 1
-            tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
-            if length(custs) == 0
-                push!( custs, CustomerTimeWindow(c.id, tmin, c.tmax))
-            else
-                tmax = min(c.tmax, custs[1].tSup - tt[c.orig,c.dest] -
-                tt[c.dest,cDesc[custs[1].id].orig] - 2*custTime)
-                insert!(custs, 1, CustomerTimeWindow(c.id, tmin, tmax))
-            end
-        else
-            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime +
-            tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
-            tt[cDesc[custs[i-1].id].dest, c.orig])
-            if i > length(custs) #If inserted in last position
-                push!(custs, CustomerTimeWindow(c.id, tmin, c.tmax))
-            else
-                tmax = min(c.tmax,custs[i].tSup - tt[c.orig, c.dest] -
-                tt[c.dest, cDesc[custs[i].id].orig] - 2*custTime)
-                insert!(custs, i, CustomerTimeWindow(c.id, tmin, tmax))
-            end
-        end
-
-        #-------------------------
-        # Update the freedom intervals of the other assigned customers
-        #-------------------------
-        for j = (i-1) :(-1):1
-            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime -
-            tt[cDesc[custs[j].id].orig, cDesc[custs[j].id].dest] -
-            tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
-        end
-        for j = (i+1) :length(custs)
-            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime +
-            tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
-            tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
-        end
-        delete!(sol.rejected,cId)
-        return solUpdates
-    end
-    end #inbounds
-end
+"""
+    `insertCost`, helper function that compute cost and position of inserting a customer
+    in a taxi's timeline. pos = -1 if unfeasible.
+    - Tractability bottleneck => really optimized
+"""
+function insertCost(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWindow}, earliest::Bool)
+@inbounds begin
 
 
-
-
-        custs = sol.custs[k]
-        initPos = pb.taxis[k].initPos
-        initTime = pb.taxis[k].initTime
-        #First Case: taking customer before all the others
-        if initTime + tt[initPos, c.orig] <= c.tmax
-            if length(custs) == 0 #if no customer at all
-                cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
-                (tc[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
-                if earliest
-                    cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
-                end
-                if cost < mincost
-                    mincost = cost
-                    position = 1
-                    mintaxi = k
-                end
-
-                #if there is a customer after
-            elseif length(custs) != 0
-                c1 = cDesc[custs[1].id]
-
-                if max(initTime + tt[initPos, c.orig], c.tmin) +
-                    tt[c.orig, c.dest] + tt[c.dest, c1.orig] + 2*custTime <= custs[1].tSup
-
-                    cost = tc[initPos, c.orig] + tc[c.orig, c.dest] +
-                    tc[c.dest,c1.orig] - tc[initPos, c1.orig] -
-                    (tt[initPos, c.orig] + tt[c.orig, c.dest] +
-                    tt[c.dest,c1.orig] - tt[initPos, c1.orig]) * pb.waitingCost
+            custs = sol.custs[k]
+            initPos = pb.taxis[k].initPos
+            initTime = pb.taxis[k].initTime
+            #First Case: taking customer before all the others
+            if initTime + tt[initPos, c.orig] <= c.tmax
+                if length(custs) == 0 #if no customer at all
+                    cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
+                    (tc[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
                     if earliest
                         cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
                     end
@@ -119,105 +64,122 @@ end
                         position = 1
                         mintaxi = k
                     end
+
+                    #if there is a customer after
+                elseif length(custs) != 0
+                    c1 = cDesc[custs[1].id]
+
+                    if max(initTime + tt[initPos, c.orig], c.tmin) +
+                        tt[c.orig, c.dest] + tt[c.dest, c1.orig] + 2*custTime <= custs[1].tSup
+
+                        cost = tc[initPos, c.orig] + tc[c.orig, c.dest] +
+                        tc[c.dest,c1.orig] - tc[initPos, c1.orig] -
+                        (tt[initPos, c.orig] + tt[c.orig, c.dest] +
+                        tt[c.dest,c1.orig] - tt[initPos, c1.orig]) * pb.waitingCost
+                        if earliest
+                            cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
+                        end
+                        if cost < mincost
+                            mincost = cost
+                            position = 1
+                            mintaxi = k
+                        end
+                    end
                 end
             end
-        end
 
-        #Second Case: taking customer after all the others
-        if length(custs) > 0
-            cLast = cDesc[custs[end].id]
-            if custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
-                tt[cLast.dest, c.orig] <= c.tmax
-                cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
-                (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
-                if earliest
-                    cost = EPS*cost + max(0., custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
-                        tt[cLast.dest, c.orig] - c.tmin)
-                end
-                if cost < mincost
-                    mincost = cost
-                    position = length(custs) + 1
-                    mintaxi = k
-                end
-            end
-        end
-
-        #Last Case: taking customer in-between two customers
-        if length(custs) > 2
-            for i in 1:length(custs)-1
-                ci = cDesc[custs[i].id]
-                cip1 = cDesc[custs[i+1].id]
-                if custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] <= c.tmax &&
-                    max(custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig], c.tmin)+
-                    tt[c.orig, c.dest] + 2*custTime + tt[c.dest, cip1.orig] <= custs[i+1].tSup
-                    cost = tc[ci.dest, c.orig] + tc[c.orig, c.dest] +
-                    tc[c.dest,cip1.orig] -  tc[ci.dest, cip1.orig] -
-                    (tt[ci.dest, c.orig] + tt[c.orig, c.dest] +
-                    tt[c.dest, cip1.orig] - tt[ci.dest, cip1.orig]) * pb.waitingCost
+            #Second Case: taking customer after all the others
+            if length(custs) > 0
+                cLast = cDesc[custs[end].id]
+                if custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
+                    tt[cLast.dest, c.orig] <= c.tmax
+                    cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
+                    (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
                     if earliest
-                        cost = EPS*cost + max(0., custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] - c.tmin)
+                        cost = EPS*cost + max(0., custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
+                            tt[cLast.dest, c.orig] - c.tmin)
                     end
                     if cost < mincost
                         mincost = cost
-                        position = i+1
+                        position = length(custs) + 1
                         mintaxi = k
                     end
                 end
             end
+
+            #Last Case: taking customer in-between two customers
+            if length(custs) > 2
+                for i in 1:length(custs)-1
+                    ci = cDesc[custs[i].id]
+                    cip1 = cDesc[custs[i+1].id]
+                    if custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] <= c.tmax &&
+                        max(custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig], c.tmin)+
+                        tt[c.orig, c.dest] + 2*custTime + tt[c.dest, cip1.orig] <= custs[i+1].tSup
+                        cost = tc[ci.dest, c.orig] + tc[c.orig, c.dest] +
+                        tc[c.dest,cip1.orig] -  tc[ci.dest, cip1.orig] -
+                        (tt[ci.dest, c.orig] + tt[c.orig, c.dest] +
+                        tt[c.dest, cip1.orig] - tt[ci.dest, cip1.orig]) * pb.waitingCost
+                        if earliest
+                            cost = EPS*cost + max(0., custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] - c.tmin)
+                        end
+                        if cost < mincost
+                            mincost = cost
+                            position = i+1
+                            mintaxi = k
+                        end
+                    end
+                end
+            end
+        end
+end #inbounds
+end
+
+"""
+    `forceInsert!`, helper function that insert customer into taxi timeline
+     without checking feasibility
+"""
+function forceInsert!(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWindow}, i::Int)
+@inbounds begin
+    t = pb.taxis[k]
+    tt = getPathTimes(pb.times)
+    c  = pb.custs[cID]
+    #If customer is to be inserted in first position
+    if i == 1
+        tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
+        if length(tw) == 0
+            push!(tw, CustomerTimeWindow(c.id, tmin, c.tmax))
+        else
+            tmax = min(c.tmax, tw[1].tSup - tt[c.orig,c.dest] -
+            tt[c.dest,pb.custs[tw[1].id].orig] - 2*pb.customerTime)
+            insert!(tw, 1, CustomerTimeWindow(c.id, tmin, tmax))
+        end
+    else
+        tmin = max(c.tmin, tw[i-1].tInf + 2*custTime +
+        tt[pb.custs[tw[i-1].id].orig, pb.custs[tw[i-1].id].dest] +
+        tt[pb.custs[tw[i-1].id].dest, c.orig])
+        if i > length(tw) #If inserted in last position
+            push!(tw, CustomerTimeWindow(c.id, tmin, c.tmax))
+        else
+            tmax = min(c.tmax, tw[i].tSup - tt[c.orig, c.dest] -
+            tt[c.dest, pb.custs[tw[i].id].orig] - 2*pb.customerTime)
+            insert!(tw, i, CustomerTimeWindow(c.id, tmin, tmax))
         end
     end
-    solUpdates = EmptyUpdate
-    #-------------------------
-    # Insert customer into selected taxi's assignments
-    #-------------------------
-    i = position
 
-    #If customer can be assigned
-    if mintaxi != 0
-        t = pb.taxis[mintaxi]
-        custs = sol.custs[mintaxi]
-        solUpdates = PartialSolution()
-        addPartialSolution!(solUpdates, mintaxi, custs)
-        #If customer is to be inserted in first position
-        if i == 1
-            tmin = max(t.initTime + tt[t.initPos, c.orig], c.tmin)
-            if length(custs) == 0
-                push!( custs, CustomerTimeWindow(c.id, tmin, c.tmax))
-            else
-                tmax = min(c.tmax, custs[1].tSup - tt[c.orig,c.dest] -
-                tt[c.dest,cDesc[custs[1].id].orig] - 2*custTime)
-                insert!(custs, 1, CustomerTimeWindow(c.id, tmin, tmax))
-            end
-        else
-            tmin = max(c.tmin, custs[i-1].tInf + 2*custTime +
-            tt[cDesc[custs[i-1].id].orig, cDesc[custs[i-1].id].dest] +
-            tt[cDesc[custs[i-1].id].dest, c.orig])
-            if i > length(custs) #If inserted in last position
-                push!(custs, CustomerTimeWindow(c.id, tmin, c.tmax))
-            else
-                tmax = min(c.tmax,custs[i].tSup - tt[c.orig, c.dest] -
-                tt[c.dest, cDesc[custs[i].id].orig] - 2*custTime)
-                insert!(custs, i, CustomerTimeWindow(c.id, tmin, tmax))
-            end
-        end
-
-        #-------------------------
-        # Update the freedom intervals of the other assigned customers
-        #-------------------------
-        for j = (i-1) :(-1):1
-            custs[j].tSup = min(custs[j].tSup, custs[j+1].tSup - 2*custTime -
-            tt[cDesc[custs[j].id].orig, cDesc[custs[j].id].dest] -
-            tt[cDesc[custs[j].id].dest, cDesc[custs[j+1].id].orig])
-        end
-        for j = (i+1) :length(custs)
-            custs[j].tInf = max(custs[j].tInf, custs[j-1].tInf + 2*custTime +
-            tt[cDesc[custs[j-1].id].orig, cDesc[custs[j-1].id].dest] +
-            tt[cDesc[custs[j-1].id].dest, cDesc[custs[j].id].orig])
-        end
-        delete!(sol.rejected,cId)
+    #-------------------------
+    # Update the freedom intervals of the other assigned customers (just half the work)
+    #-------------------------
+    for j = (i-1):(-1):1
+        tw[j].tSup = min(tw[j].tSup, tw[j+1].tSup - 2*pb.customerTime -
+        tt[cDesc[tw[j].id].orig, cDesc[tw[j].id].dest] -
+        tt[cDesc[tw[j].id].dest, cDesc[tw[j+1].id].orig])
+    end
+    for j = (i+1):length(tw)
+        tw[j].tInf = max(tw[j].tInf, tw[j-1].tInf + 2*pb.customerTime +
+        tt[pb.custs[tw[j-1].id].orig, pb.custs[tw[j-1].id].dest] +
+        tt[pb.custs[tw[j-1].id].dest, pb.custs[tw[j].id].orig])
     end
 end #inbounds
-    return solUpdates
 end
 
 
