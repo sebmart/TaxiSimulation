@@ -34,8 +34,8 @@ function insertCustomer!(sol::OfflineSolution, cID::Int, taxis = 1:length(sol.pb
         solUpdates = PartialSolution()
         addPartialSolution!(solUpdates, bestTaxi, sol.custs[bestTaxi])
         forceInsert!(sol.pb, cID, bestTaxi, sol.custs[bestTaxi], bestPos)
-        delete!(sol.rejected,cId)
-        return solUpdate
+        delete!(sol.rejected,cID)
+        return solUpdates
     end
 end
 
@@ -46,91 +46,106 @@ end
 """
 function insertCost(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWindow}, earliest::Bool)
 @inbounds begin
+    tt = getPathTimes(pb.times)
+    tc = getPathTimes(pb.costs)
+    c = pb.custs[cID]
+    t = pb.taxis[k]
 
+    #####
+    # first step:  "easy" bounds to discard insertions without using tt (tractability)
+    minC = 1
+    while minC <= length(tw) && tw[minC].tSup < c.tmin
+        minC += 1
+    end
+    maxC = length(tw)
+    while maxC >= 1 && tw[maxC].tInf > c.tmax
+        maxC -= 1
+    end
+    if maxC == 0 && t.initTime > c.tmax # special case for first pickup
+        return -1, Inf
+    end
 
-            custs = sol.custs[k]
-            initPos = pb.taxis[k].initPos
-            initTime = pb.taxis[k].initTime
-            #First Case: taking customer before all the others
-            if initTime + tt[initPos, c.orig] <= c.tmax
-                if length(custs) == 0 #if no customer at all
-                    cost = tc[initPos, c.orig] + tc[c.orig, c.dest] -
-                    (tc[initPos, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
-                    if earliest
-                        cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
-                    end
-                    if cost < mincost
-                        mincost = cost
-                        position = 1
-                        mintaxi = k
-                    end
+    #####
+    # second step: refine bounds using tt (but not too much)
+    custTime = tt[c.orig, c.dest]
+    while minC <= length(tw) &&
+         tw[minC].tSup < c.tmin + custTime + tt[c.dest, pb.custs[tw[minC].id].orig] + 2*pb.customerTime
+        minC += 1
+    end
+    while maxC >= minC-1 && maxC >= 1 &&
+         tw[maxC].tInf + tt[pb.custs[tw[maxC].id].orig, pb.custs[tw[maxC].id].dest] + tt[pb.custs[tw[maxC].id].dest, c.orig] + 2*pb.customerTime > c.tmax
+        maxC -= 1
+    end
+    if maxC < minC-1 || (maxC == 0 && t.initTime + tt[t.initPos, c.orig] > c.tmax) # we can now eliminate some solutions
+        return -1, Inf
+    end
 
-                    #if there is a customer after
-                elseif length(custs) != 0
-                    c1 = cDesc[custs[1].id]
-
-                    if max(initTime + tt[initPos, c.orig], c.tmin) +
-                        tt[c.orig, c.dest] + tt[c.dest, c1.orig] + 2*custTime <= custs[1].tSup
-
-                        cost = tc[initPos, c.orig] + tc[c.orig, c.dest] +
-                        tc[c.dest,c1.orig] - tc[initPos, c1.orig] -
-                        (tt[initPos, c.orig] + tt[c.orig, c.dest] +
-                        tt[c.dest,c1.orig] - tt[initPos, c1.orig]) * pb.waitingCost
-                        if earliest
-                            cost = EPS*cost + max(0., initTime + tt[initPos, c.orig] - c.tmin)
-                        end
-                        if cost < mincost
-                            mincost = cost
-                            position = 1
-                            mintaxi = k
-                        end
-                    end
-                end
+    #####
+    # last step: compute feasibility and cost on all remaining possible insertions and returns best one
+    bestPos = -1; bestCost = Inf
+    custCost = tc[c.orig, c.dest]
+    # special case if before first customer
+    if minC == 1
+        # two cases: no customer or some
+        if isempty(tw)
+            # feasible: we have already tested t.initTime + tt[t.initPos, c.orig] <= c.tmax
+            cost = tc[t.initPos, c.orig] + custCost -
+            (tt[t.initPos, c.orig] + custTime) * pb.waitingCost
+            if earliest
+                cost = EPS*cost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
             end
-
-            #Second Case: taking customer after all the others
-            if length(custs) > 0
-                cLast = cDesc[custs[end].id]
-                if custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
-                    tt[cLast.dest, c.orig] <= c.tmax
-                    cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
-                    (tt[cLast.dest, c.orig] + tt[c.orig, c.dest]) * pb.waitingCost
-                    if earliest
-                        cost = EPS*cost + max(0., custs[end].tInf + 2*custTime + tt[cLast.orig, cLast.dest] +
-                            tt[cLast.dest, c.orig] - c.tmin)
-                    end
-                    if cost < mincost
-                        mincost = cost
-                        position = length(custs) + 1
-                        mintaxi = k
-                    end
-                end
+            return 1, cost
+        elseif max(t.initTime + tt[t.initPos, c.orig], c.tmin) + custTime +
+                tt[c.dest, pb.custs[tw[1].id].orig] + 2*pb.customerTime <= tw[1].tSup
+            bestCost = tc[t.initPos, c.orig] + custCost + tc[c.dest, pb.custs[tw[1].id].orig] -
+            tc[t.initPos, pb.custs[tw[1].id].orig] - (tt[t.initPos, c.orig] + custTime +
+            tt[c.dest, pb.custs[tw[1].id].orig] - tt[t.initPos, pb.custs[tw[1].id].orig]) * pb.waitingCost
+            if earliest
+                bestCost = EPS*cost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
             end
+            bestPos = 1
+        end
+        minC += 1
+    end
 
-            #Last Case: taking customer in-between two customers
-            if length(custs) > 2
-                for i in 1:length(custs)-1
-                    ci = cDesc[custs[i].id]
-                    cip1 = cDesc[custs[i+1].id]
-                    if custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] <= c.tmax &&
-                        max(custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig], c.tmin)+
-                        tt[c.orig, c.dest] + 2*custTime + tt[c.dest, cip1.orig] <= custs[i+1].tSup
-                        cost = tc[ci.dest, c.orig] + tc[c.orig, c.dest] +
-                        tc[c.dest,cip1.orig] -  tc[ci.dest, cip1.orig] -
-                        (tt[ci.dest, c.orig] + tt[c.orig, c.dest] +
-                        tt[c.dest, cip1.orig] - tt[ci.dest, cip1.orig]) * pb.waitingCost
-                        if earliest
-                            cost = EPS*cost + max(0., custs[i].tInf + 2*custTime + tt[ci.orig, ci.dest] + tt[ci.dest, c.orig] - c.tmin)
-                        end
-                        if cost < mincost
-                            mincost = cost
-                            position = i+1
-                            mintaxi = k
-                        end
-                    end
-                end
+    #Second Case: taking customer after all the others (not empty now)
+    if maxC == length(tw)
+        # feasibility is already verified
+        cLast = pb.custs[tw[end].id]
+        cost = tc[cLast.dest, c.orig] + tc[c.orig, c.dest] -
+        (tt[cLast.dest, c.orig] + custTime) * pb.waitingCost
+        if earliest
+            cost = EPS*cost + max(0., tw[end].tInf + 2*pb.customerTime + tt[cLast.orig, cLast.dest] +
+                tt[cLast.dest, c.orig] - c.tmin)
+        end
+        if cost < bestCost
+            bestCost = cost
+            bestPos = length(tw) + 1
+        end
+        maxC -= 1
+    end
+
+    #Last Case : insertions in between two customers
+    while minC <= maxC+1
+        c1 = pb.custs[tw[minC-1].id]
+        c2 = pb.custs[tw[minC].id]
+        if max(tw[minC-1].tInf + 2*pb.customerTime  + tt[c1.orig, c1.dest] + tt[c1.dest, c.orig], c.tmin)+
+            custTime + 2*pb.customerTime  + tt[c.dest, c2.orig] <= tw[minC].tSup
+            cost = tc[c1.dest, c.orig] + custCost +
+            tc[c.dest,c2.orig] -  tc[c1.dest, c2.orig] -
+            (tt[c1.dest, c.orig] + custTime +
+            tt[c.dest, c2.orig] - tt[c1.dest, c2.orig]) * pb.waitingCost
+            if earliest
+                cost = EPS*cost + max(0., tw[minC-1].tInf + 2*pb.customerTime  + tt[c1.orig, c1.dest] + tt[c1.dest, c.orig] - c.tmin)
+            end
+            if cost < bestCost
+                bestCost = cost
+                bestPos = minC
             end
         end
+        minC += 1
+    end
+    return bestPos, bestCost
 end #inbounds
 end
 
