@@ -326,7 +326,7 @@ end
 
 
 """
-    `switchCost`, helper function: compute the cost of inserting customer c and the followers into taxi
+    `switchCost`, helper function: compute the cost of inserting customer newC and the followers into taxi k
     two conditions:
     - tries to keep as many of the previous customers as possible
     - has to be able to pick-up all the following customers too
