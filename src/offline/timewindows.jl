@@ -165,7 +165,8 @@ function testSolution(sol::OfflineSolution)
             @test tw.tSup <= c.tmax  + EPS
 
             prevPos = c.dest
-            prevInf = tw.tInf + tt(prevPos, c.orig)
+            prevInf = tw.tInf + tt(c.orig, c.dest) + 2*pb.customerTime
+            prevSup = tw.tSup + tt(c.orig, c.dest) + 2*pb.customerTime
             delete!(rejected, tw.id)
         end
     end

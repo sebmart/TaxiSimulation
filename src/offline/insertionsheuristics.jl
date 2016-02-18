@@ -12,7 +12,9 @@ function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCust
 
     sol = OfflineSolution(pb)
     for i in 1:nCusts
-        verbose && i%10 ==0 && @printf("\r%.2f%% customers inserted", 100 * i/nCusts)
+        if verbose && i%10 == 0
+            @printf("\r%.2f%% customers inserted", 100 * i/nCusts)
+        end
         c = order[i]
         insertCustomer!(sol, c, earliest=earliest)
     end

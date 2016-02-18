@@ -169,7 +169,7 @@ function forceInsert!(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTime
             insert!(tw, 1, CustomerTimeWindow(c.id, tmin, tmax))
         end
     else
-        tmin = max(c.tmin, tw[i-1].tInf + 2*custTime +
+        tmin = max(c.tmin, tw[i-1].tInf + 2*pb.customerTime +
         tt[pb.custs[tw[i-1].id].orig, pb.custs[tw[i-1].id].dest] +
         tt[pb.custs[tw[i-1].id].dest, c.orig])
         if i > length(tw) #If inserted in last position
@@ -186,8 +186,8 @@ function forceInsert!(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTime
     #-------------------------
     for j = (i-1):(-1):1
         tw[j].tSup = min(tw[j].tSup, tw[j+1].tSup - 2*pb.customerTime -
-        tt[cDesc[tw[j].id].orig, cDesc[tw[j].id].dest] -
-        tt[cDesc[tw[j].id].dest, cDesc[tw[j+1].id].orig])
+        tt[pb.custs[tw[j].id].orig, pb.custs[tw[j].id].dest] -
+        tt[pb.custs[tw[j].id].dest, pb.custs[tw[j+1].id].orig])
     end
     for j = (i+1):length(tw)
         tw[j].tInf = max(tw[j].tInf, tw[j-1].tInf + 2*pb.customerTime +
