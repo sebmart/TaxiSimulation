@@ -69,8 +69,9 @@ function loadManhattanCustomers(man::Network, fileName::AbstractString)
                 parse(Float64,s[TAX1]) +
                 parse(Float64,s[TAX2]) +
                 parse(Float64,s[TOLLS])
-
-        push!(customers, RealCustomer(tcall, tmin, tmax, orig, dest, fare))
+        if fare >= 1.
+            push!(customers, RealCustomer(tcall, tmin, tmax, orig, dest, fare))
+        end
     end
     print("\r100.00% customers parsed     ")
     return customers

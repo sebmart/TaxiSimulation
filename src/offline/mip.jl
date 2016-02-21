@@ -127,7 +127,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     @addConstraint(m, c3[k=1:nTaxis],
     sum{y[k,c], c = 1:nCusts} <= 1)
 
-    #c0 has been taken before by the same taxi
+    #c0 has been taken before
     @addConstraint(m, c4[c=1:nCusts, c0= 1:length(pCusts[c])],
     sum{x[pCusts[c][c0],c1], c1= 1:length(pCusts[pCusts[c][c0]])} +
     sum{y[k,pCusts[c][c0]], k=1:nTaxis} >= x[c,c0])

@@ -89,19 +89,19 @@ function insertCost(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWi
         # two cases: no customer or some
         if isempty(tw)
             # feasible: we have already tested t.initTime + tt[t.initPos, c.orig] <= c.tmax
-            cost = tc[t.initPos, c.orig] + custCost -
+            bestCost = tc[t.initPos, c.orig] + custCost -
             (tt[t.initPos, c.orig] + custTime) * pb.waitingCost
             if earliest
-                cost = EPS*cost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
+                bestCost = EPS*bestCost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
             end
-            return 1, cost
+            return 1, bestCost
         elseif max(t.initTime + tt[t.initPos, c.orig], c.tmin) + custTime +
                 tt[c.dest, pb.custs[tw[1].id].orig] + 2*pb.customerTime <= tw[1].tSup
             bestCost = tc[t.initPos, c.orig] + custCost + tc[c.dest, pb.custs[tw[1].id].orig] -
             tc[t.initPos, pb.custs[tw[1].id].orig] - (tt[t.initPos, c.orig] + custTime +
             tt[c.dest, pb.custs[tw[1].id].orig] - tt[t.initPos, pb.custs[tw[1].id].orig]) * pb.waitingCost
             if earliest
-                bestCost = EPS*cost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
+                bestCost = EPS*bestCost + max(0., t.initTime + tt[t.initPos, c.orig] - c.tmin)
             end
             bestPos = 1
         end
