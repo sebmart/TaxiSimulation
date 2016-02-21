@@ -111,7 +111,7 @@ type TaxiActions
 end
 
 function Base.show(io::IO, t::TaxiActions)
-    @printf(io,"Actions of taxi %d: serves %d customers - drives %d roads", t.taxiID, length(t.custs), length(t.path))
+    @printf(io,"Actions of taxi %d: serves %d customers - drives %d roads", t.taxiID, length(t.custs), length(t.times))
 end
 
 """

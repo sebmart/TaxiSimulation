@@ -22,7 +22,7 @@ TaxiActions[TaxiActions(t.id, Int[t.initPos], Float64[], CustomerAssignment[]) f
 """
 function rejectedCustomers(pb::TaxiProblem, actions::Vector{TaxiActions})
     rejected = IntSet(eachindex(pb.custs))
-    for act in taxiActions, c in act.custs
+    for act in actions, c in act.custs
         delete!(rejected, c.id)
     end
     return rejected
@@ -66,7 +66,7 @@ function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
     if random
         pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-rand()*time), c.tmin, c.tmax, c.fare) for c in pb.custs]
     else
-        pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmaxt, c.fare) for c in pb.custs]
+        pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-time), c.tmin, c.tmax, c.fare) for c in pb.custs]
     end
     return pb2
 end
@@ -90,7 +90,7 @@ function updateTmax(pb::TaxiProblem, time::Float64; random::Bool = false)
     if random
         pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + rand()*time, pb.simTime), c.fare) for c in pb.custs]
     else
-        pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c,tcall, c.tmin, min(c.tmin + time, pb.simTime), c.fare) for c in pb.custs]
+        pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + time, pb.simTime), c.fare) for c in pb.custs]
     end
     return pb2
 end

@@ -1,28 +1,17 @@
 # TaxiSimulation
-To use the taxi-simulation tools, start Julia in the directory "src" or clone the repository in ~/.julia/v0.4 and then import the module:
-
-```julia
-using TaxiSimulation
-```
-
-## Workflow
-Master is the main branch, working under Julia 0.4. Never push to master before running the tests
+Tools to simulate taxi routing
 
 ## Visualization controls:
 View:
 - Z - zoom in
 - X - zoom out
-- C - reset zoom
-- A - rotate counterclockwise
-- S - rotate clockwise
-- Space - toggle time display
+- A - Thicker drawings
+- S - Thinner drawings
+- UP/DOWN/LEFT/RIGHT - move camera
+- Q or ESC - quit
 
 Time:
-- Q - decrease time period
-- W - reset time period
-- E - increase time period
-- R - reset time
-- F - reverse time
-
-Escape:
-- ⌘ W or Esc
+- SPACE - pause/play
+- W - accelerate time
+- E - decelerate time
+- R - reverse time

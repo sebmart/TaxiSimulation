@@ -1,6 +1,6 @@
 ###################################################
-## offline/timewindows.jl
-## operating with time windows
+## offline/tools.jl
+## tools for offline and time-windows
 ###################################################
 
 
@@ -176,3 +176,6 @@ function testSolution(sol::OfflineSolution)
     @test sol.profit - EPS <= solutionProfit(sol.pb,sol.custs) <= sol.profit + EPS
     println("Solution is feasible!")
 end
+
+printSolution(s::OfflineSolution, io::IO = STDOUT; verbose=1) =
+printSolution(TaxiSolution(s), io, verbose=verbose)

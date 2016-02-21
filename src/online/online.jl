@@ -12,7 +12,7 @@
     account for new customers, returns a list of TaxiActions since the last update.
 """
 
-abstract OnlineMethod
+abstract OnlineAlgorithm
 
 """
     `onlineSimulation`, simulates the online problem: send only the online information to an
@@ -50,7 +50,8 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
     for (newCusts, tStart, tEnd) in updates
         if verbose
             m,s = minutesSeconds(tStart)
-            @printf("\rtime : %dm%02ds (%.2f%%)   ", 100*tStart/pb.simTime, tStart)
+            @printf("\rtime : %dm%02ds (%.2f%%)   ", m,s, 100*tStart/pb.simTime)
+        end
         newTaxiActions = onlineUpdate!(oa, tEnd, newCusts)
         for (k,allAction) in enumerate(allTaxiActions)
             if !isempty(newTaxiActions[k].times)
@@ -58,6 +59,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
                     error("Path modification back in time: $(newTaxiActions[k].times[1]) < $tStart !")
                 else
                     append!(allAction.path,newTaxiActions[k].path[2:end])
+                    append!(allAction.times,newTaxiActions[k].times)
                 end
             end
             if !isempty(newTaxiActions[k].custs)
@@ -80,7 +82,7 @@ end
 type NewCustUpdate
     custs::Vector{Customer}
 end
-function Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
+Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
 Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[2] > length(it.custs)
 function Base.next(it::NewCustUpdate, s::Tuple{Float64, Int})
     newCusts = Customer[]
@@ -106,16 +108,16 @@ type PeriodUpdate
 end
 Base.start(it::PeriodUpdate) = (0,1) # (iteration number of next, next cust)
 Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[2] > length(it.custs)
-function Base.next(it::PeriodUpdate, s::Int)
+function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
     newCusts = Customer[]
     i = s[2]
-    while i <= length(it.custs) && it.custs[i].tcall <= s[1]*period
+    while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period
         push!(newCusts, it.custs[i])
         i += 1
     end
     if i > length(it.custs)
-        return (newCusts, s[1]*period, Inf), (s[1]+1, i)
+        return (newCusts, s[1]*it.period, Inf), (s[1]+1, i)
     else
-        return (newCusts, s[1]*period, (s[1]+1)*period), (s[1]+1, i)
+        return (newCusts, s[1]*it.period, (s[1]+1)*it.period), (s[1]+1, i)
     end
 end
