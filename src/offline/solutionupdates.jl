@@ -9,7 +9,7 @@
     - returns instruction to revert to previous solution
     - only consider the given taxis
 """
-function insertCustomer!(sol::OfflineSolution, cID::Int, taxis = 1:length(sol.pb.taxis); earliest::Bool=false)
+function insertCustomer!(sol::OfflineSolution, cID::Int, taxis::AbstractArray{Int, 1} = 1:length(sol.pb.taxis); earliest::Bool=false)
     if ! (cID in sol.rejected)
         error("Customer already inserted")
     end

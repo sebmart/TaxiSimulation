@@ -1,5 +1,5 @@
 ###################################################
-## onlien/online.jl
+## online/online.jl
 ## basics of online problem solving
 ###################################################
 
@@ -13,6 +13,8 @@
 """
 
 abstract OnlineAlgorithm
+Base.show(io::IO, t::OnlineAlgorithm)=
+    print(io,"Online Algorithm: ", split(string(typeof(t)), ".")[end])
 
 """
     `onlineSimulation`, simulates the online problem: send only the online information to an
@@ -31,31 +33,23 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
 	onlineInitialize!(oa, init)
 	allTaxiActions = emptyActions(pb)
 
-
-    if verbose
-        p = floor(Int, 100*tStart/maxTime)
-        if p > percent
-            @printf("=> %02d%%, Timestep : %.2f   \r", p, tStart)
-            flush(STDOUT)
-            percent = p
-        end
-    end
-
 	#Create list of update times and customers
 	if period == 0.
         updates = NewCustUpdate(customers)
     else
         updates = PeriodUpdate(period)
     end
+    verbose && (lastPrint = -Inf)
     for (newCusts, tStart, tEnd) in updates
-        if verbose
+        if verbose && time() - lastPrint >= 0.5
             m,s = minutesSeconds(tStart)
+            lastPrint = time()
             @printf("\rtime : %dm%02ds (%.2f%%)   ", m,s, 100*tStart/pb.simTime)
         end
         newTaxiActions = onlineUpdate!(oa, tEnd, newCusts)
         for (k,allAction) in enumerate(allTaxiActions)
             if !isempty(newTaxiActions[k].times)
-                if newTaxiActions[k].times[1] < tStart - EPS
+                if newTaxiActions[k].times[1][1] < tStart - EPS
                     error("Path modification back in time: $(newTaxiActions[k].times[1]) < $tStart !")
                 else
                     append!(allAction.path,newTaxiActions[k].path[2:end])
@@ -64,13 +58,14 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
             end
             if !isempty(newTaxiActions[k].custs)
                 if newTaxiActions[k].custs[1].timeIn < tStart - EPS
-                    error("Customer modification back in time: $(newTaxiActions[k].custs[1].timeIn) < $tStart!")
+                    error("Customer modification back in time: $(newTaxiActions[k].custs[1].timeIn) < $tStart !")
                 else
                     append!(allAction.custs,newTaxiActions[k].custs)
                 end
             end
         end
     end
+    verbose && print("\n")
 
 	return TaxiSolution(pb, allTaxiActions)
 end

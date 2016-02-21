@@ -18,7 +18,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions
 export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
 # online
-export OnlineAlgorithm, onlineSimulation
+export OnlineAlgorithm, InsertOnly, onlineSimulation
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
@@ -42,6 +42,7 @@ include("offline/insertionsheuristics.jl")
 include("offline/localdescent.jl")
 #Online
 include("online/online.jl")
+include("online/insertonly.jl")
 #data
 include("realdata/realdata.jl")
 include("realdata/nyctaxidata.jl")

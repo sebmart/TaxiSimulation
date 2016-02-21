@@ -110,9 +110,8 @@ type TaxiActions
     custs::Vector{CustomerAssignment}
 end
 
-function Base.show(io::IO, t::TaxiActions)
+Base.show(io::IO, t::TaxiActions)=
     @printf(io,"Actions of taxi %d: serves %d customers - drives %d roads", t.taxiID, length(t.custs), length(t.times))
-end
 
 """
     `TaxiSolution`: a solution to a TaxiProblem
