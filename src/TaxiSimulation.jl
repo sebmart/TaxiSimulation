@@ -13,9 +13,12 @@ import RoutingNetworks: visualInit, visualEvent, visualUpdate, visualScale, visu
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
+export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
-export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions,
-testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipOpt, orderedInsertions
+export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
+# online
+export OnlineAlgorithm, onlineSimulation
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
@@ -37,6 +40,8 @@ include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
 include("offline/localdescent.jl")
+#Online
+include("online/online.jl")
 #data
 include("realdata/realdata.jl")
 include("realdata/nyctaxidata.jl")

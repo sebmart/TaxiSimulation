@@ -113,18 +113,18 @@ end
 
 
 """
-    `taxiCost`, compute taxi profit from list of cust. assignment
+    `taxiProfit`, compute taxi profit from list of cust. assignment
 """
-function taxiProfit(pb::TaxiProblem,custs::Vector{CustomerTimeWindow},k::Int)
-    tt(i::Int, j::Int) = traveltime(pb.times,i,j)
-    tc(i::Int, j::Int) = traveltime(pb.costs,i,j)
+function taxiProfit(pb::TaxiProblem, custs::Vector{CustomerTimeWindow}, k::Int)
+    tt = getPathTimes(pb.times)
+    tc = getPathTimes(pb.costs)
     pos = pb.taxis[k].initPos
     drivingTime = 0
     profit = 0.
     for c in custs
         c1 = pb.custs[c.id]
-        profit += c1.fare - tc(pos,c1.orig) - tc(c1.orig,c1.dest)
-        drivingTime += tt(pos,c1.orig) + tt(c1.orig,c1.dest)
+        profit += c1.fare - tc[pos,c1.orig] - tc[c1.orig,c1.dest]
+        drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
         pos = c1.dest
     end
     return profit - (pb.simTime - drivingTime)*pb.waitingCost

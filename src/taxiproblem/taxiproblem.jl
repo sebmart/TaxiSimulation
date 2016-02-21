@@ -77,6 +77,8 @@ function Base.show(io::IO, pb::TaxiProblem)
     end
 end
 
+Base.copy(p::TaxiProblem) = TaxiProblem(p.network, p.times, p.costs, p.custs, p.taxis, p.simTime, p.waitingCost, p.customerTime)
+
 """
     `CustomerAssignment`:  assignement of a customer to a taxi
     - Order: timeIn - wait - trip - wait - timeOut
@@ -125,6 +127,9 @@ type TaxiSolution
     "solution's profit"
     profit::Float64
 end
+
+TaxiSolution(pb::TaxiProblem, actions::Vector{TaxiActions}) =
+TaxiSolution(pb, actions, rejectedCustomers(pb,actions), solutionProfit(pb, actions))
 
 function Base.show(io::IO, sol::TaxiSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
