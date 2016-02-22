@@ -56,10 +56,13 @@ type TaxiVisualizer <: NetworkVisualizer
 	simSpeed::Float64
 	"true if simulation is paused"
 	simPaused::Bool
+	"if we are following a taxi, its ID"
+	selectedTaxi::Int
     function TaxiVisualizer(s::TaxiSolution)
         obj = new()
         obj.network = s.pb.network
 		obj.s = s
+        obj.selectedTaxi = 0
         return obj
     end
 end
@@ -96,19 +99,34 @@ function visualEvent(v::TaxiVisualizer, event::Event)
 		elseif k == KeyCode.R #reverse time
 			v.simSpeed = -v.simSpeed
 		end
+	elseif get_type(event) == EventType.MOUSE_BUTTON_PRESSED && get_mousebutton(event).button == MouseButton.LEFT
+		if v.selectedTaxi == 0
+			x,y = get_mousebutton(event).x, get_mousebutton(event).y
+	        coord = pixel2coords(v.window,Vector2i(x,y))
+			minDist = Inf; minTaxi = 0
+			for (k,ts) in enumerate(v.taxiShape)
+				pos = get_position(ts)-Vector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
+				dist = distance_squared(pos,coord)
+				if dist < minDist
+					minDist = dist
+					minTaxi = k
+				end
+			end
+			v.selectedTaxi = minTaxi
+			set_fillcolor(v.taxiShape[minTaxi], SFML.Color(255,255,0))
+		else
+			set_fillcolor(v.taxiShape[v.selectedTaxi], SFML.Color(255,0,0))
+			v.selectedTaxi = 0
+		end
 	end
 end
-
-function visualUpdate(v::TaxiVisualizer, frameTime::Float64)
+function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 	# Accelerate speed
 	is_key_pressed(KeyCode.E) && (v.simSpeed *= 4^frameTime)
 	# Reduce speed
 	is_key_pressed(KeyCode.W) && (v.simSpeed /= 4^frameTime)
-
 	# change time
 	!v.simPaused && (v.simTime += frameTime*v.simSpeed)
-	minutes, seconds = minutesSeconds(v.simTime)
-	set_title(v.window, "Simulation time : $(minutes)m$(seconds)s")
 
 	# Iterate through taxis to plot
 	for interval in intersect(v.taxiEvents, (v.simTime,v.simTime))
@@ -122,8 +140,26 @@ function visualUpdate(v::TaxiVisualizer, frameTime::Float64)
 			pos = Vector2f((1-l) * p1.x + l * p2.x, (1-l) * p1.y + l * p2.y)
 		end
 		set_position(v.taxiShape[e.taxi],pos-Vector2f(v.nodeRadius*1.5,v.nodeRadius*1.5))
-		draw(v.window,v.taxiShape[e.taxi])
 	end
+	# Are we following a Taxi?
+	minutes, seconds = minutesSeconds(v.simTime)
+	if v.selectedTaxi > 0
+		view = get_view(v.window)
+		set_center(view, get_position(v.taxiShape[v.selectedTaxi])-Vector2f(v.nodeRadius*1.5,v.nodeRadius*1.5))
+		set_view(v.window,view)
+		set_title(v.window, "Selected Taxi: $(v.selectedTaxi), Simulation time : $(minutes)m$(seconds)s")
+	else
+		set_title(v.window, "Simulation time : $(minutes)m$(seconds)s")
+	end
+
+end
+
+function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
+	#Draw taxis
+	for s in v.taxiShape
+		draw(v.window, s)
+	end
+
 	# Iterate through customers to plot
 	for interval in intersect(v.custEvents, (v.simTime,v.simTime))
 		t1, t2, e = interval.first, interval.last, interval.value
@@ -144,6 +180,7 @@ function visualUpdate(v::TaxiVisualizer, frameTime::Float64)
 			draw(v.window,v.custWaitShape[loc])
 		end
 	end
+
 end
 
 function visualScale(v::TaxiVisualizer)
