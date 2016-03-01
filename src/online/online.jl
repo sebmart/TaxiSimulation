@@ -7,7 +7,7 @@
     `OnlineAlgorithm`, abstract type inherited by online algorithms
     Needs to implement:
     - `initialize!(OnlineAlgorithm, TaxiProblem)`, initializes a given OnlineAlgorithm with
-    a selected taxi problem without customers.
+    a selected taxi problem with just initial customers.
     - `update!(OnlineAlgorithm, Float64, Vector{Customer})`, updates OnlineAlgorithm to
     account for new customers, returns a list of TaxiActions since the last update.
 """
@@ -27,9 +27,23 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
 	# Sorts customers by tcall
 	customers = sort(pb.custs, by = x -> x.tcall)
 
+    # separate customers with tcall = 0 (pre-known data)
+    firstNew = length(customers) + 1
+    for (i,c) in enumerate(customers)
+        if c.tcall > 0.
+            firsNew = i
+            break
+        end
+    end
+    firstCustomers = customers[1:firstNew - 1]
+    customers = customers[firstNew:end]
+
+
 	# Initializes the online method with the given taxi problem without the customers
 	init = copy(pb)
-	init.custs = Customer[]
+	init.custs = firstCustomers
+
+    verbose && print("\rpre-simulation computations...")
 	onlineInitialize!(oa, init)
 	allTaxiActions = emptyActions(pb)
 

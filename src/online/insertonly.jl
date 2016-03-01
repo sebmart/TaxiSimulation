@@ -13,19 +13,20 @@ type InsertOnly <: OnlineAlgorithm
 	earliest::Bool
 
     function InsertOnly(;earliest::Bool=false)
-        offline = new()
-		offline.earliest = earliest
-        return offline
+        io = new()
+		io.earliest = earliest
+        return io
     end
 end
-
-
 
 function onlineInitialize!(io::InsertOnly, pb::TaxiProblem)
 	pb.taxis = copy(pb.taxis)
     io.pb = pb
     io.startTime=0.
     io.sol = OfflineSolution(pb)
+	for cID in eachindex(pb.custs)
+		insertCustomer!(io.sol,cID, earliest=io.earliest)
+	end
 end
 
 
