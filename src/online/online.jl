@@ -31,14 +31,15 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
     firstNew = length(customers) + 1
     for (i,c) in enumerate(customers)
         if c.tcall > 0.
-            firsNew = i
+            firstNew = i
             break
         end
     end
     firstCustomers = customers[1:firstNew - 1]
     customers = customers[firstNew:end]
 
-
+    println(firstCustomers)
+    println(customers)
 	# Initializes the online method with the given taxi problem without the customers
 	init = copy(pb)
 	init.custs = firstCustomers
@@ -58,7 +59,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
         if verbose && time() - lastPrint >= 0.5
             m,s = minutesSeconds(tStart)
             lastPrint = time()
-            @printf("\rtime : %dm%02ds (%.2f%%)   ", m,s, 100*tStart/pb.simTime)
+            @printf("time : %dm%02ds (%.2f%%)   ", m,s, 100*tStart/pb.simTime)
         end
         newTaxiActions = onlineUpdate!(oa, tEnd, newCusts)
         for (k,allAction) in enumerate(allTaxiActions)
@@ -92,7 +93,7 @@ type NewCustUpdate
     custs::Vector{Customer}
 end
 Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
-Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[2] > length(it.custs)
+Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
 function Base.next(it::NewCustUpdate, s::Tuple{Float64, Int})
     newCusts = Customer[]
     i = s[2]
@@ -116,7 +117,7 @@ type PeriodUpdate
     period::Float64
 end
 Base.start(it::PeriodUpdate) = (0,1) # (iteration number of next, next cust)
-Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[2] > length(it.custs)
+Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
 function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
     newCusts = Customer[]
     i = s[2]
@@ -125,7 +126,7 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
         i += 1
     end
     if i > length(it.custs)
-        return (newCusts, s[1]*it.period, Inf), (s[1]+1, i)
+        return (newCusts, s[1]*it.period, Inf), (typemax(Int), i)
     else
         return (newCusts, s[1]*it.period, (s[1]+1)*it.period), (s[1]+1, i)
     end
