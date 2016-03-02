@@ -22,11 +22,18 @@ end
 function onlineInitialize!(io::InsertOnly, pb::TaxiProblem)
 	pb.taxis = copy(pb.taxis)
     io.pb = pb
-    io.startTime=0.
-    io.sol = OfflineSolution(pb)
-	for cID in eachindex(pb.custs)
-		insertCustomer!(io.sol,cID, earliest=io.earliest)
-	end
+	io.startTime=0.
+
+	newCustomers = pb.custs
+	io.pb.custs = Customer[]
+	io.sol = OfflineSolution(pb)
+
+	resize!(io.pb.custs, maximum([c.id for c in newCustomers]))
+	for c in newCustomers
+		push!(io.sol.rejected, c.id)
+		io.pb.custs[c.id] = c
+    end
+	orderedInsertions!(io.sol)
 end
 
 
@@ -36,12 +43,10 @@ function onlineUpdate!(io::InsertOnly, endTime::Float64, newCustomers::Vector{Cu
 	#Insert new customers
     for c in sort!(newCustomers, by=x->x.tmin)
         if length(pb.custs) < c.id
-			for i = 1+length(pb.custs) : c.id
-                push!(io.sol.rejected, i)
-            end
             resize!(pb.custs, c.id)
         end
         if c.tmax >= io.startTime
+			push!(io.sol.rejected, c.id)
             pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,
             max(c.tmin,io.startTime),c.tmax,c.fare)
             insertCustomer!(io.sol,c.id, earliest=io.earliest)

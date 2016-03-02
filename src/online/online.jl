@@ -22,7 +22,7 @@ Base.show(io::IO, t::OnlineAlgorithm)=
     TaxiSolution object and returns it.
     - `period`: period of update in seconds. If 0, update for each new customer
 """
-function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 = 0.; verbose::Bool=false)
+function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 = 0., verbose::Bool=false)
 
 	# Sorts customers by tcall
 	customers = sort(pb.custs, by = x -> x.tcall)
@@ -38,28 +38,31 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm, period::Float64 
     firstCustomers = customers[1:firstNew - 1]
     customers = customers[firstNew:end]
 
-    println(firstCustomers)
-    println(customers)
 	# Initializes the online method with the given taxi problem without the customers
 	init = copy(pb)
 	init.custs = firstCustomers
 
     verbose && print("\rpre-simulation computations...")
+
 	onlineInitialize!(oa, init)
 	allTaxiActions = emptyActions(pb)
 
 	#Create list of update times and customers
 	if period == 0.
         updates = NewCustUpdate(customers)
+        verbose && (endTime = customers[end].tcall)
     else
-        updates = PeriodUpdate(period)
+        updates = PeriodUpdate(customers, period)
+        verbose && (endTime = pb.simTime)
     end
-    verbose && (lastPrint = -Inf)
+    verbose && (lastPrint = -Inf; realTimeStart = time())
     for (newCusts, tStart, tEnd) in updates
-        if verbose && time() - lastPrint >= 0.5
-            m,s = minutesSeconds(tStart)
+        t = time()
+        if verbose && t - lastPrint >= 0.5
+            m, s  = minutesSeconds(tStart)
+            m2,s2 = minutesSeconds(t-realTimeStart)
             lastPrint = time()
-            @printf("time : %dm%02ds (%.2f%%)   ", m,s, 100*tStart/pb.simTime)
+            @printf("\rsim-time: %dm%02ds (%.2f%%) realTime:(%dm%02ds)             ", m,s, 100*tStart/endTime, m2,s2)
         end
         newTaxiActions = onlineUpdate!(oa, tEnd, newCusts)
         for (k,allAction) in enumerate(allTaxiActions)

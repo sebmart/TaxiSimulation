@@ -24,6 +24,17 @@ function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCust
 end
 
 """
+    `orderedInsertions!`: try to insert all rejected customers in solution
+    - for now, ordered by tmin
+"""
+function orderedInsertions!(s::OfflineSolution)
+    customers = sort([s.pb.custs[c] for c in s.rejected], by=c->c.tmin)
+    for c in customers
+        insertCustomer!(s, c.id)
+    end
+end
+
+"""
     `timeOrderedCustomers`, order customers id by tmin
 """
 timeOrderedCustomers(pb::TaxiProblem) =

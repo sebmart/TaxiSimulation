@@ -28,17 +28,17 @@ function localDescentWithBench(pb::TaxiProblem, start::OfflineSolution, verbose:
 
     nTaxis = length(pb.taxis)
     #if no customer
-    if length(start.rejected) == length(pb.custs)
-        ordered = orderedInsertions(pb)
-        if length(ordered.rejected) == length(pb.custs)
-            verbose && println("Final: $(ordered.profit) dollars")
-            return ordered
+    sol = copySolution(start)
+    if noassignment(start)
+        orderedInsertions!(sol)
+        if noassignment(start)
+            verbose && println("Final: $(sol.profit) dollars")
+            return sol, BenchmarkPoint[]
         end
         start = ordered
     end
 
     verbose && println("Start, $(start.profit) dollars")
-    sol =  copySolution(start)
     success = 0
 
     benchData = BenchmarkPoint[]

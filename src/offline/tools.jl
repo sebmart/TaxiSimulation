@@ -179,3 +179,15 @@ end
 
 printSolution(s::OfflineSolution, io::IO = STDOUT; verbose=1) =
 printSolution(TaxiSolution(s), io, verbose=verbose)
+
+"""
+    `noassignment`, test if all taxis are idle
+"""
+function noassignment(s::OfflineSolution)
+    for tws in s.custs
+        if !isempty(tws)
+            return false
+        end
+    end
+    return true
+end
