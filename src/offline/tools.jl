@@ -32,22 +32,25 @@ end
 
 """
     `updateTimeWindow!(OfflineSolution)`
-    update all time windows, check for feasibility and updates `rejected`
+    update all time windows
 """
 function updateTimeWindows!(s::OfflineSolution)
-    s.rejected = IntSet(1:length(s.pb.custs))
     for k in eachindex(s.pb.taxis)
         updateTimeWindows!(s,k)
-        for c in s.custs[k]
-            if c.tInf > c.tSup + EPS
-                error("Solution Infeasible for taxi $k : customer $(c.id) : tInf = $(c.tInf), tSup = $(c.tSup)")
-            end
-            delete!(s.rejected, c.id)
-        end
     end
     s
 end
 
+"""
+    `getRejected`, compute rejected customers of offline solution
+"""
+function getRejected(s::OfflineSolution)
+    rejected = IntSet(1:length(s.pb.custs))
+    for l in s.custs, c in l
+        delete!(rejected,c.id)
+    end
+    return rejected
+end
 """
     `OfflineSolution(TaxiSolution)` transform a feasible solution into an Offline solution
     (compute max time windows)
@@ -167,6 +170,9 @@ function testSolution(sol::OfflineSolution)
             prevPos = c.dest
             prevInf = tw.tInf + tt(c.orig, c.dest) + 2*pb.customerTime
             prevSup = tw.tSup + tt(c.orig, c.dest) + 2*pb.customerTime
+            if ! ( tw.id in rejected)
+                error("Customer $(tw.id) picked-up twice")
+            end
             delete!(rejected, tw.id)
         end
     end

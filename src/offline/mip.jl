@@ -10,9 +10,9 @@
     can be warmstarted with a solution
 """
 mipOpt(pb::TaxiProblem, init::OfflineSolution; arg...) =
-mipOpt(pb, Nullable{OfflineSolution}(init), arg...)
+mipOpt(pb, Nullable{OfflineSolution}(init); arg...)
 mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
-mipOpt(pb, OfflineSolution(init), args...)
+mipOpt(pb, OfflineSolution(init); args...)
 
 
 function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, solverArgs...)
@@ -55,7 +55,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     # =====================================================
 
     if !isnull(init)
-        init = get(init)
+        init2 = get(init)
         for c=1:nCusts, c0 =1:length(pCusts[c])
             setValue(x[c,c0],0)
         end
@@ -66,7 +66,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
             setValue(i[c],w.tmin)
             setValue(s[c],w.tmax)
         end
-        for (k,l) in enumerate(init.custs)
+        for (k,l) in enumerate(init2.custs)
             if length(l) > 0
                 setValue(y[k,l[1].id], 1)
                 setValue(i[l[1].id],l[1].tInf)
@@ -192,7 +192,14 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
         end
     end
 
-    rejected = IntSet(1:nCusts)
+    if !isnull(init) #trick to extract only future rejected
+        init2 = get(init)
+        trueRejected = getRejected(init2)
+        toKeep = setdiff(trueRejected, init2.rejected)
+        rejected = setdiff(IntSet(1:nCusts), toKeep)
+    else
+        rejected = IntSet(1:nCusts)
+    end
     for k= 1:nTaxis
         if first[k] > 0
             delete!(rejected, first[k])

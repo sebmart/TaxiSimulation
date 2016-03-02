@@ -89,7 +89,6 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
     pb = sb.pb
 	tt = getPathTimes(pb.times)
 
-
 	#Insert new customers
     for c in sort!(newCustomers, by=x->x.tmin)
         if length(pb.custs) < c.id
@@ -111,7 +110,10 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
 		sb.sol = sb.update_solver(pb, sb.sol, searchTime)
 	end
     actions = emptyActions(pb)
-
+	# println("===$((sb.startTime, endTime))===")
+	# println(newCustomers)
+	# println(sb.sol.custs)
+	# println(sb.sol.rejected)
 	#Apply next actions
     for (k,custs) in enumerate(sb.sol.custs)
         while !isempty(custs)
@@ -130,6 +132,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tInf, newTime))
                 pb.taxis[k] = Taxi(pb.taxis[k].id, pb.custs[c.id].dest, newTime)
                 shift!(custs)
+
             else
                 break
             end
@@ -145,6 +148,10 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
 			delete!(sb.sol.rejected, c)
 		end
 	end
+	# println(sb.sol.rejected)
+	# println([act.custs for act in actions])
+
+
     sb.startTime = endTime
 
 	return actions

@@ -8,41 +8,46 @@
      (fast on large instances)
      - parameter `random = true` to try any combination, = false to do the best one
 """
-function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb);
+function localDescent!(pb::TaxiProblem, sol::OfflineSolution;
      verbose::Bool = true, random::Bool = false, benchmark::Bool = false, iterations::Int=typemax(Int),
       maxTime::Float64=Inf)
     if benchmark
-        return localDescentWithBench(pb, start, verbose, random, benchmark, iterations, maxTime)
+        return localDescentWithBench!(pb, sol, verbose, random, benchmark, iterations, maxTime)
     else
-        return localDescentWithBench(pb, start, verbose, random, benchmark, iterations, maxTime)[1]
+        return localDescentWithBench!(pb, sol, verbose, random, benchmark, iterations, maxTime)[1]
     end
 end
 
-function localDescentWithBench(pb::TaxiProblem, start::OfflineSolution, verbose::Bool,
+function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb); args...)
+    sol = copySolution(start)
+    localDescent!(pb,sol; args...)
+    return sol
+end
+
+function localDescentWithBench!(pb::TaxiProblem, sol::OfflineSolution, verbose::Bool,
             random::Bool, benchmark::Bool, iterations::Int, maxTime::Float64)
     initT = time()
-
+    
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
 
     nTaxis = length(pb.taxis)
     #if no customer
-    sol = copySolution(start)
-    if noassignment(start)
+    if noassignment(sol)
         orderedInsertions!(sol)
-        if noassignment(start)
+        if noassignment(sol)
             verbose && println("Final: $(sol.profit) dollars")
             return sol, BenchmarkPoint[]
         end
         start = ordered
     end
 
-    verbose && println("Start, $(start.profit) dollars")
+    verbose && println("Start, $(sol.profit) dollars")
     success = 0
 
     benchData = BenchmarkPoint[]
-    benchmark && (push!(benchData, BenchmarkPoint(0.,start.profit,Inf)))
+    benchmark && (push!(benchData, BenchmarkPoint(0.,sol.profit,Inf)))
     for trys in 1:iterations
         if time()-initT > maxTime
             break
