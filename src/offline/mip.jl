@@ -79,7 +79,6 @@ end
     can be warmstarted with a solution
 """
 function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolution}; verbose::Bool=false, benchmark::Bool=false, solverArgs...)
-
     taxi = pb.taxis
     cust = pb.custs
     if length(cust) == 0.
