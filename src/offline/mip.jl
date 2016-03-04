@@ -15,7 +15,7 @@ mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
 mipOpt(pb, OfflineSolution(init); args...)
 
 
-function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, solverArgs...)
+function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, online::Bool=false, solverArgs...)
 
     taxi = pb.taxis
     cust = pb.custs
@@ -29,7 +29,13 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #Compute the list of the lists of customers that can be taken
     #before each customer
-    pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb::TaxiProblem)
+    if online
+        isnull(init) && error("Should provide warmstart in online setting")
+        toKeep = setdiff(getRejected(get(init)), init2.rejected)
+        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersOnline(pb, toKeep)
+    else
+        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb, toKeep)
+    end
     #Solver : Gurobi (modify parameters)
     m = Model(solver= GurobiSolver(MIPFocus=1, Method=1; solverArgs...))
 
@@ -52,6 +58,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     if !isnull(init)
         init2 = get(init)
+
         for k=eachindex(pairs)
             setValue(x[k],0)
         end
@@ -179,10 +186,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
 
-    if !isnull(init) #trick to extract only future rejected
-        init2 = get(init)
-        trueRejected = getRejected(init2)
-        toKeep = setdiff(trueRejected, init2.rejected)
+    if online # special case for online
         rejected = setdiff(IntSet(eachindex(cust)), toKeep)
     else
         rejected = IntSet(eachindex(cust))
@@ -215,8 +219,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 end
 
 """
-    `customersCompatibility`, returns customers that can be taken before other customers
-    - returns: array of previous custs and  next custs for each customer
+    `customersLinks`, subsets customers that can be taken before other customers
 """
 function customersLinks(pb::TaxiProblem)
     tt = getPathTimes(pb.times)
@@ -249,6 +252,47 @@ function customersLinks(pb::TaxiProblem)
             pRev[c1.id,c2.id] = length(pairs)
             push!(pRev1[c1.id], length(pairs))
             push!(pRev2[c2.id], length(pairs))
+        end
+    end
+    return pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2
+end
+
+"""
+    `customersLinks`, subsets customers that can be taken before other customers
+"""
+function customersOnline(pb::TaxiProblem, toKeep::IntSet)
+    tt = getPathTimes(pb.times)
+    custs = pb.custs[!toKeep]
+    # all customers are considered
+    cID =  [c.id for c in custs]
+    cRev = Dict{Int,Int}([(c.id, i) for (i,c) in enumerate(custs)])
+    starts = Tuple{Int,Int}[]
+    sRev   = Dict{Tuple{Int,Int},Int}()
+    sRev1  = Vector{Int}[Int[] for i=eachindex(pb.taxis)]
+    sRev2  = Vector{Int}[Int[] for i=eachindex(cID)]
+    pairs  = Tuple{Int,Int}[]
+    pRev   = Dict{Tuple{Int,Int},Int}()
+    pRev1  = Vector{Int}[Int[] for i=eachindex(cID)]
+    pRev2  = Vector{Int}[Int[] for i=eachindex(cID)]
+
+
+    # first customers
+    for t in pb.taxis, (i,c) in enumerate(custs)
+        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
+            push!(starts, (t.id, i))
+            sRev[t.id,i] = length(starts)
+            push!(sRev1[t.id], length(starts))
+            push!(sRev2[i], length(starts))
+        end
+    end
+    # customer pairs
+    for (i1,c1) in custs, (i2,c2) in custs
+        if i1 != i2 &&
+        c1.tmin + tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime <= c2.tmax
+            push!(pairs, (i1, i2))
+            pRev[i1,i2] = length(pairs)
+            push!(pRev1[i1], length(pairs))
+            push!(pRev2[i2], length(pairs))
         end
     end
     return pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2
