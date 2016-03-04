@@ -15,7 +15,7 @@ mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
 mipOpt(pb, OfflineSolution(init); args...)
 
 
-function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); benchmark=false, online::Bool=false, solverArgs...)
+function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); verbose::Bool=false, benchmark::Bool=false, online::Bool=false, solverArgs...)
 
     taxi = pb.taxis
     cust = pb.custs
@@ -31,13 +31,15 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     #before each customer
     if online
         isnull(init) && error("Should provide warmstart in online setting")
-        toKeep = setdiff(getRejected(get(init)), init2.rejected)
+        toKeep = setdiff(IntSet(eachindex(cust)), setdiff(getRejected(get(init)), get(init).rejected))
         pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersOnline(pb, toKeep)
     else
-        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb, toKeep)
+        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb)
     end
+    verbose && println("MIP with $(length(pairs)) pairs and $(length(starts)) starts")
     #Solver : Gurobi (modify parameters)
-    m = Model(solver= GurobiSolver(MIPFocus=1, Method=1; solverArgs...))
+    of = verbose ? 1:0
+    m = Model(solver= GurobiSolver(MIPFocus=1, OutputFlag=of, Method=1; solverArgs...))
 
     # =====================================================
     # Decision variables
@@ -55,7 +57,6 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     # =====================================================
     # Initialisation
     # =====================================================
-
     if !isnull(init)
         init2 = get(init)
 
@@ -84,37 +85,35 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
             end
         end
     end
-
     # =====================================================
     # Objective (do not depend on time windows!)
     # =====================================================
     #Price paid by customers
     @defExpr(customerCost, sum{
-    (tc[cust[cRev[p[1]]].dest, cust[cRev[p[2]]].orig] +
-    tc[cust[cRev[p[2]]].orig, cust[cRev[p[2]]].dest] - cust[cRev[p[2]]].fare)*x[k],
+    (tc[cust[cID[p[1]]].dest, cust[cID[p[2]]].orig] +
+    tc[cust[cID[p[2]]].orig, cust[cID[p[2]]].dest] - cust[cID[p[2]]].fare)*x[k],
     (k,p) in enumerate(pairs)})
 
     #Price paid by "first customers"
     @defExpr(firstCustomerCost, sum{
-    (tc[taxi[s[1]].initPos, cust[cRev[s[2]]].orig] +
-    tc[cust[cRev[s[2]]].orig, cust[cRev[s[2]]].dest] - cust[cRev[s[2]]].fare)*y[k],
+    (tc[taxi[s[1]].initPos, cust[cID[s[2]]].orig] +
+    tc[cust[cID[s[2]]].orig, cust[cID[s[2]]].dest] - cust[cID[s[2]]].fare)*y[k],
     (k,s) in enumerate(starts)})
 
     #Busy time
     @defExpr(busyTime, sum{
-    (tt[cust[cRev[p[1]]].dest, cust[cRev[p[2]]].orig] +
-    tt[cust[cRev[p[2]]].orig, cust[cRev[p[2]]].dest] )*(-pb.waitingCost)*x[k],
+    (tt[cust[cID[p[1]]].dest, cust[cID[p[2]]].orig] +
+    tt[cust[cID[p[2]]].orig, cust[cID[p[2]]].dest] )*(-pb.waitingCost)*x[k],
     (k,p) in enumerate(pairs)})
 
     #Busy time during "first customer"
     @defExpr(firstBusyTime, sum{
-    (tt[taxi[s[1]].initPos, cust[cRev[s[2]]].orig] +
-    tt[cust[cRev[s[2]]].orig, cust[cRev[s[2]]].dest])*(-pb.waitingCost)*y[k],
+    (tt[taxi[s[1]].initPos, cust[cID[s[2]]].orig] +
+    tt[cust[cID[s[2]]].orig, cust[cID[s[2]]].dest])*(-pb.waitingCost)*y[k],
     (k,s) in enumerate(starts)})
 
     @setObjective(m,Min, customerCost + firstCustomerCost +
     busyTime + firstBusyTime + pb.simTime*length(pb.taxis)*pb.waitingCost )
-
 
     # =====================================================
     # Constraints
@@ -147,19 +146,19 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #Sup bounds rules
     @addConstraint(m, c6[k in eachindex(pairs)],
-    s[pairs[k][1]] + tt[cust[pairs[k][1]].orig, cust[pairs[k][1]].dest] +
-    tt[cust[pairs[k][1]].dest, cust[pairs[k][2]].orig] +
+    s[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
+    tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] +
     2*pb.customerTime - s[pairs[k][2]] <= M*(1 - x[k]))
 
     #Inf bounds rules
     @addConstraint(m, c7[k in eachindex(pairs)],
-    i[pairs[k][1]] + tt[cust[pairs[k][1]].orig, cust[pairs[k][1]].dest] +
-    tt[cust[pairs[k][1]].dest, cust[pairs[k][2]].orig] +
+    i[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
+    tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] +
     2*pb.customerTime - i[pairs[k][2]] <= M*(1 - x[k]))
 
     #First move constraint
     @addConstraint(m, c8[k in eachindex(starts)],
-    i[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[starts[k][2]].orig] -
+    i[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
     taxi[starts[k][1]].initTime >= M*(y[k] - 1))
 
     #to get information
@@ -187,7 +186,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
 
     if online # special case for online
-        rejected = setdiff(IntSet(eachindex(cust)), toKeep)
+        rejected = toKeep
     else
         rejected = IntSet(eachindex(cust))
     end
@@ -262,7 +261,8 @@ end
 """
 function customersOnline(pb::TaxiProblem, toKeep::IntSet)
     tt = getPathTimes(pb.times)
-    custs = pb.custs[!toKeep]
+    custs = pb.custs[collect(toKeep)]
+
     # all customers are considered
     cID =  [c.id for c in custs]
     cRev = Dict{Int,Int}([(c.id, i) for (i,c) in enumerate(custs)])
@@ -286,7 +286,7 @@ function customersOnline(pb::TaxiProblem, toKeep::IntSet)
         end
     end
     # customer pairs
-    for (i1,c1) in custs, (i2,c2) in custs
+    for (i1,c1) in enumerate(custs), (i2,c2) in enumerate(custs)
         if i1 != i2 &&
         c1.tmin + tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime <= c2.tmax
             push!(pairs, (i1, i2))
