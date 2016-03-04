@@ -3,19 +3,82 @@
 ## mixed integer optimisation, time-window based
 ###################################################
 
+"""
+    `CustomerLink`, contain all customer link informations necessary to build mip
+"""
+type CustomerLinks
+    "mip cust IDs => real cust IDs"
+    cID::Vector{Int}
+    "real cust IDs => mip cust IDs"
+    cRev::Dict{Int,Int}
+    "list of customer pairs (mipid2, mipid2)"
+    pairs::Vector{Tuple{Int,Int}}
+    "pair => pair id"
+    pRev::Dict{Tuple{Int,Int},Int}
+    "mip cust ID => list of pair IDs where on the left"
+    pRev1::Vector{Vector{Int}}
+    "mip cust ID => list of pair IDs where on the right"
+    pRev2::Vector{Vector{Int}}
+    "list of taxi/customer pairs (taxiid, mipid)"
+    starts::Vector{Tuple{Int,Int}}
+    "start pair => start id"
+    sRev::Dict{Tuple{Int,Int},Int}
+    "taxi ID => list of starts IDs where on the left"
+    sRev1::Vector{Vector{Int}}
+    "mip cust ID => list of starts IDs where on the right"
+    sRev2::Vector{Vector{Int}}
+end
 
+"""
+    `MIPSettings`, represents MIP settings: links that we allow between customers
+    has to include:
+        "The taxi problem"
+        `pb::TaxiProblem`
+        "the mip structure: customers links"
+        `links::CustomerLinks`
+        "warmstart"
+        `warmstart::Nullable{OfflineSolution}`
+    can overload to define
+        mipInit!, mipEnd
+
+"""
+abstract MIPSettings
+
+"""
+    `mipSolve`: offline solver using mip. Can be overwritten!
+"""
+function mipSolve(pb::TaxiProblem, warmstart::Nullable{OfflineSolution}, s::MIPSettings, verbose::Bool, benchmark::Bool; solverArgs...)
+    mipInit!(s, pb, warmstart)
+    custs, rev = mipOpt(s.pb, s.links, s.warmstart, verbose=verbose, benchmark=benchmark; solverArgs...)
+    return mipEnd(s, custs, rev)
+end
+mipSolve(pb::TaxiProblem, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
+    mipSolve(pb, Nullable{OfflineSolution}(), set, verbose, benchmark; solverArgs...)
+mipSolve(pb::TaxiProblem, s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=false, benchmark::Bool=false, solverArgs...) =
+    mipSolve(pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
+mipSolve(s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
+    mipSolve(s.pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
+
+"""
+    `mipInit!`: initialize mip settings with problem (to be overloaded)
+"""
+function mipInit!(s::MIPSettings, pb::TaxiProblem, warmstart::Nullable{OfflineSolution})
+    error("mipInit! has to be defined")
+end
+
+"""
+    `mipEnd`: return solution from mip output (can be overloaded)
+"""
+function mipEnd(s::MIPSettings, custs::Vector{Vector{CustomerTimeWindow}}, rev::Float64)
+    rejected = getRejected(s.pb, custs)
+    return OfflineSolution(s.pb, custs, rejected, rev)
+end
 
 """
     `mipOpt`: MIP formulation of offline taxi assignment
     can be warmstarted with a solution
 """
-mipOpt(pb::TaxiProblem, init::OfflineSolution; arg...) =
-mipOpt(pb, Nullable{OfflineSolution}(init); arg...)
-mipOpt(pb::TaxiProblem, init::TaxiSolution; args...) =
-mipOpt(pb, OfflineSolution(init); args...)
-
-
-function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{OfflineSolution}(); verbose::Bool=false, benchmark::Bool=false, online::Bool=false, solverArgs...)
+function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolution}; verbose::Bool=false, benchmark::Bool=false, solverArgs...)
 
     taxi = pb.taxis
     cust = pb.custs
@@ -29,13 +92,9 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #Compute the list of the lists of customers that can be taken
     #before each customer
-    if online
-        isnull(init) && error("Should provide warmstart in online setting")
-        toKeep = setdiff(IntSet(eachindex(cust)), setdiff(getRejected(get(init)), get(init).rejected))
-        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersOnline(pb, toKeep)
-    else
-        pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb)
-    end
+    cID,   cRev,   pairs,   pRev,   pRev1,   pRev2,   starts,   sRev,   sRev1,   sRev2   =
+    l.cID, l.cRev, l.pairs, l.pRev, l.pRev1, l.pRev2, l.starts, l.sRev, l.sRev1, l.sRev2
+
     verbose && println("MIP with $(length(pairs)) pairs and $(length(starts)) starts")
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
@@ -163,14 +222,14 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #to get information
     tstart = time()
-    benchData = BenchmarkPoint[]
-    function infocallback(cb)
-        cost = MathProgBase.cbgetobj(cb)
-        bestbound = MathProgBase.cbgetbestbound(cb)
-        seconds = time()-tstart
-        push!(benchData, BenchmarkPoint(seconds,-cost,-bestbound))
-    end
-    benchmark && addInfoCallback(m,infocallback)
+    # benchData = BenchmarkPoint[]
+    # function infocallback(cb)
+    #     cost = MathProgBase.cbgetobj(cb)
+    #     bestbound = MathProgBase.cbgetbestbound(cb)
+    #     seconds = time()-tstart
+    #     push!(benchData, BenchmarkPoint(seconds,-cost,-bestbound))
+    # end
+    # benchmark && addInfoCallback(m,infocallback)
 
 
     status = solve(m)
@@ -185,115 +244,25 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
 
-    if online # special case for online
-        rejected = toKeep
-    else
-        rejected = IntSet(eachindex(cust))
-    end
     # reconstruct solution
     for k in eachindex(starts)
         if ty[k] > 0.9
             t, c = starts[k]
-            delete!(rejected, cID[c])
             push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
 
             while (k2 = findfirst(x->x>0.9, [tx[p] for p in pRev1[c]])) != 0
                 c  = pairs[pRev1[c][k2]][2]
-                delete!(rejected, cID[c])
                 push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
             end
         end
     end
 
-    s = OfflineSolution(pb,custs, rejected, - getObjectiveValue(m) )
-
-    if benchmark
-        o = -s.cost - benchData[end].revenue
-        for (i,p) in enumerate(benchData)
-            benchData[i] = BenchmarkPoint(p.time,p.revenue + o, p.bound + o)
-        end
-    end
-    benchmark && return (s,benchData)
-    return updateTimeWindows!(s)
-end
-
-"""
-    `customersLinks`, subsets customers that can be taken before other customers
-"""
-function customersLinks(pb::TaxiProblem)
-    tt = getPathTimes(pb.times)
-    # all customers are considered
-    cID = collect(eachindex(pb.custs))
-    cRev = Dict([(i,i) for i in eachindex(pb.custs)])
-    starts = Tuple{Int,Int}[]
-    sRev   = Dict{Tuple{Int,Int},Int}()
-    sRev1  = Vector{Int}[Int[] for i=eachindex(pb.taxis)]
-    sRev2  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
-    pairs  = Tuple{Int,Int}[]
-    pRev   = Dict{Tuple{Int,Int},Int}()
-    pRev1  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
-    pRev2  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
-
-    # first customers
-    for t in pb.taxis, c in pb.custs
-        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
-            push!(starts, (t.id, c.id))
-            sRev[t.id,c.id] = length(starts)
-            push!(sRev1[t.id], length(starts))
-            push!(sRev2[c.id], length(starts))
-        end
-    end
-    # customer pairs
-    for c1 in pb.custs, c2 in pb.custs
-        if c1.id != c2.id &&
-        c1.tmin + tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime <= c2.tmax
-            push!(pairs, (c1.id, c2.id))
-            pRev[c1.id,c2.id] = length(pairs)
-            push!(pRev1[c1.id], length(pairs))
-            push!(pRev2[c2.id], length(pairs))
-        end
-    end
-    return pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2
-end
-
-"""
-    `customersLinks`, subsets customers that can be taken before other customers
-"""
-function customersOnline(pb::TaxiProblem, toKeep::IntSet)
-    tt = getPathTimes(pb.times)
-    custs = pb.custs[collect(toKeep)]
-
-    # all customers are considered
-    cID =  [c.id for c in custs]
-    cRev = Dict{Int,Int}([(c.id, i) for (i,c) in enumerate(custs)])
-    starts = Tuple{Int,Int}[]
-    sRev   = Dict{Tuple{Int,Int},Int}()
-    sRev1  = Vector{Int}[Int[] for i=eachindex(pb.taxis)]
-    sRev2  = Vector{Int}[Int[] for i=eachindex(cID)]
-    pairs  = Tuple{Int,Int}[]
-    pRev   = Dict{Tuple{Int,Int},Int}()
-    pRev1  = Vector{Int}[Int[] for i=eachindex(cID)]
-    pRev2  = Vector{Int}[Int[] for i=eachindex(cID)]
-
-
-    # first customers
-    for t in pb.taxis, (i,c) in enumerate(custs)
-        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
-            push!(starts, (t.id, i))
-            sRev[t.id,i] = length(starts)
-            push!(sRev1[t.id], length(starts))
-            push!(sRev2[i], length(starts))
-        end
-    end
-    # customer pairs
-    for (i1,c1) in enumerate(custs), (i2,c2) in enumerate(custs)
-        if i1 != i2 &&
-        c1.tmin + tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime <= c2.tmax
-            push!(pairs, (i1, i2))
-            pRev[i1,i2] = length(pairs)
-            push!(pRev1[i1], length(pairs))
-            push!(pRev2[i2], length(pairs))
-        end
-    end
-    return pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2
+    # if benchmark
+    #     o = -s.cost - benchData[end].revenue
+    #     for (i,p) in enumerate(benchData)
+    #         benchData[i] = BenchmarkPoint(p.time,p.revenue + o, p.bound + o)
+    #     end
+    # end
+    # benchmark && return (s,benchData)
+    return updateTimeWindows!(pb, custs), - getObjectiveValue(m)  # returns assignments + profit
 end

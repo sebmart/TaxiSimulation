@@ -5,52 +5,61 @@
 
 
 """
-    `updateTimeWindow!(OfflineSolution,k::Int)`
+    `updateTimeWindow!(TaxiProblem,Vector{CustomerTimeWindow},k::Int)`
     Update the time windows of taxi `k` timeline
     Do not check for feasibility or update rejected!
 """
-function updateTimeWindows!(s::OfflineSolution,k::Int)
-    l = s.custs[k]; c=s.pb.custs
-    tt(i::Int, j::Int) = traveltime(s.pb.times,i,j)
+function updateTimeWindows!(pb::TaxiProblem, l::Vector{CustomerTimeWindow}, k::Int)
+    c= pb.custs
+    tt = getPathTimes(pb.times)
 
     if !isempty(l)
-        l[1].tInf = max(c[l[1].id].tmin, s.pb.taxis[k].initTime + tt(s.pb.taxis[k].initPos, c[l[1].id].orig))
+        l[1].tInf = max(c[l[1].id].tmin, pb.taxis[k].initTime + tt[pb.taxis[k].initPos, c[l[1].id].orig])
         l[end].tSup = c[l[end].id].tmax
     end
     for i = 2:(length(l))
         l[i].tInf = max(c[l[i].id].tmin, l[i-1].tInf+
-        tt(c[l[i-1].id].orig, c[l[i-1].id].dest)+
-        tt(c[l[i-1].id].dest, c[l[i].id].orig)+ 2*s.pb.customerTime)
+        tt[c[l[i-1].id].orig, c[l[i-1].id].dest]+
+        tt[c[l[i-1].id].dest, c[l[i].id].orig]+ 2*pb.customerTime)
     end
     for i = (length(l) - 1):(-1):1
         l[i].tSup = min(c[l[i].id].tmax, l[i+1].tSup-
-        tt(c[l[i].id].orig, c[l[i].id].dest)-
-        tt(c[l[i].id].dest, c[l[i+1].id].orig) - 2*s.pb.customerTime)
+        tt[c[l[i].id].orig, c[l[i].id].dest]-
+        tt[c[l[i].id].dest, c[l[i+1].id].orig] - 2*pb.customerTime)
     end
+    l
+end
+function updateTimeWindows!(s::OfflineSolution, k::Int)
+    updateTimeWindows!(s.pb,s.custs[k], k)
     s
 end
-
 """
     `updateTimeWindow!(OfflineSolution)`
     update all time windows
 """
-function updateTimeWindows!(s::OfflineSolution)
-    for k in eachindex(s.pb.taxis)
-        updateTimeWindows!(s,k)
+function updateTimeWindows!(pb::TaxiProblem, l::Vector{Vector{CustomerTimeWindow}})
+    for k in eachindex(pb.taxis)
+        updateTimeWindows!(pb,l[k],k)
     end
+    l
+end
+function updateTimeWindows!(s::OfflineSolution)
+    updateTimeWindows!(s.pb, s.custs)
     s
 end
 
 """
     `getRejected`, compute rejected customers of offline solution
 """
-function getRejected(s::OfflineSolution)
-    rejected = IntSet(1:length(s.pb.custs))
-    for l in s.custs, c in l
+function getRejected(pb::TaxiProblem, custs::Vector{Vector{CustomerTimeWindow}})
+    rejected = IntSet(1:length(pb.custs))
+    for l in custs, c in l
         delete!(rejected,c.id)
     end
     return rejected
 end
+getRejected(s::OfflineSolution) = getRejected(s.pb, s.custs)
+
 """
     `OfflineSolution(TaxiSolution)` transform a feasible solution into an Offline solution
     (compute max time windows)
