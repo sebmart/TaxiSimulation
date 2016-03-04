@@ -29,8 +29,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #Compute the list of the lists of customers that can be taken
     #before each customer
-    pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersCompatibility(pb::TaxiProblem)
-
+    pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2 = customersLinks(pb::TaxiProblem)
     #Solver : Gurobi (modify parameters)
     m = Model(solver= GurobiSolver(MIPFocus=1, Method=1; solverArgs...))
 
@@ -39,9 +38,9 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     # =====================================================
 
     #Taxi k takes customer c, right after customer c0
-    @defVar(m, x[p=eachindex(pairs)], Bin)
+    @defVar(m, x[k=eachindex(pairs)], Bin)
     #Taxi k takes customer c, as a first customer
-    @defVar(m, y[s=eachindex(starts)], Bin)
+    @defVar(m, y[k=eachindex(starts)], Bin)
     #Lower bound of pick-up time window
     @defVar(m, i[c=eachindex(cID)] >= cust[cID[c]].tmin)
     #Upper bound of pick-up time window
@@ -53,24 +52,24 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     if !isnull(init)
         init2 = get(init)
-        for p=eachindex(pairs)
-            setValue(x[p],0)
+        for k=eachindex(pairs)
+            setValue(x[k],0)
         end
-        for s=eachindex(starts)
-            setValue(y[s],0)
+        for k=eachindex(starts)
+            setValue(y[k],0)
         end
-        for (c,i) in enumerate(cId)
-            setValue(i[c], cust[i].tmin)
-            setValue(s[c], cust[i].tmax)
+        for (c,id) in enumerate(cID)
+            setValue(i[c], cust[id].tmin)
+            setValue(s[c], cust[id].tmax)
         end
         for (k,l) in enumerate(init2.custs)
             if length(l) > 0
-                cr = cRev[l[1].id]]
+                cr = cRev[l[1].id]
                 setValue(y[sRev[k,cr]], 1)
                 setValue(i[cr],l[1].tInf)
                 setValue(s[cr],l[1].tSup)
                 for j= 2:length(l)
-                    cr = cRev[l[j].id]]
+                    cr = cRev[l[j].id]
                     setValue(x[pRev[cRev[l[j-1].id],cr]], 1)
                     setValue(i[cr],l[j].tInf)
                     setValue(s[cr],l[j].tSup)
@@ -109,22 +108,23 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     @setObjective(m,Min, customerCost + firstCustomerCost +
     busyTime + firstBusyTime + pb.simTime*length(pb.taxis)*pb.waitingCost )
 
+
     # =====================================================
     # Constraints
     # =====================================================
 
     #Each customer can only be taken at most once and can only have one other customer before
-    @addConstraint(m, c1[c=eachIndex(cID)],
+    @addConstraint(m, c1[c=eachindex(cID)],
     sum{x[k], k= pRev2[c]} +
     sum{y[k], k= sRev2[c]} <= 1)
 
     #Each customer can only have one next customer
-    @addConstraint(m, c2[c=eachIndex(cID)],
+    @addConstraint(m, c2[c=eachindex(cID)],
     sum{x[k], k = pRev1[c]} <= 1)
 
     #Only one first customer per taxi
-    @addConstraint(m, c3[t=eachIndex(pb.taxis)],
-    sum{y[k], k = sRev[1]} <= 1)
+    @addConstraint(m, c3[t=eachindex(pb.taxis)],
+    sum{y[k], k = sRev1[t]} <= 1)
 
     #c0 has been taken before c1
     @addConstraint(m, c4[pi in eachindex(pairs)],
@@ -135,7 +135,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     M = 2 * pb.simTime + 2 * longestPathTime(pb.times)
 
     #inf <= sup
-    @addConstraint(m, c5[c=eachIndex(cID)],
+    @addConstraint(m, c5[c=eachindex(cID)],
     i[c] <= s[c])
 
     #Sup bounds rules
@@ -152,7 +152,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
 
     #First move constraint
     @addConstraint(m, c8[k in eachindex(starts)],
-    i[c] - tt[taxi[starts[k][1]].initPos, cust[starts[k][2]].orig] -
+    i[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[starts[k][2]].orig] -
     taxi[starts[k][1]].initTime >= M*(y[k] - 1))
 
     #to get information
@@ -177,17 +177,15 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
     ti = getValue(i)
     ts = getValue(s)
 
-    chain = [0 for i in 1:nCusts]
-    first = [0 for i in 1:nTaxis]
-    custs = [CustomerTimeWindow[] for k in 1:nTaxis]
+    custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
 
     if !isnull(init) #trick to extract only future rejected
         init2 = get(init)
         trueRejected = getRejected(init2)
         toKeep = setdiff(trueRejected, init2.rejected)
-        rejected = setdiff(IntSet(1:nCusts), toKeep)
+        rejected = setdiff(IntSet(eachindex(cust)), toKeep)
     else
-        rejected = IntSet(1:nCusts)
+        rejected = IntSet(eachindex(cust))
     end
     # reconstruct solution
     for k in eachindex(starts)
@@ -196,7 +194,7 @@ function mipOpt(pb::TaxiProblem, init::Nullable{OfflineSolution} = Nullable{Offl
             delete!(rejected, cID[c])
             push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
 
-            while k2 = findfirst(x->x>0.9, tx[pRev1[c]])
+            while (k2 = findfirst(x->x>0.9, [tx[p] for p in pRev1[c]])) != 0
                 c  = pairs[pRev1[c][k2]][2]
                 delete!(rejected, cID[c])
                 push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
@@ -221,22 +219,21 @@ end
     - returns: array of previous custs and  next custs for each customer
 """
 function customersLinks(pb::TaxiProblem)
-    cust = pb.custs; taxis = pb.taxis
     tt = getPathTimes(pb.times)
     # all customers are considered
-    cID = collect(eachindex(cust))
-    cRev = Dict([(i,i) for i in eachindex(cust)])
+    cID = collect(eachindex(pb.custs))
+    cRev = Dict([(i,i) for i in eachindex(pb.custs)])
     starts = Tuple{Int,Int}[]
     sRev   = Dict{Tuple{Int,Int},Int}()
-    sRev1  = Vector{Int}[Int[] for i=eachindex(taxis)]
-    sRev2  = Vector{Int}[Int[] for i=eachindex(cust)]
+    sRev1  = Vector{Int}[Int[] for i=eachindex(pb.taxis)]
+    sRev2  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
     pairs  = Tuple{Int,Int}[]
     pRev   = Dict{Tuple{Int,Int},Int}()
-    pRev1  = Vector{Int}[Int[] for i=eachindex(cust)]
-    pRev2  = Vector{Int}[Int[] for i=eachindex(cust)]
+    pRev1  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
+    pRev2  = Vector{Int}[Int[] for i=eachindex(pb.custs)]
 
     # first customers
-    for t in taxis, c in custs
+    for t in pb.taxis, c in pb.custs
         if t.initTime + tt[t.initPos, c.orig] <= c.tmax
             push!(starts, (t.id, c.id))
             sRev[t.id,c.id] = length(starts)
@@ -245,13 +242,13 @@ function customersLinks(pb::TaxiProblem)
         end
     end
     # customer pairs
-    for c1 in custs, c2 in custs
+    for c1 in pb.custs, c2 in pb.custs
         if c1.id != c2.id &&
         c1.tmin + tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime <= c2.tmax
             push!(pairs, (c1.id, c2.id))
             pRev[c1.id,c2.id] = length(pairs)
-            push!(sRev1[c1.id], length(pairs))
-            push!(sRev2[c2.id], length(pairs))
+            push!(pRev1[c1.id], length(pairs))
+            push!(pRev2[c2.id], length(pairs))
         end
     end
     return pairs, starts, cID, cRev, pRev, pRev1, pRev2, sRev, sRev1, sRev2
