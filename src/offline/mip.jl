@@ -54,7 +54,7 @@ function mipSolve(pb::TaxiProblem, warmstart::Nullable{OfflineSolution}, s::MIPS
 end
 mipSolve(pb::TaxiProblem, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
     mipSolve(pb, Nullable{OfflineSolution}(), set, verbose, benchmark; solverArgs...)
-mipSolve(pb::TaxiProblem, s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=false, benchmark::Bool=false, solverArgs...) =
+mipSolve(pb::TaxiProblem, s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
     mipSolve(pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
 mipSolve(s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
     mipSolve(s.pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
