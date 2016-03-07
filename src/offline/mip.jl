@@ -131,11 +131,17 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
         for (k,l) in enumerate(init2.custs)
             if length(l) > 0
                 cr = cRev[l[1].id]
+                if !haskey(sRev,(k,cr))
+                    break
+                end
                 setValue(y[sRev[k,cr]], 1)
                 setValue(i[cr],l[1].tInf)
                 setValue(s[cr],l[1].tSup)
                 for j= 2:length(l)
                     cr = cRev[l[j].id]
+                    if !haskey(pRev,(cRev[l[j-1].id],cr))
+                        break
+                    end
                     setValue(x[pRev[cRev[l[j-1].id],cr]], 1)
                     setValue(i[cr],l[j].tInf)
                     setValue(s[cr],l[j].tSup)
