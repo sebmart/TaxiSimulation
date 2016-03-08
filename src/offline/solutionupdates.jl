@@ -341,27 +341,31 @@ function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
     pb = sol.pb
     tt = getPathTimes(pb.times)
     custs = pb.custs
+    tw = sol.custs[k]
     nC = custs[newC.id]
     t = pb.taxis[k]
-    if t.initTime + tt[t.initPos, nC.orig] > newC.tSup
-        return (Inf, -1)
+
+
+    # rough approximation
+    i = length(tw)
+    while i >= 1 && tw[i].tInf > newC.tSup
+        i -= 1
     end
-    i = 0
-    for c in sol.custs[k]
-        c0 = custs[c.id]
-        if c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest] + tt[c0.dest, nC.orig] > newC.tSup
-            break
-        else
-            i += 1
-        end
+    # finer loop
+    while i >= 1 && tw[i].tInf + 2*pb.customerTime +
+        tt[custs[tw[i].id].orig, custs[tw[i].id].dest] + tt[custs[tw[i].id].dest, nC.orig] > newC.tSup
+        i -= 1
     end
+
     if i == 0
-        return (max(t.initTime + tt[t.initPos, nC.orig], nC.tmin) - t.initTime, 0)
+        if t.initTime + tt[t.initPos, nC.orig] > newC.tSup
+            return (Inf, -1)
+        else
+            return max(tt[t.initPos, nC.orig], nC.tmin - t.initTime), 0
+        end
     else
-        c = sol.custs[k][i]
-        c0 = custs[c.id]
-        return (max(c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest] + tt[c0.dest, nC.orig], nC.tmin) -
-                (c.tInf + 2*pb.customerTime + tt[c0.orig, c0.dest]),i)
+        return max(tt[custs[tw[i].id].dest, nC.orig],
+                   nC.tmin - custs[tw[i].id].tmax - 2*pb.customerTime - tt[custs[tw[i].id].orig, custs[tw[i].id].dest]), i
     end
 end #inbounds
 end
