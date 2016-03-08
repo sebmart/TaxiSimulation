@@ -41,6 +41,41 @@ function Base.show(io::IO, t::Taxi)
 end
 
 """
+    `Metrics`, store performance measures for taxi-routing solutions
+    `Inf` if not computed
+"""
+type Metrics
+    # Revenues
+    "Solution revenues (customer fares)"
+    revenues::Float64
+    "Solution costs (driving/waiting costs)"
+    costs::Float64
+    "Profit (revenues-costs)"
+    profit::Float64
+
+    # Efficiency
+    "Total distance driven (meters)"
+    driveDistance::Float64
+    "Total time driven"
+    driveTime::Float64
+    "Total time driven empty"
+    emptyDriveTime::Float64
+    "Percentage of time empty when driving = emptyDrivingTime/(drivingTime+emptyDrivingTime)"
+    emptyDriveRatio::Float64
+    "Percentage of time spent driving"
+    driveRatio::Float64
+    "Percentage of picked-up customers"
+    demandRatio::Float64
+
+    # Fairness
+    "Mean of taxi revenue (=revenues/nTaxis)"
+    taxiProfitMean::Float64
+    "Taxi revenue standard deviation"
+    taxiProfitStd::Float64
+end
+Metrics() = Metrics(fill(Inf, length(fieldnames(Metrics)))...)
+
+"""
     `TaxiProblem`: All data needed for simulation
 """
 type TaxiProblem
@@ -135,15 +170,4 @@ function Base.show(io::IO, sol::TaxiSolution)
     println(io, "TaxiSolution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.metrics.profit)
     println(io, "$(length(sol.rejected)) customers not served. ")
-end
-
-
-"""
-    `testSolution`, Tests if a TaxiSolution is feasible
-    - The paths must be feasible paths (time to cross roads, no jumping..)
-    - The customers must correspond to the path, and be driven directly as soon
-     as picked-up, using the ehortest path available
-"""
-function testSolution(sol::TaxiSolution)
-    testSolution(OfflineSolution(sol))
 end

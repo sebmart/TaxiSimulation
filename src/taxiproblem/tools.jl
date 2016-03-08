@@ -2,6 +2,15 @@
 ## taxiproblem/tools.jl
 ## various tools (not exported)
 ###################################################
+"""
+    `testSolution`, Tests if a TaxiSolution is feasible
+    - The paths must be feasible paths (time to cross roads, no jumping..)
+    - The customers must correspond to the path, and be driven directly as soon
+     as picked-up, using the ehortest path available
+"""
+function testSolution(sol::TaxiSolution)
+    testSolution(OfflineSolution(sol))
+end
 
 """
     `minutesSeconds`, returns current minute and second

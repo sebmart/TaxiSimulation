@@ -11,9 +11,9 @@ import MathProgBase
 import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualScale, visualize
 
 # taxiproblem
-export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution
+export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
-export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, Metrics
+export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, Optimal, OnlineMIP, KLinks, mipSolve, orderedInsertions
 export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
@@ -34,6 +34,7 @@ include("taxiproblem/print.jl")
 include("taxiproblem/randomproblem.jl")
 include("taxiproblem/tools.jl")
 include("taxiproblem/metrics.jl")
+
 #Offline
 include("offline/offline.jl")
 include("offline/tools.jl")
