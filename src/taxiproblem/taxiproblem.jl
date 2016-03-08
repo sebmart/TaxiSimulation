@@ -41,41 +41,6 @@ function Base.show(io::IO, t::Taxi)
 end
 
 """
-    `Metrics`, store performance measures for taxi-routing solutions
-    `Inf` if not computed
-"""
-type Metrics
-    # Revenues
-    "Solution revenues (customer fares)"
-    revenues::Float64
-    "Solution costs (driving/waiting costs)"
-    costs::Float64
-    "Profit (revenues-costs)"
-    profit::Float64
-
-    # Efficiency
-    "Total distance driven (meters)"
-    driveDistance::Float64
-    "Total time driven"
-    driveTime::Float64
-    "Total time driven empty"
-    emptyDriveTime::Float64
-    "Percentage of time empty when driving = emptyDrivingTime/(drivingTime+emptyDrivingTime)"
-    emptyDriveRatio::Float64
-    "Percentage of time spent driving"
-    driveRatio::Float64
-    "Percentage of picked-up customers"
-    demandRatio::Float64
-
-    # Fairness
-    "Mean of taxi revenue (=revenues/nTaxis)"
-    taxiProfitMean::Float64
-    "Taxi revenue standard deviation"
-    taxiProfitStd::Float64
-end
-Metrics() = Metrics(fill(Inf, length(fieldnames(Metrics)))...)
-
-"""
     `TaxiProblem`: All data needed for simulation
 """
 type TaxiProblem
@@ -159,15 +124,16 @@ type TaxiSolution
     "rejected customers"
     rejected::IntSet
     "solution's profit"
-    metrics::Metrics
+    profit::Float64
 end
 
 TaxiSolution(pb::TaxiProblem, actions::Vector{TaxiActions}) =
-TaxiSolution(pb, actions, rejectedCustomers(pb,actions), computeMetrics(pb, actions))
+TaxiSolution(pb, actions, rejectedCustomers(pb,actions), solutionProfit(pb, actions))
 
 function Base.show(io::IO, sol::TaxiSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
     println(io, "TaxiSolution, problem with $nCusts customers and $nTaxis taxis")
-    @printf(io, "Profit : %.2f dollars\n", sol.metrics.profit)
+    @printf(io, "Profit : %.2f dollars\n", sol.profit)
     println(io, "$(length(sol.rejected)) customers not served. ")
+    println(io, Metrics(sol))
 end

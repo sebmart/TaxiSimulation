@@ -123,37 +123,6 @@ function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignm
     return TaxiActions(id_taxi,path,times,custs)
 end
 
-
-"""
-    `taxiProfit`, compute taxi profit from list of cust. assignment
-"""
-function taxiProfit(pb::TaxiProblem, custs::Vector{CustomerTimeWindow}, k::Int)
-    tt = getPathTimes(pb.times)
-    tc = getPathTimes(pb.costs)
-    pos = pb.taxis[k].initPos
-    drivingTime = 0
-    profit = 0.
-    for c in custs
-        c1 = pb.custs[c.id]
-        profit += c1.fare - tc[pos,c1.orig] - tc[c1.orig,c1.dest]
-        drivingTime += tt[pos,c1.orig] + tt[c1.orig,c1.dest]
-        pos = c1.dest
-    end
-    return profit - (pb.simTime - drivingTime)*pb.waitingCost
-end
-
-"""
-    `solutionProfit`, compute the cost of an Offline Solution just using Customers
-"""
-function solutionProfit(pb::TaxiProblem, t::Vector{Vector{CustomerTimeWindow}})
-    profit = 0.0
-
-    for (k,custs) in enumerate(t)
-        profit += taxiProfit(pb,custs,k)
-    end
-    return profit
-end
-
 """
     `testSolution(OfflineSolution)`, test if offline solution is feasible
 """
@@ -188,7 +157,10 @@ function testSolution(sol::OfflineSolution)
     if sol.rejected != rejected
         error("Rejected customers do not match")
     end
-    @test sol.profit - EPS <= solutionProfit(sol.pb,sol.custs) <= sol.profit + EPS
+
+    for f in fieldnames(Metrics)
+        @test sol.profit - EPS <= solutionProfit(sol.pb,sol.custs) <= sol.profit + EPS
+    end
     println("Solution is feasible!")
 end
 

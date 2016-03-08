@@ -26,7 +26,7 @@ type OfflineSolution
     custs::Vector{Vector{CustomerTimeWindow}}
     "rejected customers"
     rejected::IntSet
-    "solution's metrics"
+    "solution's profit"
     profit::Float64
 end
 
@@ -35,6 +35,7 @@ function Base.show(io::IO, sol::OfflineSolution)
     println(io, "Offline Solution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
     println(io, "$(length(sol.rejected)) customers rejected. ")
+    println(io, Metrics(sol))
 end
 
 "by default, all taxis wait"
@@ -42,7 +43,9 @@ OfflineSolution(pb::TaxiProblem) =
     OfflineSolution(pb,
                     [CustomerAssignment[] for k in 1:length(pb.taxis)],
                     IntSet(eachindex(pb.custs)),
-                    -pb.simTime * length(pb.taxis) * pb.waitingCost)
+                    -length(pb.taxis)*pb.waitingCost*pb.simTime)
+OfflineSolution(pb::TaxiProblem, custs::Vector{Vector{CustomerTimeWindow}})=
+OfflineSolution(pb, custs, getRejected(pb, custs), computeMetrics(pb, custs))
 
 """
     `BenchmarkPoint`, Benchmark points for offline solvers
@@ -56,4 +59,4 @@ immutable BenchmarkPoint
     bound::Float64
 end
 
-copySolution(sol::OfflineSolution) = OfflineSolution( sol.pb, deepcopy(sol.custs), copy(sol.rejected), sol.profit)
+copySolution(sol::OfflineSolution) = OfflineSolution( sol.pb, deepcopy(sol.custs), copy(sol.rejected), copy(sol.metrics))
