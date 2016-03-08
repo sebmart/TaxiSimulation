@@ -30,7 +30,7 @@ function printSolution(s::TaxiSolution, io::IO = STDOUT; verbose=1)
   end
   println(io, "=== PROFIT")
   println(io, "==========================")
-  @printf(io, "%.2f dollars\n",s.profit)
+  @printf(io, "%.2f dollars\n",s.metrics.profit)
 
 end
 """

@@ -26,7 +26,7 @@ type OfflineSolution
     custs::Vector{Vector{CustomerTimeWindow}}
     "rejected customers"
     rejected::IntSet
-    "solution's profit"
+    "solution's metrics"
     profit::Float64
 end
 

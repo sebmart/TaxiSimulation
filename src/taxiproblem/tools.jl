@@ -29,35 +29,6 @@ function rejectedCustomers(pb::TaxiProblem, actions::Vector{TaxiActions})
 end
 
 """
-    `taxiProfit`, compute taxi profit from list of cust. assignment
-"""
-function taxiProfit(pb::TaxiProblem, a::TaxiActions)
-    tt = getPathTimes(pb.times)
-    tc = getPathTimes(pb.costs)
-    drivingTime = 0.
-    profit = 0.
-    for i in 1:length(a.path)-1
-        profit -= tc[a.path[i], a.path[i+1]]
-        drivingTime += tt[a.path[i], a.path[i+1]]
-    end
-    for c in a.custs
-        profit += pb.custs[c.id].fare
-    end
-    return profit - (pb.simTime - drivingTime)*pb.waitingCost
-end
-
-"""
-    `solutionProfit`, compute the cost of an Offline Solution just using Customers
-"""
-function solutionProfit(pb::TaxiProblem, sol::Vector{TaxiActions})
-    profit = 0.
-    for actions in sol
-        profit += taxiProfit(pb, actions)
-    end
-    return profit
-end
-
-"""
     `updateTcall`, change the request times (!not a deep copy!)
     - either with fixed offset time or with uniform random
 """

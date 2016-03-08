@@ -124,16 +124,16 @@ type TaxiSolution
     "rejected customers"
     rejected::IntSet
     "solution's profit"
-    profit::Float64
+    metrics::Metrics
 end
 
 TaxiSolution(pb::TaxiProblem, actions::Vector{TaxiActions}) =
-TaxiSolution(pb, actions, rejectedCustomers(pb,actions), solutionProfit(pb, actions))
+TaxiSolution(pb, actions, rejectedCustomers(pb,actions), computeMetrics(pb, actions))
 
 function Base.show(io::IO, sol::TaxiSolution)
     nCusts = length(sol.pb.custs); nTaxis = length(sol.pb.taxis)
     println(io, "TaxiSolution, problem with $nCusts customers and $nTaxis taxis")
-    @printf(io, "Profit : %.2f dollars\n", sol.profit)
+    @printf(io, "Profit : %.2f dollars\n", sol.metrics.profit)
     println(io, "$(length(sol.rejected)) customers not served. ")
 end
 
