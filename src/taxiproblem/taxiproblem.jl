@@ -135,5 +135,6 @@ function Base.show(io::IO, sol::TaxiSolution)
     println(io, "TaxiSolution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
     println(io, "$(length(sol.rejected)) customers not served. ")
+    println(io, "==================================")
     println(io, Metrics(sol))
 end

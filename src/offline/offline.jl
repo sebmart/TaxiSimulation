@@ -35,6 +35,7 @@ function Base.show(io::IO, sol::OfflineSolution)
     println(io, "Offline Solution, problem with $nCusts customers and $nTaxis taxis")
     @printf(io, "Profit : %.2f dollars\n", sol.profit)
     println(io, "$(length(sol.rejected)) customers rejected. ")
+    println(io, "==========================================")
     println(io, Metrics(sol))
 end
 
@@ -59,4 +60,4 @@ immutable BenchmarkPoint
     bound::Float64
 end
 
-copySolution(sol::OfflineSolution) = OfflineSolution( sol.pb, deepcopy(sol.custs), copy(sol.rejected), copy(sol.metrics))
+copySolution(sol::OfflineSolution) = OfflineSolution( sol.pb, deepcopy(sol.custs), copy(sol.rejected), sol.profit)
