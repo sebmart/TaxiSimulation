@@ -17,7 +17,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, Optimal, OnlineMIP, KLinks, mipSolve, orderedInsertions
 export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
-export localDescent!
+export localDescent!, smartSearch!
 # online
 export OnlineAlgorithm, InsertOnly, SearchBudget, onlineSimulation
 # data

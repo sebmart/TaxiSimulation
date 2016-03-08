@@ -197,59 +197,6 @@ function forceInsert!(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTime
 end #inbounds
 end
 
-
-
-
-"""
-    `switchCustomers!`,   split a taxi timeline and tries to switch the last part with another taxi's
-    - updates solution, and returns instructions to revert
-"""
-function switchCustomers!(sol::OfflineSolution, k::Int, i::Int, bestK::Int = -1)
-    pb = sol.pb
-
-    #Step 1: find the best taxi (if not given)
-    # criterion: minimum "insertcost"
-    if bestK == -1
-        bestCost = Inf
-        bestPos  = -1
-
-        for k2 in eachindex(pb.taxis)
-            if k2==k
-                continue
-            end
-            cost, pos = switchCost(sol, k2, sol.custs[k][i])
-            if cost < bestCost
-                bestCost = cost
-                bestPos  = pos
-                bestK    = k2
-            end
-        end
-
-    else
-        bestCost, bestPos = switchCost(sol,bestK, sol.custs[k][i])
-    end
-    if bestCost == Inf
-        return EmptyUpdate
-    end
-
-    solUpdates = PartialSolution()
-    priorRejected = deepcopy(sol.rejected)
-
-    #Step 2: switch the two timelines at the given position
-    addPartialSolution!(solUpdates,switchTimelines!(sol,k,i-1,bestK,bestPos))
-
-    #Step3: tries to insert all customers
-    for c in eachindex(pb.custs)
-        if c in priorRejected
-            addPartialSolution!(solUpdates,insertCustomer!(sol, c, [k, bestK]))
-        elseif c in sol.rejected
-            addPartialSolution!(solUpdates,insertCustomer!(sol, c))
-        end
-    end
-    return solUpdates
-end
-
-
 """
     `switchTimelines!(s,k1,i1,k2,i2)`, Performs a timeline switch between k1 and k2,
      at positions i1 and i2
@@ -259,11 +206,13 @@ end
     - returns instructions to revert
 """
 function switchTimelines!(s::OfflineSolution, k1::Int, i1::Int, k2::Int, i2::Int)
+@inbounds begin
     pb = s.pb
     tt = getPathTimes(pb.times)
     c1 = s.custs[k1][(i1+1):end]
     c2 = s.custs[k2][(i2+1):end]
 
+    priorRejected = deepcopy(s.rejected)
     solUpdates = PartialSolution()
     addPartialSolution!(solUpdates,k1,s.custs[k1])
     addPartialSolution!(solUpdates,k2,s.custs[k2])
@@ -321,7 +270,17 @@ function switchTimelines!(s::OfflineSolution, k1::Int, i1::Int, k2::Int, i2::Int
     end
     append!(s.custs[k2],c1[firstCust:end])
     updateTimeWindows!(s,k2)
+
+    #Last step: tries to insert all customers
+    for c in eachindex(pb.custs)
+        if c in priorRejected
+            addPartialSolution!(solUpdates,insertCustomer!(s, c, [k1, k2]))
+        elseif c in s.rejected
+            addPartialSolution!(solUpdates,insertCustomer!(s, c))
+        end
+    end
     return solUpdates
+end #inbounds
 end
 
 
@@ -335,7 +294,7 @@ end
     - ==> total time from last action.
     - same with costs
 """
-function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
+function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow, countWait::Bool=false)
 @inbounds begin
 
     pb = sol.pb
@@ -365,7 +324,10 @@ function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow)
         end
     else
         return max(tt[custs[tw[i].id].dest, nC.orig],
-                   nC.tmin - custs[tw[i].id].tmax - 2*pb.customerTime - tt[custs[tw[i].id].orig, custs[tw[i].id].dest]), i
+                   nC.tmin - (countWait? tw[i].tInf : custs[tw[i].id].tmax)
+                           - 2*pb.customerTime
+                           - tt[custs[tw[i].id].orig, custs[tw[i].id].dest]),
+               i
     end
 end #inbounds
 end

@@ -9,13 +9,13 @@
      - parameter `random = true` to try any combination, = false to do the best one
 """
 function localDescent!(pb::TaxiProblem, sol::OfflineSolution;
-     verbose::Bool = true, random::Bool = false, benchmark::Bool = false, iterations::Int=typemax(Int),
+     verbose::Bool = true, maxSearch::Int = 1, iterations::Int=typemax(Int),
       maxTime::Float64=Inf)
-    if benchmark
-        return localDescentWithBench!(pb, sol, verbose, random, benchmark, iterations, maxTime)
-    else
-        return localDescentWithBench!(pb, sol, verbose, random, benchmark, iterations, maxTime)[1]
-    end
+
+    sol = localDescentWithStats!(pb, sol, verbose, maxSearch, benchmark, iterations, maxTime)[1]
+    updateTimeWindows!(sol)
+    sol.profit = solutionProfit(pb,sol.custs)
+    return sol
 end
 
 function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb); args...)
@@ -24,10 +24,10 @@ function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertion
     return sol
 end
 
-function localDescentWithBench!(pb::TaxiProblem, sol::OfflineSolution, verbose::Bool,
-            random::Bool, benchmark::Bool, iterations::Int, maxTime::Float64)
+function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::Bool,
+            maxSearch::Int, iterations::Int, maxTime::Float64)
     initT = time()
-    
+
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 5.
     end
@@ -38,33 +38,51 @@ function localDescentWithBench!(pb::TaxiProblem, sol::OfflineSolution, verbose::
         orderedInsertions!(sol)
         if noassignment(sol)
             verbose && println("Final: $(sol.profit) dollars")
-            return sol, BenchmarkPoint[]
+            return sol
         end
         start = ordered
     end
 
-    verbose && println("Start, $(sol.profit) dollars")
     success = 0
 
-    benchData = BenchmarkPoint[]
-    benchmark && (push!(benchData, BenchmarkPoint(0.,sol.profit,Inf)))
     for trys in 1:iterations
         if time()-initT > maxTime
             break
         end
-        k = rand(1:nTaxis)
-        while isempty(sol.custs[k])
-            k = rand(1:nTaxis)
+        ##############
+        # Selecting first taxi and customer to split on (purely random!)
+        k1 = rand(1:nTaxis)
+        while isempty(sol.custs[k1])
+            k1 = rand(1:nTaxis)
         end
-        i = rand(1:length(sol.custs[k]))
+        i1 = rand(eachindex(sol.custs[k1]))
 
-        if random
-            k2 = rand(1:(nTaxis-1))
-            k2 >= k && (k2 +=1)
-            revertSol = switchCustomers!(sol, k, i,k2)
-        else
-            revertSol = switchCustomers!(sol, k, i)
+        #################
+        # Selecting second taxi and customer: randomly in the maxSearch best possibilities...
+        searchBest = Tuple{Float64, Int}[(Inf,-1) for i in 1:maxSearch]
+        countWait = rand(Bool)
+        costOrderF(x::Tuple{Float64, Int}) = x[1]
+        costOrder = Base.Order.ReverseOrdering(Base.Order.By(costOrderF))
+        switch = sol.custs[k1][i1]
+        for k2 in eachindex(pb.taxis)
+            if k2 != k1
+                cost, _ = switchCost(sol, k2, switch, countWait)
+                if cost < searchBest[1][1]
+                    Collections.heappop!(searchBest, costOrder)
+                    Collections.heappush!(searchBest, (cost, k2), costOrder)
+                end
+            end
         end
+        cost, k2 = rand(searchBest)
+        if cost == Inf
+            continue
+        end
+        _, i2 = switchCost(sol, k2, switch, countWait) # need to recompute i2
+
+        #################
+        # Finally switching!
+        revertSol = switchTimelines!(sol, k1, i1 - 1, k2, i2) # -1 because we need to give at least one cust 1=>2
+
         updateProfit = profitDiff(sol,revertSol)
         if updateProfit > 0.
             sol.profit += updateProfit
@@ -73,14 +91,44 @@ function localDescentWithBench!(pb::TaxiProblem, sol::OfflineSolution, verbose::
             min,sec = minutesSeconds(t)
             verbose && (@printf("\r====Try: %i, %.2f dollars (%dm%ds, %.2f tests/min, %.3f%% successful)   ",
             trys, sol.profit, min, sec, 60.*trys/t, success/(trys-1.)*100.))
-            benchmark && push!(benchData, BenchmarkPoint(t,sol.profit,Inf))
         else
             updateSolution!(sol,revertSol)
         end
     end
-    updateTimeWindows!(sol)
-    sol.profit = solutionProfit(pb,sol.custs)
-    verbose && println("\n====Final: $(sol.profit) dollars")
-    benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
-    return sol, benchData
+    return sol, success, trys
+end
+
+"""
+    `smartSearch!`, localSearch with maxSearch parameter automatically and smartly updated
+"""
+function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = true, maxTime::Float64=Inf)
+     initT = time()
+     updateFreq = 1. # Update frequency in seconds (increase progressively)
+     maxSearch = 1
+     noProgress = 0
+     prevRatio = 0.
+     goingUp = true
+     success, trys = 1., 1.
+     while time() - initT <= maxTime
+         min,sec = minutesSeconds(time() - initT)
+         @printf("\rTotal time = %dm%02ds, %.3f%% successful, search dept: %d, update time: %.2fs    ",
+         min,sec, 100*success/trys, maxSearch, updateFreq)
+         sol, success, trys = localDescentWithStats!(pb, sol, false, maxSearch, typemax(Int), updateFreq)
+         success <= 5  && (updateFreq *= 1.5)# randomly set
+         noProgress = (success==0) ? noProgress + 1 : 0
+         if noProgress == 3 #stopping criterion
+             verbose && println("No more improvements: stop                         ")
+             break
+         end
+         newRatio = success / trys
+         if newRatio < prevRatio
+             goingUp = !goingUp
+         end
+         maxSearch += goingUp ? 1 : - 1
+         maxSearch = max(1, maxSearch)
+         newRatio = prevRatio
+     end
+     updateTimeWindows!(sol)
+     sol.profit = solutionProfit(pb,sol.custs)
+     return sol
 end
