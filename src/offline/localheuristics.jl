@@ -132,11 +132,12 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
              momentum += (newRatio < prevRatio) ? 1 : -1
              goingUp = newRatio < prevRatio
          else # =0
+             prevRatio = newRatio
              momentum += goingUp ? 1 : -1
          end
          maxSearch += momentum
          maxSearch = max(1, maxSearch)
-         prevRatio = newRatio
+
          totalTrys += trys
          totalSuccess += success
      end
