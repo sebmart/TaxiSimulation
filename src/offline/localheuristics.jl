@@ -114,8 +114,8 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
      momentum = 0
      while time() - initT <= maxTime
          min,sec = minutesSeconds(time() - initT)
-         @printf("\r\$%.2f, %dm%02ds, %d/%d, %.3f%% successful, search depth: %d, update: %.2fs",
-         sol.profit, min,sec, totalTrys, totalSuccess, 100*success/trys, maxSearch, updateFreq)
+         @printf("\r\$%.2f, %dm%02ds, %d/%d, %.3f%% successful, search depth: %d(%d), update: %.2fs",
+         sol.profit, min, sec, totalSuccess, totalTrys, 100*success/trys, maxSearch, momentum, updateFreq)
          sol, success, trys = localDescentWithStats!(pb, sol, false, maxSearch, typemax(Int), updateFreq)
          success <= 5  && (updateFreq *= 1.5)# randomly set
          noProgress = (success==0) ? noProgress + 1 : 0
