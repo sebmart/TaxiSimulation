@@ -1,8 +1,7 @@
 ###################################################
-## offline/localdescent.jl
+## offline/localheuristics.jl
 ## introduce local changes in solution to find a better one
 ###################################################
-
 """
     `localDescent`: switches two taxis timelines to locally optimize a solution
      (fast on large instances)

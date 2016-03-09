@@ -43,7 +43,7 @@ include("offline/mipsettings.jl")
 include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
-include("offline/localdescent.jl")
+include("offline/localheuristics.jl")
 include("offline/metrics.jl")
 #Online
 include("online/online.jl")
