@@ -44,7 +44,7 @@ function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::
     end
 
     success = 0
-
+    totalTrys = 0
     for trys in 1:iterations
         if time()-initT > maxTime
             break
@@ -94,8 +94,9 @@ function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::
         else
             updateSolution!(sol,revertSol)
         end
+        totalTrys = trys
     end
-    return sol, success, trys
+    return sol, success, totalTrys
 end
 
 """
@@ -108,11 +109,12 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
      noProgress = 0
      prevRatio = 0.
      goingUp = true
-     success, trys = 1., 1.
+     success, trys = 1, 1
+     totalTrys = 0
      while time() - initT <= maxTime
          min,sec = minutesSeconds(time() - initT)
-         @printf("\rTotal time = %dm%02ds, %.3f%% successful, search dept: %d, update time: %.2fs    ",
-         min,sec, 100*success/trys, maxSearch, updateFreq)
+         @printf("\r\$%.2f, %dm%02ds, %d trys, %.3f%% successful, search depth: %d, update: %.2fs    ",
+         sol.profit, min,sec, totalTrys, 100*success/trys, maxSearch, updateFreq)
          sol, success, trys = localDescentWithStats!(pb, sol, false, maxSearch, typemax(Int), updateFreq)
          success <= 5  && (updateFreq *= 1.5)# randomly set
          noProgress = (success==0) ? noProgress + 1 : 0
@@ -126,7 +128,8 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
          end
          maxSearch += goingUp ? 1 : - 1
          maxSearch = max(1, maxSearch)
-         newRatio = prevRatio
+         prevRatio = newRatio
+         totalTrys += trys
      end
      updateTimeWindows!(sol)
      sol.profit = solutionProfit(pb,sol.custs)
