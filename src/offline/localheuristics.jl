@@ -127,11 +127,11 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
 
          if momentum >= 1
              momentum += (newRatio < prevRatio) ? -1 : 1
-             prevRatio = newRatio/50. + prevRatio*1.8
+             prevRatio = newRatio/50. + prevRatio*1.08
              goingUp = newRatio >= prevRatio
          elseif momentum <= -1
              momentum += (newRatio < prevRatio) ? 1 : -1
-             prevRatio = newRatio/50. + prevRatio*1.8
+             prevRatio = newRatio/50. + prevRatio*1.08
              goingUp = newRatio < prevRatio
          else # =0
              prevRatio = newRatio
