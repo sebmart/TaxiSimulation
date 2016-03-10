@@ -101,10 +101,9 @@ end
 """
     `smartSearch!`, localSearch with maxSearch parameter automatically and smartly updated
 """
-function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = true, maxTime::Float64=Inf)
+function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = true,
+     maxTime::Float64=Inf, updateFreq::Float64 = 1., maxSearch=1)
      initT = time()
-     updateFreq = 1. # Update frequency in seconds (increase progressively)
-     maxSearch = 1
      noProgress = 0
      prevRatio = 0.
      goingUp = true
@@ -117,9 +116,12 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
          @printf("\r\$%.2f, %dm%02ds, %d/%d, %.3f%% successful, search depth: %d(%d), update: %.2fs  ",
          sol.profit, min, sec, totalSuccess, totalTrys, 100*success/trys, maxSearch, momentum, updateFreq)
          sol, success, trys = localDescentWithStats!(pb, sol, false, maxSearch, typemax(Int), updateFreq)
-         success <= 5  && (updateFreq *= 1.5)# randomly set
+         if success <= 5
+             updateFreq *= 1.5
+             momentum = 0 # to avoid getting trapped
+         end
          noProgress = (success==0) ? noProgress + 1 : 0
-         if noProgress == 3 #stopping criterion
+         if noProgress == 2 #stopping criterion
              verbose && println("No more improvements: stop                         ")
              break
          end
