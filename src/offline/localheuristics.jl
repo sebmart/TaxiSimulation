@@ -11,7 +11,7 @@ function localDescent!(pb::TaxiProblem, sol::OfflineSolution;
      verbose::Bool = true, maxSearch::Int = 1, iterations::Int=typemax(Int),
       maxTime::Float64=Inf)
 
-    sol = localDescentWithStats!(pb, sol, verbose, maxSearch, benchmark, iterations, maxTime)[1]
+    sol = localDescentWithStats!(pb, sol, verbose, maxSearch, iterations, maxTime)[1]
     updateTimeWindows!(sol)
     sol.profit = solutionProfit(pb,sol.custs)
     return sol
