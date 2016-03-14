@@ -47,17 +47,17 @@ abstract MIPSettings
 """
     `mipSolve`: offline solver using mip. Can be overwritten!
 """
-function mipSolve(pb::TaxiProblem, warmstart::Nullable{OfflineSolution}, s::MIPSettings, verbose::Bool, benchmark::Bool; solverArgs...)
+function mipSolve(pb::TaxiProblem, warmstart::Nullable{OfflineSolution}, s::MIPSettings, verbose::Bool; solverArgs...)
     mipInit!(s, pb, warmstart)
-    custs, rev = mipOpt(s.pb, s.links, s.warmstart, verbose=verbose, benchmark=benchmark; solverArgs...)
+    custs, rev = mipOpt(s.pb, s.links, s.warmstart, verbose=verbose; solverArgs...)
     return mipEnd(s, custs, rev)
 end
-mipSolve(pb::TaxiProblem, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
-    mipSolve(pb, Nullable{OfflineSolution}(), set, verbose, benchmark; solverArgs...)
-mipSolve(pb::TaxiProblem, s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
-    mipSolve(pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
-mipSolve(s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, benchmark::Bool=false, solverArgs...) =
-    mipSolve(s.pb, Nullable{OfflineSolution}(s), set, verbose, benchmark; solverArgs...)
+mipSolve(pb::TaxiProblem, set::MIPSettings = Optimal(); verbose::Bool=true, solverArgs...) =
+    mipSolve(pb, Nullable{OfflineSolution}(), set, verbose; solverArgs...)
+mipSolve(pb::TaxiProblem, s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, solverArgs...) =
+    mipSolve(pb, Nullable{OfflineSolution}(s), set, verbose; solverArgs...)
+mipSolve(s::OfflineSolution, set::MIPSettings = Optimal(); verbose::Bool=true, solverArgs...) =
+    mipSolve(s.pb, Nullable{OfflineSolution}(s), set, verbose; solverArgs...)
 
 """
     `mipInit!`: initialize mip settings with problem (to be overloaded)
@@ -78,7 +78,7 @@ end
     `mipOpt`: MIP formulation of offline taxi assignment
     can be warmstarted with a solution
 """
-function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolution}; verbose::Bool=false, benchmark::Bool=false, solverArgs...)
+function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolution}; verbose::Bool=false, solverArgs...)
     taxi = pb.taxis
     cust = pb.custs
     if length(cust) == 0.
@@ -197,31 +197,20 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     sum{x[k], k = pRev2[pairs[pi][1]]} +
     sum{y[k], k = sRev2[pairs[pi][1]]} >= x[pi])
 
-    # M = 100*pb.simTime #For bigM method
-    M = 2 * pb.simTime + 2 * longestPathTime(pb.times)
+
 
     #Time limits rules
     @addConstraint(m, c6[k in eachindex(pairs)],
-    t[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
-    tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] +
-    2*pb.customerTime - t[pairs[k][2]] <= M*(1 - x[k]))
+    t[pairs[k][2]] - t[pairs[k][1]] >= (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][2]]].tmax) +
+    (tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
+    tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] + 2*pb.customerTime -
+    (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][2]]].tmax))*x[k])
 
     #First move constraint
     @addConstraint(m, c8[k in eachindex(starts)],
-    t[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
-    taxi[starts[k][1]].initTime >= M*(y[k] - 1))
-
-    #to get information
-    # tstart = time()
-    # benchData = BenchmarkPoint[]
-    # function infocallback(cb)
-    #     cost = MathProgBase.cbgetobj(cb)
-    #     bestbound = MathProgBase.cbgetbestbound(cb)
-    #     seconds = time()-tstart
-    #     push!(benchData, BenchmarkPoint(seconds,-cost,-bestbound))
-    # end
-    # benchmark && addInfoCallback(m,infocallback)
-
+    t[starts[k][2]] >= cust[cID[starts[k][2]]].tmin +
+    (taxi[starts[k][1]].initTime + tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
+    cust[cID[starts[k][2]]].tmin)* y[k]* 
 
     status = solve(m)
     if status == :Infeasible
@@ -247,12 +236,5 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
         end
     end
 
-    # if benchmark
-    #     o = -s.cost - benchData[end].revenue
-    #     for (i,p) in enumerate(benchData)
-    #         benchData[i] = BenchmarkPoint(p.time,p.revenue + o, p.bound + o)
-    #     end
-    # end
-    # benchmark && return (s,benchData)
     return updateTimeWindows!(pb, custs), - getObjectiveValue(m)  # returns assignments + profit
 end
