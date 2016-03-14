@@ -97,7 +97,7 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     verbose && println("MIP with $(length(pairs)) pairs and $(length(starts)) starts")
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(MIPFocus=1, OutputFlag=of; solverArgs...))
+    m = Model(solver= GurobiSolver(OutputFlag=of; solverArgs...))
 
     # =====================================================
     # Decision variables
