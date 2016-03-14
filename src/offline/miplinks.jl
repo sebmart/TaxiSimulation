@@ -1,5 +1,5 @@
 ###################################################
-## offline/mipsettings.jl
+## offline/miplinks.jl
 ## different pre and post computations on the mip
 ###################################################
 """
