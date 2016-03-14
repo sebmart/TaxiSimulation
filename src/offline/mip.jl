@@ -97,7 +97,7 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     verbose && println("MIP with $(length(pairs)) pairs and $(length(starts)) starts")
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(MIPFocus=1, OutputFlag=of, Method=1; solverArgs...))
+    m = Model(solver= GurobiSolver(MIPFocus=1, OutputFlag=of; solverArgs...))
 
     # =====================================================
     # Decision variables
@@ -201,16 +201,16 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
 
     #Time limits rules
     @addConstraint(m, c6[k in eachindex(pairs)],
-    t[pairs[k][2]] - t[pairs[k][1]] >= (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][2]]].tmax) +
+    t[pairs[k][2]] - t[pairs[k][1]] >= (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][1]]].tmax) +
     (tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
     tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] + 2*pb.customerTime -
-    (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][2]]].tmax))*x[k])
+    (cust[cID[pairs[k][2]]].tmin - cust[cID[pairs[k][1]]].tmax))*x[k])
 
     #First move constraint
     @addConstraint(m, c8[k in eachindex(starts)],
     t[starts[k][2]] >= cust[cID[starts[k][2]]].tmin +
     (taxi[starts[k][1]].initTime + tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
-    cust[cID[starts[k][2]]].tmin)* y[k]* 
+    cust[cID[starts[k][2]]].tmin)* y[k])
 
     status = solve(m)
     if status == :Infeasible
