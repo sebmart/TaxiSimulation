@@ -107,10 +107,9 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     @defVar(m, x[k=eachindex(pairs)], Bin)
     #Taxi k takes customer c, as a first customer
     @defVar(m, y[k=eachindex(starts)], Bin)
-    #Lower bound of pick-up time window
-    @defVar(m, i[c=eachindex(cID)] >= cust[cID[c]].tmin)
-    #Upper bound of pick-up time window
-    @defVar(m, s[c=eachindex(cID)] <= cust[cID[c]].tmax)
+    # Pick-up time
+    @defVar(m, cust[cID[c]].tmin <= t[c=eachindex(cID)] <= cust[cID[c]].tmax)
+
 
     # =====================================================
     # Initialisation
@@ -125,8 +124,7 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
             setValue(y[k],0)
         end
         for (c,id) in enumerate(cID)
-            setValue(i[c], cust[id].tmin)
-            setValue(s[c], cust[id].tmax)
+            setValue(t[c], cust[id].tmin)
         end
         for (k,l) in enumerate(init2.custs)
             if length(l) > 0
@@ -135,16 +133,14 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
                     break
                 end
                 setValue(y[sRev[k,cr]], 1)
-                setValue(i[cr],l[1].tInf)
-                setValue(s[cr],l[1].tSup)
+                setValue(t[cr],l[1].tInf)
                 for j= 2:length(l)
                     cr = cRev[l[j].id]
                     if !haskey(pRev,(cRev[l[j-1].id],cr))
                         break
                     end
                     setValue(x[pRev[cRev[l[j-1].id],cr]], 1)
-                    setValue(i[cr],l[j].tInf)
-                    setValue(s[cr],l[j].tSup)
+                    setValue(t[cr],l[j].tInf)
                 end
             end
         end
@@ -204,29 +200,19 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     # M = 100*pb.simTime #For bigM method
     M = 2 * pb.simTime + 2 * longestPathTime(pb.times)
 
-    #inf <= sup
-    @addConstraint(m, c5[c=eachindex(cID)],
-    i[c] <= s[c])
-
-    #Sup bounds rules
+    #Time limits rules
     @addConstraint(m, c6[k in eachindex(pairs)],
-    s[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
+    t[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
     tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] +
-    2*pb.customerTime - s[pairs[k][2]] <= M*(1 - x[k]))
-
-    #Inf bounds rules
-    @addConstraint(m, c7[k in eachindex(pairs)],
-    i[pairs[k][1]] + tt[cust[cID[pairs[k][1]]].orig, cust[cID[pairs[k][1]]].dest] +
-    tt[cust[cID[pairs[k][1]]].dest, cust[cID[pairs[k][2]]].orig] +
-    2*pb.customerTime - i[pairs[k][2]] <= M*(1 - x[k]))
+    2*pb.customerTime - t[pairs[k][2]] <= M*(1 - x[k]))
 
     #First move constraint
     @addConstraint(m, c8[k in eachindex(starts)],
-    i[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
+    t[starts[k][2]] - tt[taxi[starts[k][1]].initPos, cust[cID[starts[k][2]]].orig] -
     taxi[starts[k][1]].initTime >= M*(y[k] - 1))
 
     #to get information
-    tstart = time()
+    # tstart = time()
     # benchData = BenchmarkPoint[]
     # function infocallback(cb)
     #     cost = MathProgBase.cbgetobj(cb)
@@ -244,8 +230,7 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
 
     tx = getValue(x)
     ty = getValue(y)
-    ti = getValue(i)
-    ts = getValue(s)
+    ttime = getValue(t)
 
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
 
@@ -253,11 +238,11 @@ function mipOpt(pb::TaxiProblem, l::CustomerLinks, init::Nullable{OfflineSolutio
     for k in eachindex(starts)
         if ty[k] > 0.9
             t, c = starts[k]
-            push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
+            push!(custs[t], CustomerTimeWindow(cID[c], ttime[c], ttime[c]))
 
             while (k2 = findfirst(x->x>0.9, [tx[p] for p in pRev1[c]])) != 0
                 c  = pairs[pRev1[c][k2]][2]
-                push!(custs[t], CustomerTimeWindow(cID[c], ti[c], ts[c]))
+                push!(custs[t], CustomerTimeWindow(cID[c], ttime[c], ttime[c]))
             end
         end
     end
