@@ -3,15 +3,6 @@
 ## mixed integer optimisation, time-window based
 ###################################################
 
-"""
-    `CustomerLink`, contain all customer link informations necessary to build mip
-"""
-type CustomerLinks
-    "cust ID => previous customer (>0) or taxi (<0)"
-    prv::Dict{Int, Set{Int}}
-    "cust ID (>0) or taxi ID (<0) => next customer (>0)"
-    nxt::Dict{Int, Set{Int}}
-end
 
 """
     `mipSolve`: MIP formulation of offline taxi assignment
@@ -48,12 +39,12 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     # Decision variables
     # =====================================================
 
-    #Taxi k takes customer c, right after customer c0
-    @defVar(m, x[c1=keys(prev), c2 = nxt[c1]], Bin)
+    #Taxi k takes customer c2, right after customer c1
+    @defVar(m, x[c1=keys(prv), c2 = nxt[c1]], Bin)
     #Taxi k takes customer c, as a first customer
     @defVar(m, y[k=eachindex(taxi), c=nxt[-k]], Bin)
     # Pick-up time
-    @defVar(m, cust[c].tmin <= t[c=keys(prev)] <= cust[c].tmax)
+    @defVar(m, cust[c].tmin <= t[c=keys(prv)] <= cust[c].tmax)
 
 
     # =====================================================
@@ -95,7 +86,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     @defExpr(customerCost, sum{
     (tc[cust[c1].dest, cust[c2].orig] +
     tc[cust[c2].orig, cust[c2].dest] - cust[c2].fare) * x[c1, c2],
-    c1=keys(prev), c2 = nxt[c1]})
+    c1=keys(prv), c2 = nxt[c1]})
 
     #Price paid by "first customers"
     @defExpr(firstCustomerCost, sum{
@@ -107,7 +98,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     @defExpr(busyTime, sum{
     (tt[cust[c1].dest, cust[c2].orig] +
     tt[cust[c2].orig, cust[c2].dest] )*(-pb.waitingCost) * x[c1, c2],
-    c1=keys(prev), c2 = nxt[c1]})
+    c1=keys(prv), c2 = nxt[c1]})
 
     #Busy time during "first customer"
     @defExpr(firstBusyTime, sum{
@@ -116,7 +107,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     k=eachindex(taxi), c=nxt[-k]})
 
     @setObjective(m,Min, customerCost + firstCustomerCost +
-    busyTime + firstBusyTime + pb.simTime*length(pb.taxis)*pb.waitingCost )
+    busyTime + firstBusyTime + pb.simTime*length(taxi)*pb.waitingCost )
 
     # =====================================================
     # Constraints
@@ -135,15 +126,15 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     @addConstraint(m, cs3[k=eachindex(taxi)],
     sum{y[k, c], c = nxt[-k]} <= 1)
 
-    #c0 has been taken before c1
-    @addConstraint(m, cs4[c1=keys(prev), c2 = nxt[c1]],
-    sum{x[c0, c1], k = filter(x->x>0, prv[c1])} +
+    #c1 has been taken before c2
+    @addConstraint(m, cs4[c1=keys(prv), c2 = nxt[c1]],
+    sum{x[c0, c1], c0 = filter(x->x>0, prv[c1])} +
     sum{y[-k, c1], k = filter(x->x<0, prv[c1])} >= x[c1, c2])
 
 
 
     #Time limits rules
-    @addConstraint(m, cs5[c1=keys(prev), c2 = nxt[c1]],
+    @addConstraint(m, cs5[c1=keys(prv), c2 = nxt[c1]],
     t[c2] - t[c1] >= (cust[c2].tmin - cust[c1].tmax) +
     (tt[cust[c1].orig, cust[c1].dest] + tt[cust[c1].dest, cust[c2].orig] + 2*pb.customerTime -
     (cust[c2].tmin - cust[c1].tmax)) * x[c1, c2])
@@ -151,7 +142,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     #First move constraint
     @addConstraint(m, cs6[k=eachindex(taxi), c=nxt[-k]],
     t[c] >= cust[c].tmin +
-    (taxi[k].initTime + tt[taxi[c].initPos, cust[c].orig] - cust[c].tmin)* y[k, c])
+    (taxi[k].initTime + tt[taxi[k].initPos, cust[c].orig] - cust[c].tmin)* y[k, c])
 
     status = solve(m)
     if status == :Infeasible

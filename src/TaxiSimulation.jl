@@ -15,7 +15,7 @@ export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolutio
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
-export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, Optimal, OnlineMIP, KLinks, mipSolve, orderedInsertions
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, orderedInsertions
 export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
 export localDescent!, smartSearch!
 # online
@@ -38,8 +38,8 @@ include("taxiproblem/metrics.jl")
 #Offline
 include("offline/offline.jl")
 include("offline/tools.jl")
-include("offline/mip.jl")
 include("offline/miplinks.jl")
+include("offline/mip.jl")
 include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
