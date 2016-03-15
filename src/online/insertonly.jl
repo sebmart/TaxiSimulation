@@ -27,8 +27,9 @@ function onlineInitialize!(io::InsertOnly, pb::TaxiProblem)
 	newCustomers = pb.custs
 	io.pb.custs = Customer[]
 	io.sol = OfflineSolution(pb)
-
-	resize!(io.pb.custs, maximum([c.id for c in newCustomers]))
+	if !isempty(newCustomers)
+		resize!(io.pb.custs, maximum([c.id for c in newCustomers]))
+	end
 	for c in newCustomers
 		push!(io.sol.rejected, c.id)
 		io.pb.custs[c.id] = c

@@ -13,7 +13,7 @@ type NearestTaxi <: OnlineAlgorithm
 	startTime::Float64
 
 	freeTaxiOnly::Bool
-	function NearestTaxi(;freeTaxiOnly::Bool=true)
+	function NearestTaxi(;freeTaxiOnly::Bool=false)
 		nt = new()
 		nt.startTime = 0.0
 		nt.freeTaxiOnly = freeTaxiOnly
@@ -43,15 +43,15 @@ function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{C
 
 	actions = emptyActions(pb)
 	# Iterates through all customers and assigns them to the closest free taxi, if available
-	while !isempty(pb.custs) && pb.custs[1].tmin <= nt.startTime
+	while !isempty(pb.custs) && pb.custs[1].tmin <= endTime
 		c = Collections.heappop!(pb.custs, tminOrder)
-
+		
 		taxiIndex = 0
 		minPickupTime = Inf
 		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer's appearence
 		for (k,t) in enumerate(pb.taxis)
-			if (!nt.freeTaxiOnly || t.initTime == nt.startTime) && t.initTime + tt[t.initPos, c.orig] <= c.tmax
-				pickupTime = t.initTime + tt[t.initPos, c.orig]
+			if (!nt.freeTaxiOnly || t.initTime <= c.tmin + 2*EPS) && max(t.initTime, c.tmin) + tt[t.initPos, c.orig] <= c.tmax
+				pickupTime = max(t.initTime, c.tmin) + tt[t.initPos, c.orig]
 				if pickupTime < minPickupTime
 					minPickupTime = pickupTime; taxiIndex = k
 				end
@@ -62,7 +62,7 @@ function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{C
 			continue
 		else
 			k = taxiIndex; t = pb.taxis[k]
-			path, times = getPathWithTimes(pb.times, t.initPos, c.orig, startTime=t.initTime)
+			path, times = getPathWithTimes(pb.times, t.initPos, c.orig, startTime=max(t.initTime, c.tmin))
 			append!(actions[k].path, path[2:end])
 			append!(actions[k].times, times)
 			path, times = getPathWithTimes(pb.times, c.orig, c.dest, startTime=minPickupTime + pb.customerTime)
