@@ -5,6 +5,8 @@
 
 """
     `CustomerLink`, contain all customer link informations necessary to build mip
+    - all taxis must be in nxt
+    - all customers that are in prv must be in nxt and vice-versa
 """
 type CustomerLinks
     "cust ID => previous customer (>0) or taxi (<0)"
@@ -63,7 +65,8 @@ end
     `kLinks` : k links for each cust/taxi
     - can use custList to subset customers
 """
-function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs)))
+function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs));
+                initOnly::Bool = false)
     tt = getPathTimes(pb.times)
     prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
     nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
@@ -94,24 +97,26 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
         end
     end
 
-    # customer pairs
-    for c1 in custList
-        custs = Int[]; costs = Float64[]
-        for c2 in custList
-            if c1 != c2 && pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
-            tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
-                push!(custs, c2)
-                cost = linkCost(pb, c1, c2)
-                push!(costs, cost)
-                push!(revLink[c2], c1)
-                push!(revCost[c2], cost)
+    if !initOnly
+        # customer pairs
+        for c1 in custList
+            custs = Int[]; costs = Float64[]
+            for c2 in custList
+                if c1 != c2 && pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
+                tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
+                    push!(custs, c2)
+                    cost = linkCost(pb, c1, c2)
+                    push!(costs, cost)
+                    push!(revLink[c2], c1)
+                    push!(revCost[c2], cost)
+                end
             end
-        end
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            c2 = custs[i]
-            push!(nxt[c1], c2)
-            push!(prv[c2], c1)
+            p = sortperm(costs)
+            for i in p[1:min(end,maxLink)]
+                c2 = custs[i]
+                push!(nxt[c1], c2)
+                push!(prv[c2], c1)
+            end
         end
     end
 
@@ -141,6 +146,51 @@ function linkCost(pb::TaxiProblem, i1::Int, i2::Int)
         return max(tt[c1.dest, c2.orig], c2.tmin - c1.tmax - tt[c1.orig, c1.dest] - 2*pb.customerTime)
     end
 end
+
+"""
+    `linkUnion`, union of two valid link lists
+"""
+function linkUnion(l1::CustomerLinks, l2::CustomerLinks)
+    prv = deepcopy(l1.prv)
+    nxt = deepcopy(l1.nxt)
+    for (c, s) in l2.nxt
+        if haskey(nxt,c)
+            union!(nxt[c], s)
+            if c > 0
+                union!(prv[c], l2.prv[c])
+            end
+        else
+            nxt[c] = deepcopy(s)
+            prv[c] = deepcopy(l2.prv[c])
+        end
+    end
+    return CustomerLinks(prv, nxt)
+end
+
+"""
+    `usedLinks`, extract used links from offline solution
+"""
+function usedLinks(s::OfflineSolution)
+    prv = Dict{Int,Set{Int}}()
+    nxt = Dict{Int,Set{Int}}()
+    for (k,l) in enumerate(s.custs)
+        if isempty(l)
+            nxt[-k] = Set{Int}()
+        else
+            nxt[-k] = Set{Int}(l[1].id)
+            prv[l[1].id] = Set{Int}(-k)
+            for i in 1:length(l)-1
+                nxt[l[i].id] = Set{Int}(l[i+1].id)
+                prv[l[i+1].id] = Set{Int}(l[i].id)
+            end
+            if length(l) > 1
+                nxt[l[end].id] = Set{Int}(l[end-1].id)
+            end
+        end
+    end
+    return CustomerLinks(prv, nxt)
+end
+
 #
 # """
 #     `OnlineMIP` : creates MIP problem that works in online setting (can extend any MIP setting)
