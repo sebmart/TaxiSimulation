@@ -47,8 +47,7 @@ function onlineUpdate!(io::InsertOnly, endTime::Float64, newCustomers::Vector{Cu
         end
         if c.tmax >= io.startTime
 			push!(io.sol.rejected, c.id)
-            pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,
-            max(c.tmin,io.startTime),c.tmax,c.fare)
+            pb.custs[c.id] = c
             insertCustomer!(io.sol,c.id, earliest=io.earliest)
         end
     end

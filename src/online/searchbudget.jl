@@ -96,8 +96,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
         end
         if c.tmax >= sb.startTime
 			push!(sb.sol.rejected, c.id)
-            pb.custs[c.id] = Customer(c.id,c.orig,c.dest,c.tcall,
-            max(c.tmin,sb.startTime),c.tmax,c.fare)
+            pb.custs[c.id] = c
             insertCustomer!(sb.sol,c.id)
         end
     end

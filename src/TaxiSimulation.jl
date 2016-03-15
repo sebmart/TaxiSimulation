@@ -19,7 +19,7 @@ export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, 
 export usedLinks, orderedInsertions, testSolution, insertionsDescent, randomInsertions, copySolution
 export localDescent, localDescent!, smartSearch!
 # online
-export OnlineAlgorithm, InsertOnly, SearchBudget, onlineSimulation
+export OnlineAlgorithm, InsertOnly, SearchBudget, NearestTaxi, onlineSimulation
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
@@ -49,6 +49,7 @@ include("offline/metrics.jl")
 include("online/online.jl")
 include("online/insertonly.jl")
 include("online/searchbudget.jl")
+include("online/nearesttaxi.jl")
 #data
 include("realdata/realdata.jl")
 include("realdata/nyctaxidata.jl")

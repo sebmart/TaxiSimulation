@@ -22,7 +22,7 @@ Base.show(io::IO, t::OnlineAlgorithm)=
     TaxiSolution object and returns it.
     - `period`: period of update in seconds. If 0, update for each new customer
 """
-function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 = 0., verbose::Bool=false)
+function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 = 0., verbose::Bool=true)
 
 	# Sorts customers by tcall
 	customers = sort(pb.custs, by = x -> x.tcall)
@@ -125,7 +125,9 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period
-        push!(newCusts, it.custs[i])
+        c = it.custs[i]
+        push!(newCusts, Customer(c.id,c.orig,c.dest,c.tcall,
+        max(c.tmin,s[1]*it.period),c.tmax,c.fare))
         i += 1
     end
     if i > length(it.custs)
