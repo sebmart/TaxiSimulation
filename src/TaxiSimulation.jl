@@ -15,9 +15,9 @@ export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolutio
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
-export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, orderedInsertions
-export testSolution, insertionsDescent, randomInsertions, copySolution, localDescent
-export localDescent!, smartSearch!
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks
+export orderedInsertions, testSolution, insertionsDescent, randomInsertions, copySolution
+export localDescent, localDescent!, smartSearch!
 # online
 export OnlineAlgorithm, InsertOnly, SearchBudget, onlineSimulation
 # data
