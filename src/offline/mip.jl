@@ -83,30 +83,30 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     # Objective (do not depend on time windows!)
     # =====================================================
     #Price paid by customers
-    @defExpr(customerCost, sum{
+    @defExpr(m, customerCost, sum{
     (tc[cust[c1].dest, cust[c2].orig] +
     tc[cust[c2].orig, cust[c2].dest] - cust[c2].fare) * x[c1, c2],
     c1=keys(prv), c2 = nxt[c1]})
 
     #Price paid by "first customers"
-    @defExpr(firstCustomerCost, sum{
+    @defExpr(m, firstCustomerCost, sum{
     (tc[taxi[k].initPos, cust[c].orig] +
     tc[cust[c].orig, cust[c].dest] - cust[c].fare) * y[k, c],
     k=eachindex(taxi), c=nxt[-k]})
 
     #Busy time
-    @defExpr(busyTime, sum{
+    @defExpr(m, busyTime, sum{
     (tt[cust[c1].dest, cust[c2].orig] +
     tt[cust[c2].orig, cust[c2].dest] )*(-pb.waitingCost) * x[c1, c2],
     c1=keys(prv), c2 = nxt[c1]})
 
     #Busy time during "first customer"
-    @defExpr(firstBusyTime, sum{
+    @defExpr(m, firstBusyTime, sum{
     (tt[taxi[k].initPos, cust[c].orig] +
     tt[cust[c].orig, cust[c].dest])*(-pb.waitingCost) * y[k, c],
     k=eachindex(taxi), c=nxt[-k]})
 
-    @setObjective(m,Min, customerCost + firstCustomerCost +
+    @setObjective(m, Min, customerCost + firstCustomerCost +
     busyTime + firstBusyTime + pb.simTime*length(taxi)*pb.waitingCost )
 
     # =====================================================

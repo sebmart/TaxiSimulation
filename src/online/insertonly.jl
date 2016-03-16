@@ -27,6 +27,7 @@ function onlineInitialize!(io::InsertOnly, pb::TaxiProblem)
 	newCustomers = pb.custs
 	io.pb.custs = Customer[]
 	io.sol = OfflineSolution(pb)
+	io.sol.rejected = IntSet()
 	if !isempty(newCustomers)
 		resize!(io.pb.custs, maximum([c.id for c in newCustomers]))
 	end
@@ -34,7 +35,7 @@ function onlineInitialize!(io::InsertOnly, pb::TaxiProblem)
 		push!(io.sol.rejected, c.id)
 		io.pb.custs[c.id] = c
     end
-	orderedInsertions!(io.sol)
+	orderedInsertions!(io.sol, earliest=io.earliest)
 end
 
 

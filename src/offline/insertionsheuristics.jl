@@ -27,10 +27,10 @@ end
     `orderedInsertions!`: try to insert all rejected customers in solution
     - for now, ordered by tmin
 """
-function orderedInsertions!(s::OfflineSolution)
-    customers = sort([s.pb.custs[c] for c in s.rejected], by=c->c.tmin)
+function orderedInsertions!(s::OfflineSolution; earliest::Bool=false)
+    customers = sort(collect(s.rejected), by=c->s.pb.custs[c].tmin)
     for c in customers
-        insertCustomer!(s, c.id)
+        insertCustomer!(s, c, earliest=earliest)
     end
 end
 

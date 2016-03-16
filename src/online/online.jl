@@ -50,7 +50,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 
 	#Create list of update times and customers
 	if period == 0.
         updates = NewCustUpdate(customers)
-        verbose && (endTime = customers[end].tcall)
+        verbose && (endTime = isempty(customers) ? pb.simTime : customers[end].tcall)
     else
         updates = PeriodUpdate(customers, period)
         verbose && (endTime = pb.simTime)
