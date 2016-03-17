@@ -26,6 +26,8 @@ type SearchBudget <: OnlineAlgorithm
 	pb::TaxiProblem
 	"Solution to offline problem, kept up-to-date"
 	sol::OfflineSolution
+	"Customers of present and futur"
+	onlineCusts::IntSet
 	"Current time in simulation"
 	startTime::Float64
 	"Last search sim-time (seconds)"
@@ -33,7 +35,7 @@ type SearchBudget <: OnlineAlgorithm
 	"total search time (seconds)"
 	totalSearchTime::Float64
 
-    function SearchBudget(;update_solver::Function = (pb,init,t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
+    function SearchBudget(;update_solver::Function = (pb,init,custs,t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
 		 time_budget::Float64=1.,  update_freq::Float64=0., precompute_time::Float64=10.,
 		 precompute_solver::Function=(pb,t) -> update_solver(pb, orderedInsertions(pb), t))
 
@@ -44,6 +46,7 @@ type SearchBudget <: OnlineAlgorithm
 		sb.time_budget = time_budget
 		sb.update_freq = update_freq
 		sb.precompute_time = precompute_time
+		sb.onlineCusts = IntSet()
 
         return sb
     end
@@ -56,17 +59,23 @@ function onlineInitialize!(sb::SearchBudget, pb::TaxiProblem)
 	sb.lastSearchTime = 0. # we consider precomputations as a search
 	sb.totalSearchTime = 0.
 
-	newCustomers = copy(pb.custs)
-	pb.custs = [Customer(i,c.orig,c.dest,c.tcall,c.tmin,c.tmax,c.fare) for (i,c) in enumerate(pb.custs)]
-	sb.sol = sb.precompute_solver(pb, sb.precompute_time)
+	if isempty(pb.custs)
+		sb.sol = OfflineSolution(pb)
+	else
+		newCustomers = copy(pb.custs)
+		pb.custs = [Customer(i,c.orig,c.dest,c.tcall,c.tmin,c.tmax,c.fare) for (i,c) in enumerate(pb.custs)]
+		sb.sol = sb.precompute_solver(pb, sb.precompute_time)
 
-	newIDs = [c.id for c in newCustomers]
-	pb.custs = Array{Customer}(maximum([c.id for c in newCustomers]))
-	for c in newCustomers
-		pb.custs[c.id] = c
-    end
+		newIDs = [c.id for c in newCustomers]
+		pb.custs = Array{Customer}(maximum([c.id for c in newCustomers]))
+		for c in newCustomers
+			pb.custs[c.id] = c
+			push!(sb.onlineCusts, c.id)
+	    end
+		changeCustIDs!(sb.sol, newIDs)
+	end
 	sb.pb = pb
-	changeCustIDs!(sb.sol, newIDs)
+
 end
 
 """
@@ -96,6 +105,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
         end
         if c.tmax >= sb.startTime
 			push!(sb.sol.rejected, c.id)
+			push!(sb.onlineCusts, c.id)
             pb.custs[c.id] = c
             insertCustomer!(sb.sol,c.id)
         end
@@ -106,7 +116,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
 		sb.lastSearchTime = sb.startTime
 		searchTime = sb.startTime * sb.time_budget - sb.totalSearchTime
 		sb.totalSearchTime = sb.startTime * sb.time_budget
-		sb.sol = sb.update_solver(pb, sb.sol, searchTime)
+		sb.sol = sb.update_solver(pb, sb.sol, sb.onlineCusts, searchTime)
 	end
     actions = emptyActions(pb)
 	# println("===$((sb.startTime, endTime))===")
@@ -131,7 +141,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tInf, newTime))
                 pb.taxis[k] = Taxi(pb.taxis[k].id, pb.custs[c.id].dest, newTime)
                 shift!(custs)
-
+				delete!(sb.onlineCusts, c.id)
             else
                 break
             end
@@ -145,6 +155,7 @@ function onlineUpdate!(sb::SearchBudget, endTime::Float64, newCustomers::Vector{
 	for c in sb.sol.rejected
 		if pb.custs[c].tmax < endTime
 			delete!(sb.sol.rejected, c)
+			delete!(sb.onlineCusts, c)
 		end
 	end
 	# println(sb.sol.rejected)
