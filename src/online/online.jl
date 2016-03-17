@@ -35,7 +35,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 
             break
         end
     end
-    firstCustomers = customers[1:firstNew - 1]
+    firstCustomers = sort(customers[1:firstNew - 1], by=x -> x.tmin)
     customers = customers[firstNew:end]
 
 	# Initializes the online method with the given taxi problem without the customers
@@ -64,7 +64,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 
             lastPrint = time()
             @printf("\rsim-time: %dm%02ds (%.2f%%) realTime:(%dm%02ds)             ", m,s, 100*tStart/endTime, m2,s2)
         end
-        newTaxiActions = onlineUpdate!(oa, tEnd, newCusts)
+        newTaxiActions = onlineUpdate!(oa, tEnd, sort(newCusts, by=c->c.tmin))
         for (k,allAction) in enumerate(allTaxiActions)
             if !isempty(newTaxiActions[k].times)
                 if newTaxiActions[k].times[1][1] < tStart - EPS

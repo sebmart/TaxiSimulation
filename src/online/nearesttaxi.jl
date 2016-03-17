@@ -45,12 +45,11 @@ function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{C
 	# Iterates through all customers and assigns them to the closest free taxi, if available
 	while !isempty(pb.custs) && pb.custs[1].tmin <= endTime
 		c = Collections.heappop!(pb.custs, tminOrder)
-		
-		taxiIndex = 0
-		minPickupTime = Inf
-		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer's appearence
+		taxiIndex = 0; minPickupTime = Inf
+		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer appears
 		for (k,t) in enumerate(pb.taxis)
-			if (!nt.freeTaxiOnly || t.initTime <= c.tmin + 2*EPS) && max(t.initTime, c.tmin) + tt[t.initPos, c.orig] <= c.tmax
+			if (!nt.freeTaxiOnly || t.initTime <= c.tmin + 2*EPS) &&
+					max(t.initTime, c.tmin) + tt[t.initPos, c.orig] <= c.tmax
 				pickupTime = max(t.initTime, c.tmin) + tt[t.initPos, c.orig]
 				if pickupTime < minPickupTime
 					minPickupTime = pickupTime; taxiIndex = k
@@ -58,22 +57,20 @@ function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{C
 			end
 		end
 		# If there is no closest free taxi, then this customer is not picked up at all
-		if taxiIndex == 0
-			continue
-		else
-			k = taxiIndex; t = pb.taxis[k]
-			path, times = getPathWithTimes(pb.times, t.initPos, c.orig, startTime=max(t.initTime, c.tmin))
-			append!(actions[k].path, path[2:end])
-			append!(actions[k].times, times)
-			path, times = getPathWithTimes(pb.times, c.orig, c.dest, startTime=minPickupTime + pb.customerTime)
-			append!(actions[k].path, path[2:end])
-			append!(actions[k].times, times)
+		taxiIndex == 0 && continue
 
-			dropoffT = minPickupTime + tt[c.orig, c.dest] + 2 * pb.customerTime
-			push!(actions[k].custs, CustomerAssignment(c.id, minPickupTime, dropoffT))
-			# Updates the taxi's initial location and time
-			pb.taxis[k] = Taxi(pb.taxis[k].id, c.dest, dropoffT)
-		end
+		k = taxiIndex; t = pb.taxis[k]
+		path, times = getPathWithTimes(pb.times, t.initPos, c.orig, startTime=max(t.initTime, c.tmin))
+		append!(actions[k].path, path[2:end])
+		append!(actions[k].times, times)
+		path, times = getPathWithTimes(pb.times, c.orig, c.dest, startTime=minPickupTime + pb.customerTime)
+		append!(actions[k].path, path[2:end])
+		append!(actions[k].times, times)
+
+		dropoffT = minPickupTime + tt[c.orig, c.dest] + 2 * pb.customerTime
+		push!(actions[k].custs, CustomerAssignment(c.id, minPickupTime, dropoffT))
+		# Updates the taxi's initial location and time
+		pb.taxis[k] = Taxi(pb.taxis[k].id, c.dest, dropoffT)
 	end
 
 	# Updates the remaining taxis (stay at the same place)

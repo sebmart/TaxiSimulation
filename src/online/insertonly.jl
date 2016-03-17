@@ -43,7 +43,7 @@ function onlineUpdate!(io::InsertOnly, endTime::Float64, newCustomers::Vector{Cu
     pb = io.pb
 	tt = getPathTimes(pb.times)
 	#Insert new customers
-    for c in sort!(newCustomers, by=x->x.tmin)
+    for c in newCustomers
         if length(pb.custs) < c.id
             resize!(pb.custs, c.id)
         end
