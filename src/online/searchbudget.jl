@@ -33,7 +33,7 @@ type SearchBudget <: OnlineAlgorithm
 	"total search time (seconds)"
 	totalSearchTime::Float64
 
-    function SearchBudget(;update_solver::Function = (pb,init,t)->localDescent(pb,init,maxTime=t,random=false,verbose=false),
+    function SearchBudget(;update_solver::Function = (pb,init,t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
 		 time_budget::Float64=1.,  update_freq::Float64=0., precompute_time::Float64=10.,
 		 precompute_solver::Function=(pb,t) -> update_solver(pb, orderedInsertions(pb), t))
 
