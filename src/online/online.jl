@@ -126,8 +126,10 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period
         c = it.custs[i]
-        push!(newCusts, Customer(c.id,c.orig,c.dest,c.tcall,
-        max(c.tmin,s[1]*it.period),c.tmax,c.fare))
+        if c.tmax >= s[1]*it.period
+            push!(newCusts, Customer(c.id,c.orig,c.dest,c.tcall,
+            max(c.tmin,s[1]*it.period),c.tmax,c.fare))
+        end
         i += 1
     end
     if i > length(it.custs)

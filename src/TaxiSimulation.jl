@@ -47,6 +47,7 @@ include("offline/localheuristics.jl")
 include("offline/metrics.jl")
 #Online
 include("online/online.jl")
+include("online/offlineplanning")
 include("online/insertonly.jl")
 include("online/searchbudget.jl")
 include("online/nearesttaxi.jl")
