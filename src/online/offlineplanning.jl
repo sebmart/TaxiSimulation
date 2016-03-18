@@ -21,34 +21,50 @@
 """
 abstract OfflinePlanning <: OnlineAlgorithm
 
+
+"""
+    `initialPlanning!`, initialize offline planned solution given initial data
+"""
+function initialPlanning!(op::OfflinePlanning)
+    error("initialPlanning! has to be overloaded for $(typeof(op))")
+end
+
+"""
+    `updatePlanning!`, update offline planned solution given new demand data
+"""
+function updatePlanning!(op::OfflinePlanning, endTime::Float64, newCusts::Vector{Int})
+    error("updatePlanning! has to be overloaded for $(typeof(op))")
+end
+
 function onlineInitialize!(op::OfflinePlanning, pb::TaxiProblem)
-    op.currentCusts = Set{Int}()
+    op.currentCusts = IntSet()
     pb.taxis = copy(pb.taxis)
     op.pb = pb
     if !isempty(pb.custs)
-        pb.custs = Array{Customer}(maximum([c.id for c in pb.custs]))
-		for c in newCustomers
-			pb.custs[c.id] = c
+        custs = Array{Customer}(maximum([c.id for c in pb.custs]))
+		for c in pb.custs
+			custs[c.id] = c
 			push!(op.currentCusts, c.id)
 	    end
+        pb.custs = custs
     end
     initialPlanning!(op)
 end
 
+
 function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vector{Customer})
     newCusts = Int[]
-    tt = getPathTimes(pb.times)
+    tt = getPathTimes(op.pb.times)
 
     #Add new customers
     for c in newCustomers
         if length(op.pb.custs) < c.id
             resize!(op.pb.custs, c.id)
         end
-            push!(op.sol.rejected, c.id)
-            push!(op.currentCusts, c.id)
-            push!(newCusts, c.id)
-            pb.custs[c.id] = c
-        end
+        push!(op.sol.rejected, c.id)
+        push!(op.currentCusts, c.id)
+        push!(newCusts, c.id)
+        op.pb.custs[c.id] = c
     end
 
     updatePlanning!(op, endTime, newCusts)
@@ -63,7 +79,7 @@ function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vect
                 append!(actions[k].path, path[2:end])
                 append!(actions[k].times, times)
                 path, times = getPathWithTimes(op.pb.times, op.pb.custs[c.id].orig, op.pb.custs[c.id].dest,
-                                    startTime=c.tInf + pb.customerTime)
+                                    startTime=c.tInf + op.pb.customerTime)
                 append!(actions[k].path, path[2:end])
                 append!(actions[k].times, times)
 

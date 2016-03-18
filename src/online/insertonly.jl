@@ -22,11 +22,10 @@ type InsertOnly <: OfflinePlanning
 end
 
 function initialPlanning!(io::InsertOnly)
-	sol = OfflineSolution(io.pb)
-	sol.rejected = copy(io.currentCusts)
+	io.sol = OfflineSolution(io.pb)
+	io.sol.rejected = copy(io.currentCusts)
 	orderedInsertions!(io.sol, earliest=io.earliest)
 end
-
 
 function updatePlanning!(io::InsertOnly, endTime::Float64, newCustomers::Vector{Int})
 	#Insert new customers
