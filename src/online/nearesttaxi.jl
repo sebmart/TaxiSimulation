@@ -4,53 +4,59 @@
 ###################################################
 
 """
-	`NearestTaxi`, OnlineAlgorithm that continuously improves best solution, constrained by time of search
-	- uses an offline solution. Customers that are not rejected yet are either already taken,
-	taken in the future or already rejected
+	`NearestTaxi`, Baseline: Taxi wait after drop-off, closest available taxi chosen when
+	new customer
+	- pure online
 """
-type NearestTaxi <: OnlineAlgorithm
+type NearestTaxi <: OfflinePlanning
 	pb::TaxiProblem
-	startTime::Float64
+	sol::OfflineSolution
+	currentCusts::IntSet
 
 	freeTaxiOnly::Bool
+	customerHeap::Vector{Int}
 	function NearestTaxi(;freeTaxiOnly::Bool=false)
 		nt = new()
-		nt.startTime = 0.0
 		nt.freeTaxiOnly = freeTaxiOnly
 		return nt
 	end
 end
 
-function onlineInitialize!(nt::NearestTaxi, pb::TaxiProblem)
-	tminOrderF(x::Customer) = x.tmin
+function initialPlanning!(nt::NearestTaxi) #just heapify the customer list by tmin
+	tminOrderF(c::Int) = nt.pb.custs[c].tmin
 	tminOrder = Base.Order.By(tminOrderF)
-
-	nt.pb = pb
-	nt.pb.taxis = copy(nt.pb.taxis)
-	nt.pb.custs = Collections.heapify!(nt.pb.custs, tminOrder)
+	nt.customerHeap = Collections.heapify!(collect(nt.currentCusts), tminOrder)
+	nt.sol = OfflineSolution(nt.pb)
 end
 
 
-function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{Customer})
-	pb=nt.pb
-	tminOrderF(x::Customer) = x.tmin
+function updatePlanning!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{Int})
+	tminOrderF(c::Int) = nt.pb.custs[c].tmin
 	tminOrder = Base.Order.By(tminOrderF)
-	tt = getPathTimes(pb.times)
+	tt = getPathTimes(nt.pb.times)
 
 	for c in newCustomers
-		Collections.heappush!(pb.custs, c, tminOrder)
+		Collections.heappush!(nt.customerHeap, c, tminOrder)
 	end
 
-	actions = emptyActions(pb)
-	# Iterates through all customers and assigns them to the closest free taxi, if available
-	while !isempty(pb.custs) && pb.custs[1].tmin <= endTime
-		c = Collections.heappop!(pb.custs, tminOrder)
+	# Iterates through all customers that appear during interval
+	# and assigns them to the closest free taxi, if available
+	while !isempty(nt.customerHeap) && nt.pb.custs[nt.customerHeap[1]].tmin <= endTime
+		c = nt.pb.custs[Collections.heappop!(nt.customerHeap, tminOrder)]
 		taxiIndex = 0; minPickupTime = Inf
 		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer appears
-		for (k,t) in enumerate(pb.taxis)
-			if (!nt.freeTaxiOnly || t.initTime <= c.tmin + 2*EPS) &&
-					max(t.initTime, c.tmin) + tt[t.initPos, c.orig] <= c.tmax
-				pickupTime = max(t.initTime, c.tmin) + tt[t.initPos, c.orig]
+		for k in eachindex(nt.pb.taxis)
+			if isempty(nt.sol.custs[k])
+				tloc = nt.pb.taxis[k].initPos
+				tfree = nt.pb.taxis[k].initTime
+			else
+				tw = nt.sol.custs[k][end]
+				tloc = nt.pb.custs[tw.id].dest
+				tfree = tw.tInf + tt[nt.pb.custs[tw.id].orig, tloc] + 2*nt.pb.customerTime
+			end
+			if (!nt.freeTaxiOnly || tfree <= c.tmin + 2*EPS) &&
+					max(tfree, c.tmin) + tt[tloc, c.orig] <= c.tmax
+				pickupTime = max(tfree, c.tmin) + tt[tloc, c.orig]
 				if pickupTime < minPickupTime
 					minPickupTime = pickupTime; taxiIndex = k
 				end
@@ -58,29 +64,7 @@ function onlineUpdate!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector{C
 		end
 		# If there is no closest free taxi, then this customer is not picked up at all
 		taxiIndex == 0 && continue
-
-		k = taxiIndex; t = pb.taxis[k]
-		path, times = getPathWithTimes(pb.times, t.initPos, c.orig, startTime=max(t.initTime, c.tmin))
-		append!(actions[k].path, path[2:end])
-		append!(actions[k].times, times)
-		path, times = getPathWithTimes(pb.times, c.orig, c.dest, startTime=minPickupTime + pb.customerTime)
-		append!(actions[k].path, path[2:end])
-		append!(actions[k].times, times)
-
-		dropoffT = minPickupTime + tt[c.orig, c.dest] + 2 * pb.customerTime
-		push!(actions[k].custs, CustomerAssignment(c.id, minPickupTime, dropoffT))
-		# Updates the taxi's initial location and time
-		pb.taxis[k] = Taxi(pb.taxis[k].id, c.dest, dropoffT)
+		push!(nt.sol.custs[taxiIndex], CustomerTimeWindow(c.id, minPickupTime, nt.pb.custs[c.id].tmax))
+		delete!(nt.sol.rejected, c.id)
 	end
-
-	# Updates the remaining taxis (stay at the same place)
-	for (k,t) in enumerate(pb.taxis)
-		if t.initTime < endTime
-			pb.taxis[k] = Taxi(t.id, t.initPos, endTime)
-		end
-	end
-
-	# Returns new TaxiActions to OnlineSimulation
-	nt.startTime = endTime
-	return actions
 end
