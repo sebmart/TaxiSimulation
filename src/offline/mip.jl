@@ -154,7 +154,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     ttime = getValue(t)
 
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
-    rejected = IntSet(eachindex(pb.custs))
+    rejected = IntSet(keys(prv))
     # reconstruct solution
     for k=eachindex(taxi), c=nxt[-k]
         if ty[k, c] > 0.9

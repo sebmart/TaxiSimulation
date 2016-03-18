@@ -32,6 +32,7 @@ function orderedInsertions!(s::OfflineSolution; earliest::Bool=false)
     for c in customers
         insertCustomer!(s, c, earliest=earliest)
     end
+    s
 end
 
 """

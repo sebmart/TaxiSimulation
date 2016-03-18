@@ -16,10 +16,11 @@ export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks, linkUnion
-export usedLinks, orderedInsertions, testSolution, insertionsDescent, randomInsertions, copySolution
+export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
 export localDescent, localDescent!, smartSearch!
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, NearestTaxi, onlineSimulation
+export partialOfflineSolution
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
@@ -51,6 +52,7 @@ include("online/offlineplanning.jl")
 include("online/insertonly.jl")
 include("online/searchbudget.jl")
 include("online/nearesttaxi.jl")
+include("online/tools.jl")
 #data
 include("realdata/realdata.jl")
 include("realdata/nyctaxidata.jl")
