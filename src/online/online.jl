@@ -21,12 +21,19 @@ Base.show(io::IO, t::OnlineAlgorithm)=
      online algorithm, in an iterative way. Compiles the taxis' online actions into a
     TaxiSolution object and returns it.
     - `period`: period of update in seconds. If 0, update for each new customer
+    - `horizon`: horizon in minutes (max on tmin - tcall)
 """
-function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm; period::Float64 = 0., verbose::Bool=true)
+function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
+                period::Real = 0., verbose::Bool=true, horizon::Real = Inf)
 
 	# Sorts customers by tcall
 	customers = sort(pb.custs, by = x -> x.tcall)
-
+    if horizon < Inf
+        for (i,c) in enumerate(customers)
+            customer[i]=
+            Customer(c.id, c.orig, c.dest, max(c.tcall, c.tmin-horizon), c.tmin, c.tmaxt, c.fare)
+        end
+    end
     # separate customers with tcall = 0 (pre-known data)
     firstNew = length(customers) + 1
     for (i,c) in enumerate(customers)
