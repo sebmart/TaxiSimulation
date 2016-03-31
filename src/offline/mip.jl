@@ -69,6 +69,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
                 end
                 setValue(y[k, l[1].id], 1)
                 setValue(t[l[1].id],l[1].tInf)
+
                 for j= 2:length(l)
                     if !(l[j].id in nxt[l[j-1].id])
                         break

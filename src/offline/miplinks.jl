@@ -148,7 +148,9 @@ function linkCost(pb::TaxiProblem, i1::Int, i2::Int)
 end
 
 """
-    `linkUnion`, union of two valid link lists
+    `linkUnion`
+    - union of two valid link lists
+    - or merge the second one that is a solution into the first one
 """
 function linkUnion(l1::CustomerLinks, l2::CustomerLinks)
     prv = deepcopy(l1.prv)
@@ -183,52 +185,42 @@ function usedLinks(s::OfflineSolution)
                 nxt[l[i].id] = Set{Int}(l[i+1].id)
                 prv[l[i+1].id] = Set{Int}(l[i].id)
             end
-            if length(l) > 1
-                nxt[l[end].id] = Set{Int}(l[end-1].id)
-            end
+            nxt[l[end].id] = Set{Int}()
         end
     end
     return CustomerLinks(prv, nxt)
 end
 
-#
-# """
-#     `OnlineMIP` : creates MIP problem that works in online setting (can extend any MIP setting)
-# """
-# type OnlineMIP <: MIPSettings
-#     pb::TaxiProblem
-#     links::CustomerLinks
-#     warmstart::Nullable{OfflineSolution}
-#
-#     "The underlying MIP setting"
-#     mip::MIPSettings
-#     "Customer in consideration"
-#     realCusts::IntSet
-#
-#     function OnlineMIP(mip::MIPSettings = Optimal())
-#         o = new()
-#         o.mip = mip
-#         o
-#     end
-#
-# end
-# function mipInit!(o::OnlineMIP, pb::TaxiProblem, warmstart::Nullable{OfflineSolution})
-#     isnull(warmstart) && error("online setting has to have a warmstart")
-#
-#     pb2 = copy(pb)
-#     o.realCusts = setdiff(IntSet(eachindex(pb.custs)), setdiff(getRejected(get(warmstart)), get(warmstart).rejected))
-#     pb2.custs = [pb.custs[c] for c in o.realCusts]
-#     mipInit!(o.mip, pb2, warmstart)
-#
-#     o.pb = pb
-#     o.links = o.mip.links
-#     o.links.cID = [c.id for c in pb2.custs]
-#     o.links.cRev = Dict([(c.id,i) for (i,c) in enumerate(pb2.custs)])
-#     o.warmstart = o.mip.warmstart
-# end
-#
-# function mipEnd(o::OnlineMIP, custs::Vector{Vector{CustomerTimeWindow}}, rev::Float64)
-#     rejected = intersect(getRejected(o.pb,custs),o.realCusts)
-#     return OfflineSolution(o.pb, custs, rejected, rev)
-# end
-#
+
+"""
+    `testLinks`, test if link structure is valid
+"""
+function testLinks(pb::TaxiProblem, l::CustomerLinks)
+    function testKey(d,c, s)
+        if !haskey(d,c)
+            error("$s has no element $c")
+        end
+    end
+    for t in pb.taxis
+        testKey(l.nxt, -t.id, "nxt")
+    end
+    for c in keys(l.prv)
+        testKey(l.nxt, c, "nxt")
+        for c2 in l.prv[c]
+            testKey(l.nxt, c2, "nxt")
+            if c2 > 0
+                testKey(l.prv, c2, "prv")
+            end
+        end
+    end
+    for c in keys(l.nxt)
+        if c>0
+            testKey(l.prv, c, "prv")
+            for c2 in l.nxt[c]
+                testKey(l.nxt, c2, "nxt")
+                testKey(l.prv, c2, "prv")
+            end
+        end
+    end
+    println("Links all good")
+end
