@@ -56,7 +56,7 @@ function updatePlanning!(lo::LinksOpt, endTime::Float64, newCustomers::Vector{In
 	if lo.startTime - lo.lastSearchTime  >= lo.improveFreq
 		lo.lastSearchTime = lo.startTime
         removeCusts!(lo.links, setdiff(IntSet(keys(lo.links.prv)), lo.currentCusts))
-        removeInfeasible!(lo.links, lo.pb, lo.currentCusts)
+        removeInfeasible!(lo.links, lo.pb)
         linkUnion!(lo.links, baseLinks(lo))
         linkUnion!(lo.links, usedLinks(lo.sol))
         lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
