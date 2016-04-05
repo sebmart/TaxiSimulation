@@ -38,9 +38,9 @@ function initialPlanning!(lo::LinksOpt)
 	lo.lastSearchTime = 0. # we consider precomputations as a search
     lo.sol = orderedInsertions!(partialOfflineSolution(lo.pb, lo.currentCusts))
     lo.links = baseLinks(lo)
-    for i in 1:10
+    for i in 1:5
         linkUnion!(lo.links, usedLinks(lo.sol))
-        lo.sol =  mipSolve(lo.pb, lo.sol, lo.links, verbose=true)
+        lo.sol =  mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
         localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=5, verbose=true)
     end
 end
@@ -53,23 +53,24 @@ function updatePlanning!(lo::LinksOpt, endTime::Float64, newCustomers::Vector{In
     end
 
 	# improve!
-	if lo.startTime - lo.lastSearchTime  >= lo.update_freq
+	if lo.startTime - lo.lastSearchTime  >= lo.improveFreq
 		lo.lastSearchTime = lo.startTime
-
-        removeInfeasible!(lo.links, lo.pb)
+        removeCusts!(lo.links, setdiff(IntSet(keys(lo.links.prv)), lo.currentCusts))
+        removeInfeasible!(lo.links, lo.pb, lo.currentCusts)
         linkUnion!(lo.links, baseLinks(lo))
-        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true)
+        linkUnion!(lo.links, usedLinks(lo.sol))
+        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
         improveSolution!(lo)
 	end
 
-    sb.startTime = endTime
+    lo.startTime = endTime
 end
 
 """
     `improveSolution!`, find better solution and creates new links
 """
 function improveSolution!(lo::LinksOpt)
-    localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=5, verbose=true)
+    localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=3, verbose=true)
     linkUnion!(lo.links, usedLinks(lo.sol))
 end
 

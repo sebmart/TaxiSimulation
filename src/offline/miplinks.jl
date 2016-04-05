@@ -65,7 +65,7 @@ end
     `kLinks` : k links for each cust/taxi
     - can use custList to subset customers
 """
-function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs)), addList;
+function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs));
                 initOnly::Bool = false)
     tt = getPathTimes(pb.times)
     prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
@@ -130,6 +130,7 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
     end
     return CustomerLinks(prv, nxt)
 end
+
 """
     `linkCost(TaxiProblem, i1,i2)`, return cost of link i1=>i2 (if i1<0, then i1 is a taxi)
     !!! customer must be  "feasible"
@@ -215,6 +216,7 @@ end
     `removeInfeasible!`, remove infeasible links from CustomerLinks
 """
 function removeInfeasible!(l::CustomerLinks, pb::TaxiProblem)
+    tt = getPathTimes(pb.times)
     for (c2, s) in l.prv, c in s
         if c>0 && pb.custs[c].tmin + tt[pb.custs[c].orig, pb.custs[c].dest] +
             tt[pb.custs[c].dest, pb.custs[c2].orig] + 2*pb.customerTime > pb.custs[c2].tmax
