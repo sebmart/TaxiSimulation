@@ -65,7 +65,7 @@ end
     `kLinks` : k links for each cust/taxi
     - can use custList to subset customers
 """
-function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs));
+function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs)), addList;
                 initOnly::Bool = false)
     tt = getPathTimes(pb.times)
     prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
@@ -148,26 +148,29 @@ function linkCost(pb::TaxiProblem, i1::Int, i2::Int)
 end
 
 """
-    `linkUnion`
+    `linkUnion!`
     - union of two valid link lists
     - or merge the second one that is a solution into the first one
 """
-function linkUnion(l1::CustomerLinks, l2::CustomerLinks)
+function linkUnion!(l1::CustomerLinks, l2::CustomerLinks)
     prv = deepcopy(l1.prv)
     nxt = deepcopy(l1.nxt)
     for (c, s) in l2.nxt
-        if haskey(nxt,c)
-            union!(nxt[c], s)
+        if haskey(l1.nxt,c)
+            union!(l1.nxt[c], s)
             if c > 0
-                union!(prv[c], l2.prv[c])
+                union!(l1.prv[c], l2.prv[c])
             end
         else
-            nxt[c] = deepcopy(s)
-            prv[c] = deepcopy(l2.prv[c])
+            l1.nxt[c] = deepcopy(s)
+            l1.prv[c] = deepcopy(l2.prv[c])
         end
     end
-    return CustomerLinks(prv, nxt)
+    return l1
 end
+
+linkUnion(l1::CustomerLinks, l2::CustomerLinks) =
+linkUnion!(CustomerLinks(deepcopy(l1.prv),deepcopy(l1.nxt)), l2)
 
 """
     `usedLinks`, extract used links from offline solution
@@ -191,6 +194,39 @@ function usedLinks(s::OfflineSolution)
     return CustomerLinks(prv, nxt)
 end
 
+"""
+    `removeCusts!`, remove a set of customers/taxis from CustomerLinks
+"""
+function removeCusts!(l::CustomerLinks, rem)
+    for c in rem
+        delete!(l.prv, c)
+        delete!(l.nxt, c)
+    end
+    for s in values(l.prv)
+        setdiff!(s, rem)
+    end
+    for s in values(l.nxt)
+        setdiff!(s, rem)
+    end
+    l
+end
+
+"""
+    `removeInfeasible!`, remove infeasible links from CustomerLinks
+"""
+function removeInfeasible!(l::CustomerLinks, pb::TaxiProblem)
+    for (c2, s) in l.prv, c in s
+        if c>0 && pb.custs[c].tmin + tt[pb.custs[c].orig, pb.custs[c].dest] +
+            tt[pb.custs[c].dest, pb.custs[c2].orig] + 2*pb.customerTime > pb.custs[c2].tmax
+            delete!(s, c)
+            delete!(l.nxt[c], c2)
+        elseif c < 0 && pb.taxis[-c].initTime + tt[pb.taxis[-c].initPos, pb.custs[c2].orig] > pb.custs[c2].tmax
+            delete!(s, c)
+            delete!(l.nxt[c], c2)
+        end
+    end
+    l
+end
 
 """
     `testLinks`, test if link structure is valid

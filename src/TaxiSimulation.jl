@@ -19,7 +19,7 @@ export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, 
 export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
 export localDescent, localDescent!, smartSearch!
 # online
-export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, NearestTaxi, onlineSimulation
+export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
@@ -51,6 +51,7 @@ include("online/online.jl")
 include("online/offlineplanning.jl")
 include("online/insertonly.jl")
 include("online/searchbudget.jl")
+include("online/linksopt.jl")
 include("online/nearesttaxi.jl")
 include("online/tools.jl")
 #data
