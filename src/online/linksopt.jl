@@ -59,6 +59,7 @@ function updatePlanning!(lo::LinksOpt, endTime::Float64, newCustomers::Vector{In
         removeInfeasible!(lo.links, lo.pb)
         linkUnion!(lo.links, baseLinks(lo))
         linkUnion!(lo.links, usedLinks(lo.sol))
+        println(lo.links)
         lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
         improveSolution!(lo)
 	end

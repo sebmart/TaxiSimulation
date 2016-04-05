@@ -26,6 +26,7 @@ function Base.show(io::IO, l::CustomerLinks)
     end
     println("MIP links precomputation:")
     println("$tLink initial links and $cLink customer links")
+    println("Link/customer equal to $(cLink/length(keys(l.prv)))")
 end
 
 
