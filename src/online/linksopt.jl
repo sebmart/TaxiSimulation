@@ -71,8 +71,10 @@ end
     `improveSolution!`, find better solution and creates new links
 """
 function improveSolution!(lo::LinksOpt)
-    localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=3, verbose=true)
-    linkUnion!(lo.links, usedLinks(lo.sol))
+    for i = 1:10
+        localDescent!(lo.pb, lo.sol, maxTime=5., maxSearch=3, verbose=true)
+        linkUnion!(lo.links, usedLinks(lo.sol))
+    end
 end
 
 """
