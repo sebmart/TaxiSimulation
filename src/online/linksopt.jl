@@ -62,6 +62,7 @@ function updatePlanning!(lo::LinksOpt, endTime::Float64, newCustomers::Vector{In
         println(lo.links)
         lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
         improveSolution!(lo)
+        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
 	end
 
     lo.startTime = endTime
