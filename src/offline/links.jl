@@ -127,6 +127,7 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
                 push!(prv[c2], k)
             end
         end
+        println("blop")
     end
 
 
@@ -355,14 +356,13 @@ function flowKLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eac
                 push!(prv[c2], c1)
             end
         end
-    end
-
-    for (c2, costs) in revCost
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            k = revLink[c2][i]
-            push!(nxt[k], c2)
-            push!(prv[c2], k)
+        for (c2, costs) in revCost
+            p = sortperm(costs)
+            for i in p[1:min(end,maxLink)]
+                k = revLink[c2][i]
+                push!(nxt[k], c2)
+                push!(prv[c2], k)
+            end
         end
     end
     return CustomerLinks(prv, nxt)
