@@ -17,7 +17,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks, linkUnion
 export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
-export localDescent, localDescent!, smartSearch!
+export localDescent, localDescent!, smartSearch!, flowSolve, flowLinks, flowKLinks
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution
@@ -39,13 +39,14 @@ include("taxiproblem/metrics.jl")
 #Offline
 include("offline/offline.jl")
 include("offline/tools.jl")
-include("offline/miplinks.jl")
+include("offline/links.jl")
 include("offline/mip.jl")
 include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
 include("offline/localheuristics.jl")
 include("offline/metrics.jl")
+include("offline/flow.jl")
 #Online
 include("online/online.jl")
 include("online/offlineplanning.jl")
