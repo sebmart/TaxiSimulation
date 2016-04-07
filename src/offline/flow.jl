@@ -92,14 +92,11 @@ function flowSolve(pb::TaxiProblem, l::CustomerLinks=allLinks(pb); verbose::Bool
         error("Model is infeasible")
     end
 
-    tx = getValue(x)
-    ty = getValue(y)
-
     custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
     rejected = IntSet(keys(prv))
     # reconstruct solution
     for k=eachindex(taxi), c=nxt[-k]
-        if ty[k, c] > 0.9
+        if getValue(y[k, c]) > 0.9
             push!(custs[k], CustomerTimeWindow(c, 0., 0.))
             c1 = c
             delete!(rejected, c)
@@ -107,7 +104,7 @@ function flowSolve(pb::TaxiProblem, l::CustomerLinks=allLinks(pb); verbose::Bool
             while anotherCust
                 anotherCust = false
                 for c2 in nxt[c1]
-                    if tx[c1, c2] > 0.9
+                    if getValue(x[c1, c2]) > 0.9
                         push!(custs[k], CustomerTimeWindow(c2, 0., 0.))
                         delete!(rejected, c2)
                         anotherCust = true; c1 = c2; break;
