@@ -82,10 +82,6 @@ function flowSolve(pb::TaxiProblem, l::CustomerLinks=allLinks(pb); verbose::Bool
     # customer nodes : exit
     @addConstraint(m, cs2[c=keys(prv)],
     sum{x[c, c1], c1= nxt[c]} <= p[c])
-    #Each customer can only be taken at most once and can only have one other customer before
-    @addConstraint(m, cs1[c=keys(prv)],
-    sum{x[c1, c], c1= filter(x->x>0, prv[c])} +
-    sum{y[-k, c], k = filter(x->x<0, prv[c])} <= 1)
 
     status = solve(m)
     if status == :Infeasible

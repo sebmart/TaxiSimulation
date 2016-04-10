@@ -59,7 +59,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
         updates = NewCustUpdate(customers)
         verbose && (endTime = isempty(customers) ? pb.simTime : customers[end].tcall)
     else
-        updates = PeriodUpdate(customers, period)
+        updates = PeriodUpdate(customers, period, pb.simTime)
         verbose && (endTime = pb.simTime)
     end
     verbose && (lastPrint = -Inf; realTimeStart = time())
@@ -125,6 +125,7 @@ end
 type PeriodUpdate
     custs::Vector{Customer}
     period::Float64
+    simTime::Float64
 end
 Base.start(it::PeriodUpdate) = (0,1) # (iteration number of next, next cust)
 Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
@@ -139,7 +140,7 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
         end
         i += 1
     end
-    if i > length(it.custs)
+    if s[1]*it.period > it.simTime
         return (newCusts, s[1]*it.period, Inf), (typemax(Int), i)
     else
         return (newCusts, s[1]*it.period, (s[1]+1)*it.period), (s[1]+1, i)
