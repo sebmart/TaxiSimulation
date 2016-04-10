@@ -43,6 +43,8 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     @defVar(m, x[c1=keys(prv), c2 = nxt[c1]], Bin)
     #Taxi k takes customer c, as a first customer
     @defVar(m, y[k=eachindex(taxi), c=nxt[-k]], Bin)
+    # customer c picked-up only once
+    @defVar(m, p[c=keys(prv)], Bin)
     # Pick-up time
     @defVar(m, cust[c].tmin <= t[c=keys(prv)] <= cust[c].tmax)
 
@@ -61,6 +63,7 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
         end
         for c in keys(prv)
             setValue(t[c], cust[c].tmin)
+            setValue(p[c], 0)
         end
         for (k,l) in enumerate(init2.custs)
             if length(l) > 0
@@ -69,13 +72,15 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
                 end
                 setValue(y[k, l[1].id], 1)
                 setValue(t[l[1].id],l[1].tInf)
-
+                setValue(p[l[1].id], 1)
                 for j= 2:length(l)
                     if !(l[j].id in nxt[l[j-1].id])
                         break
                     end
                     setValue(x[l[j-1].id, l[j].id], 1)
                     setValue(t[l[j].id],l[j].tInf)
+                    setValue(p[l[j].id], 1)
+
                 end
             end
         end
@@ -113,26 +118,18 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution},  l::Customer
     # =====================================================
     # Constraints
     # =====================================================
+    # taxi nodes (entering one flow, might exit immediately)
+    @addConstraint(m, cs1[k=eachindex(taxi)],
+    sum{y[k, c], c=nxt[-k]} <= 1)
 
-    #Each customer can only be taken at most once and can only have one other customer before
-    @addConstraint(m, cs1[c=keys(prv)],
-    sum{x[c1, c], c1= filter(x->x>0, prv[c])} +
-    sum{y[-k, c], k = filter(x->x<0, prv[c])} <= 1)
-
-    #Each customer can only have one next customer
+    # customer nodes : entry
     @addConstraint(m, cs2[c=keys(prv)],
-    sum{x[c, c2], c2 = nxt[c]} <= 1)
+    sum{x[c1, c], c1 = filter(x->x>0, prv[c])} +
+    sum{y[-k, c], k  = filter(x->x<0, prv[c])} == p[c])
 
-    #Only one first customer per taxi
-    @addConstraint(m, cs3[k=eachindex(taxi)],
-    sum{y[k, c], c = nxt[-k]} <= 1)
-
-    #c1 has been taken before c2
-    @addConstraint(m, cs4[c1=keys(prv), c2 = nxt[c1]],
-    sum{x[c0, c1], c0 = filter(x->x>0, prv[c1])} +
-    sum{y[-k, c1], k = filter(x->x<0, prv[c1])} >= x[c1, c2])
-
-
+    # customer nodes : exit
+    @addConstraint(m, cs2[c=keys(prv)],
+    sum{x[c, c1], c1= nxt[c]} <= p[c])
 
     #Time limits rules
     @addConstraint(m, cs5[c1=keys(prv), c2 = nxt[c1]],

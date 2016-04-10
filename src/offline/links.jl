@@ -127,7 +127,6 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
                 push!(prv[c2], k)
             end
         end
-        println("blop")
     end
 
 
