@@ -321,7 +321,7 @@ function flowKLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eac
         for c in custList
             if t.initTime + tt[t.initPos, pb.custs[c].orig] <= times[c]
                 push!(custs, c)
-                cost = linkCost(pb, -t.id, c)
+                cost = max(tt[t.initPos, pb.custs[c].orig], times[c] - t.initTime)
                 push!(costs, cost)
                 push!(revLink[c], -t.id)
                 push!(revCost[c], cost)
@@ -343,7 +343,7 @@ function flowKLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eac
                 if c1 != c2 && times[c1] + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
                 tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= times[c2]
                     push!(custs, c2)
-                    cost = linkCost(pb, c1, c2)
+                    cost = max(tt[pb.custs[c1].dest, pb.custs[c2].orig], times[c2] - times[c1] - tt[pb.custs[c1].orig, pb.custs[c1].dest] - 2*pb.customerTime)
                     push!(costs, cost)
                     push!(revLink[c2], c1)
                     push!(revCost[c2], cost)
