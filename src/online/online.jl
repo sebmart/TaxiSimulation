@@ -30,9 +30,10 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
 	customers = sort(pb.custs, by = x -> x.tcall)
     if horizon < Inf
         for (i,c) in enumerate(customers)
-            customer[i]=
-            Customer(c.id, c.orig, c.dest, max(c.tcall, c.tmin-horizon), c.tmin, c.tmaxt, c.fare)
+            customers[i]=
+            Customer(c.id, c.orig, c.dest, max(c.tcall, c.tmin-horizon), c.tmin, c.tmax, c.fare)
         end
+        sort!(customers, by = x -> x.tcall)
     end
     # separate customers with tcall = 0 (pre-known data)
     firstNew = length(customers) + 1
