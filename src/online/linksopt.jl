@@ -40,7 +40,7 @@ function initialPlanning!(lo::LinksOpt)
     lo.links = baseLinks(lo)
     for i in 1:5
         linkUnion!(lo.links, usedLinks(lo.sol))
-        lo.sol =  mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
+        lo.sol =  mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6, Presolve=2, FlowCoverCuts=2)
         localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=5, verbose=true)
     end
 end
@@ -60,9 +60,9 @@ function updatePlanning!(lo::LinksOpt, endTime::Float64, newCustomers::Vector{In
         linkUnion!(lo.links, baseLinks(lo))
         linkUnion!(lo.links, usedLinks(lo.sol))
         println(lo.links)
-        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
+        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6, Presolve=2, FlowCoverCuts=2)
         improveSolution!(lo)
-        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6)
+        lo.sol = mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6, Presolve=2, FlowCoverCuts=2)
 	end
 
     lo.startTime = endTime
