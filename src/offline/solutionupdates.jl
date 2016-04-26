@@ -44,7 +44,7 @@ end
     in a taxi's timeline. pos = -1 if unfeasible.
     - Tractability bottleneck => really optimized
 """
-function insertCost(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWindow}, earliest::Bool)
+function insertCost(pb::TaxiProblem, cID::Int, k::Int, tw::Vector{CustomerTimeWindow}, earliest::Bool=false)
 @inbounds begin
     tt = getPathTimes(pb.times)
     tc = getPathTimes(pb.costs)
