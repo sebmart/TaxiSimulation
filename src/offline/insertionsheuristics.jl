@@ -48,15 +48,6 @@ sort(collect(1:length(pb.custs)), by = i -> pb.custs[i].tmin)
 function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCustomers(pb);
                     benchmark::Bool=false, verbose::Bool=true, maxTime::Float64=Inf,
                     iterations::Int=typemax(Int), earliest::Bool = false)
-    if benchmark
-        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations, earliest)
-    else
-        return insertionsDescentWithBench(pb,start, benchmark, verbose, maxTime, iterations, earliest)[1]
-    end
-end
-
-function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchmark::Bool,
-                                verbose::Bool, maxTime::Float64, iterations::Int, earliest::Bool)
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 10.
     end
@@ -64,8 +55,6 @@ function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchma
 
     initT = time()
     best = orderedInsertions(pb, order, earliest=earliest)
-    benchData = BenchmarkPoint[]
-    benchmark && (push!(benchData, BenchmarkPoint(time()-initT,best.profit,Inf)))
 
     #if no customer or only one in problem: stop
     if best.rejected == IntSet(eachindex(pb.custs)) || length(pb.custs) == 1
@@ -89,7 +78,6 @@ function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchma
         sol = orderedInsertions(pb, order, earliest=earliest)
         if sol.profit >= best.profit # in case of equality, update order
             if sol.profit > best.profit
-                benchmark && push!(benchData, BenchmarkPoint(time()-initT,sol.profit,Inf))
                 success += 1
                 t = time()-initT
                 min,sec = minutesSeconds(t)
@@ -102,8 +90,7 @@ function insertionsDescentWithBench(pb::TaxiProblem, start::Vector{Int}, benchma
         order[i], order[j] = order[j], order[i]
     end
     verbose && println("\nFinal profit: $(best.profit) dollars")
-    benchmark && push!(benchData, BenchmarkPoint(time()-initT, best.profit,Inf))
-    return (best,benchData)
+    return best
 end
 
 """
@@ -136,4 +123,39 @@ function randomInsertions(pb::TaxiProblem; benchmark=false, verbose=true, maxTim
     benchmark && push!(benchData, BenchmarkPoint(time()-initT,best.profit,Inf))
     benchmark && return (best,benchData)
     return best
+end
+
+"""
+    `greedyInsertions`, select best customer to insert at each step
+"""
+function greedyInsertions(pb::TaxiProblem; verbose::Bool=false)
+    nCusts = length(pb.custs)
+    sol = OfflineSolution(pb)
+
+    remainCusts = IntSet(1:nCusts)
+
+    for i in 1:nCusts
+        verbose && @printf("\r%d / %d customers inserted", i, nCusts)
+        bestCost = Inf; bestPos = 0; bestTaxi = 0; bestCust = 0
+        for c in remainCusts, k in 1:length(pb.taxis)
+            pos, cost = insertCost(pb, c, k, sol.custs[k])
+            if pos == -1
+                delete!(remainCusts, c)
+            elseif cost < bestCost
+                bestCost = cost
+                bestPos = pos
+                bestTaxi = k
+                bestCust = c
+            end
+        end
+        if bestTaxi = 0
+            break
+        else
+            forceInsert!(pb, bestCust, bestTaxi, sol.custs[bestTaxi], bestPos)
+            delete!(sol.rejected,bestCust)
+        end
+    end
+    verbose && print("\n")
+    sol.profit = solutionProfit(pb,sol.custs)
+    return sol
 end

@@ -17,7 +17,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks, linkUnion
 export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
-export localDescent, localDescent!, smartSearch!, flowSolve, flowLinks, flowKLinks
+export localDescent, localDescent!, smartSearch!, flowSolve, flowLinks, flowKLinks, greedyInsertions
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution
