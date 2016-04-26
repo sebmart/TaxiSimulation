@@ -131,31 +131,81 @@ end
 function greedyInsertions(pb::TaxiProblem; verbose::Bool=false)
     nCusts = length(pb.custs)
     sol = OfflineSolution(pb)
+    tt = getPathTimes(pb.times)
 
+    initPos  = [t.initPos for t in pb.taxis]
+    initTime = [t.initTime for t in pb.taxis]
+    allTime = Array(Float64, (nCusts, length(pb.taxis)))
+    bestTime = Array(Float64, nCusts)
+    bestTaxi = Array(Int, nCusts)
     remainCusts = IntSet(1:nCusts)
 
-    for i in 1:nCusts
-        verbose && @printf("\r%d / %d customers inserted", i, nCusts)
-        bestCost = Inf; bestPos = 0; bestTaxi = 0; bestCust = 0
-        for c in remainCusts, k in 1:length(pb.taxis)
-            pos, cost = insertCost(pb, c, k, sol.custs[k])
-            if pos == -1
-                delete!(remainCusts, c)
-            elseif cost < bestCost
-                bestCost = cost
-                bestPos = pos
-                bestTaxi = k
-                bestCust = c
+    verbose && print("First Computations...")
+    bTime = Inf; bCust = 0
+    for c in 1:nCusts
+        bestTime[c] = Inf
+        bestTaxi[c] = 0
+        for k in eachindex(pb.taxis)
+            minTime = initTime[k] + tt[initPos[k], pb.custs[c].orig]
+            if minTime <= pb.custs[c].tmax
+                allTime[c,k] = max(minTime, pb.custs[c].tmin) - initTime[k]
+                if allTime[c,k] < bestTime[c]
+                    bestTime[c] = allTime[c,k]
+                    bestTaxi[c] = k
+                end
+            else
+                allTime[c,k] = Inf
             end
         end
-        if bestTaxi = 0
-            break
-        else
-            forceInsert!(pb, bestCust, bestTaxi, sol.custs[bestTaxi], bestPos)
-            delete!(sol.rejected,bestCust)
+
+        if bestTaxi[c] == 0
+            delete!(remainCusts, c)
+        elseif bestTime[c] < bTime
+            bTime = bestTime[c]
+            bCust = c
         end
+    end
+    i=1
+    while !isempty(remainCusts)
+        if bCust == 0
+            break
+        end
+        c = pb.custs[bCust]; k =bestTaxi[bCust]; t = bTime
+        push!(sol.custs[k], CustomerTimeWindow(c.id, initTime[k] + t, c.tmax))
+        delete!(sol.rejected, bCust)
+        delete!(remainCusts, bCust)
+        initTime[k] = max(c.tmin, initTime[k] + tt[initPos[k],c.orig]) + tt[c.orig, c.dest] + 2*pb.customerTime
+        initPos[k] = c.dest
+
+        bTime = Inf; bCust = 0
+        # update all customers for this taxi
+        for c in remainCusts
+            minTime = initTime[k] + tt[initPos[k], pb.custs[c].orig]
+            if minTime <= pb.custs[c].tmax
+                allTime[c,k] = max(minTime, pb.custs[c].tmin) - initTime[k]
+            else
+                allTime[c,k] = Inf
+            end
+            if bestTaxi[c] == k
+                bestTaxi[c] = indmin(allTime[c,:])
+                bestTime[c] = allTime[c,bestTaxi[c]]
+            elseif allTime[c,k] < bestTime[c]
+                bestTime[c] = allTime[c,k]
+                bestTaxi[c] = k
+            end
+
+            if bestTime[c] == Inf
+                delete!(remainCusts, c)
+            elseif bestTime[c] < bTime
+                bTime = bestTime[c]
+                bCust = c
+            end
+        end
+
+        verbose && i%100 == 0 && @printf("\r%d / %d customers inserted", i, nCusts); i+=1
     end
     verbose && print("\n")
     sol.profit = solutionProfit(pb,sol.custs)
+    # updateTimeWindows!(pb, sol.custs)
     return sol
 end

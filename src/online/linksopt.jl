@@ -38,7 +38,7 @@ function initialPlanning!(lo::LinksOpt)
 	lo.lastSearchTime = 0. # we consider precomputations as a search
     lo.sol = orderedInsertions!(partialOfflineSolution(lo.pb, lo.currentCusts))
     lo.links = baseLinks(lo)
-    for i in 1:5
+    for i in 1:2
         linkUnion!(lo.links, usedLinks(lo.sol))
         lo.sol =  mipSolve(lo.pb, lo.sol, lo.links, verbose=true, MIPGap=1e-6, Presolve=2, FlowCoverCuts=2)
         localDescent!(lo.pb, lo.sol, maxTime=10., maxSearch=5, verbose=true)

@@ -79,3 +79,19 @@ end
     `noTmax`, Returns a taxi problem with all tmaxt set to nTime
 """
 noTmax(pb::TaxiProblem) = updateTmax(pb, Inf, random=false)
+
+"""
+    `onlineSubproblem` returns offline problem to solve at a precise time in an online setting
+"""
+function onlineSubproblem(pb::TaxiProblem, t::Float64)
+    custs = Customer[]
+    for c in pb.custs
+        if c.tcall < t && c.tmax >= t
+            push!(custs, Customer(length(custs)+1, c.orig, d.dest,
+                                    0, max(c.tmin, t) - t, c.tmax-t, c.fare))
+        end
+    end
+    pb2 = copy(pb)
+    pb2.custs = custs
+    return pb2
+end
