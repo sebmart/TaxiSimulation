@@ -83,15 +83,26 @@ noTmax(pb::TaxiProblem) = updateTmax(pb, Inf, random=false)
 """
     `onlineSubproblem` returns offline problem to solve at a precise time in an online setting
 """
-function onlineSubproblem(pb::TaxiProblem, t::Float64)
+function onlineSubproblem(pb::TaxiProblem, t::Number)
+    tt = getPathTimes(pb.times)
+
     custs = Customer[]
     for c in pb.custs
-        if c.tcall < t && c.tmax >= t
-            push!(custs, Customer(length(custs)+1, c.orig, d.dest,
+        if c.tcall <= t && c.tmax >= t
+            push!(custs, Customer(length(custs)+1, c.orig, c.dest,
                                     0, max(c.tmin, t) - t, c.tmax-t, c.fare))
         end
     end
     pb2 = copy(pb)
     pb2.custs = custs
+
+    pb2.taxis = Array(Taxi, length(pb.taxis))
+    for k in eachindex(pb2.taxis)
+        c = rand(pb2.custs)
+        t = pb.taxis[k]
+        print(c)
+        taxitime = tt[c.orig, c.dest] + 2*pb.customerTime
+        pb2.taxis[k] = Taxi(t.id, t.initPos, rand() < 0.2 ? 0 : rand()*taxitime)
+    end
     return pb2
 end
