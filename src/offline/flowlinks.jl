@@ -1,7 +1,28 @@
 ###################################################
-## offline/miplinks.jl
-## link sets for mip
+## offline/flowlinks.jl
+## Flow representation of an offline problem
 ###################################################
+
+
+"""
+    `FlowLinks`: represents an offline problem as a flow graph between customers
+"""
+abstract FlowLinks
+
+"""
+    `AllLinks`: All feasible links for offline problem
+"""
+type AllLinks <: FlowLinks
+
+end
+
+"""
+    `KLinks`: sparse flow representation with K in/out edges per customer
+"""
+type KLinks <: FlowLinks
+
+end
+
 
 """
     `CustomerLink`, contain all customer link informations necessary to build mip
@@ -120,80 +141,6 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
             end
         end
     end
-
-
-    return CustomerLinks(prv, nxt)
-end
-
-"""
-    `kLinks` : k links for each cust/taxi
-    - can use custList to subset customers
-"""
-function kLinks2(pb::TaxiProblem, maxLink::Int, s::OfflineSolution, custList::IntSet = IntSet(eachindex(pb.custs)))
-    tw = [begin t = c.tmin + rand() * (c.tmax - c.tmin); (t,t) end for c in pb.custs]
-    for l in s.custs, t in l
-       tw[t.id] = (t.tInf, t.tSup)
-    end
-
-    tt = getPathTimes(pb.times)
-    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    for k in eachindex(pb.taxis)
-        nxt[-k] = Set{Int}()
-    end
-
-    revLink = Dict{Int, Vector{Int}}([(c,Int[]) for c in custList])
-    revCost = Dict{Int, Vector{Float64}}([(c,Float64[]) for c in custList])
-
-    # first customers
-    for t in pb.taxis
-        custs = Int[]; costs = Float64[]
-        for c in custList
-            if t.initTime + tt[t.initPos, pb.custs[c].orig] <= pb.custs[c].tmax
-                push!(custs, c)
-                cost = max(tt[t.initPos, pb.custs[c].orig], tw[c][2] - t.initTime)
-
-                push!(costs, cost)
-                push!(revLink[c], -t.id)
-                push!(revCost[c], cost)
-            end
-        end
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            c = custs[i]
-            push!(nxt[-t.id], c)
-            push!(prv[c], -t.id)
-        end
-    end
-    # customer pairs
-    for c1 in custList
-        custs = Int[]; costs = Float64[]
-        for c2 in custList
-            if c1 != c2 && pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
-            tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
-                push!(custs, c2)
-                cost =  max(tt[pb.custs[c1].dest, pb.custs[c2].orig], tw[c2][2] - tw[c1][1] - tt[pb.custs[c1].orig, pb.custs[c1].dest] - 2*pb.customerTime)
-                push!(costs, cost)
-                push!(revLink[c2], c1)
-                push!(revCost[c2], cost)
-            end
-        end
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            c2 = custs[i]
-            push!(nxt[c1], c2)
-            push!(prv[c2], c1)
-        end
-    end
-    for (c2, costs) in revCost
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            k = revLink[c2][i]
-            push!(nxt[k], c2)
-            push!(prv[c2], k)
-        end
-    end
-
 
 
     return CustomerLinks(prv, nxt)
