@@ -16,17 +16,9 @@ type CustomerLinks
 end
 
 function Base.show(io::IO, l::CustomerLinks)
-    tLink = 0; cLink = 0
-    for (k,s) in l.nxt
-        if k > 0
-            cLink += length(s)
-        else
-            tLink += length(s)
-        end
-    end
+    nLinks = sum([length(s) for s in values(l.prv)])
     println("MIP links precomputation:")
-    println("$tLink initial links and $cLink customer links")
-    println("Link/customer equal to $(cLink/length(keys(l.prv)))")
+    println("$nLinks edges in network")
 end
 
 
@@ -128,6 +120,80 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
             end
         end
     end
+
+
+    return CustomerLinks(prv, nxt)
+end
+
+"""
+    `kLinks` : k links for each cust/taxi
+    - can use custList to subset customers
+"""
+function kLinks2(pb::TaxiProblem, maxLink::Int, s::OfflineSolution, custList::IntSet = IntSet(eachindex(pb.custs)))
+    tw = [begin t = c.tmin + rand() * (c.tmax - c.tmin); (t,t) end for c in pb.custs]
+    for l in s.custs, t in l
+       tw[t.id] = (t.tInf, t.tSup)
+    end
+
+    tt = getPathTimes(pb.times)
+    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
+    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
+    for k in eachindex(pb.taxis)
+        nxt[-k] = Set{Int}()
+    end
+
+    revLink = Dict{Int, Vector{Int}}([(c,Int[]) for c in custList])
+    revCost = Dict{Int, Vector{Float64}}([(c,Float64[]) for c in custList])
+
+    # first customers
+    for t in pb.taxis
+        custs = Int[]; costs = Float64[]
+        for c in custList
+            if t.initTime + tt[t.initPos, pb.custs[c].orig] <= pb.custs[c].tmax
+                push!(custs, c)
+                cost = max(tt[t.initPos, pb.custs[c].orig], tw[c][2] - t.initTime)
+
+                push!(costs, cost)
+                push!(revLink[c], -t.id)
+                push!(revCost[c], cost)
+            end
+        end
+        p = sortperm(costs)
+        for i in p[1:min(end,maxLink)]
+            c = custs[i]
+            push!(nxt[-t.id], c)
+            push!(prv[c], -t.id)
+        end
+    end
+    # customer pairs
+    for c1 in custList
+        custs = Int[]; costs = Float64[]
+        for c2 in custList
+            if c1 != c2 && pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
+            tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
+                push!(custs, c2)
+                cost =  max(tt[pb.custs[c1].dest, pb.custs[c2].orig], tw[c2][2] - tw[c1][1] - tt[pb.custs[c1].orig, pb.custs[c1].dest] - 2*pb.customerTime)
+                push!(costs, cost)
+                push!(revLink[c2], c1)
+                push!(revCost[c2], cost)
+            end
+        end
+        p = sortperm(costs)
+        for i in p[1:min(end,maxLink)]
+            c2 = custs[i]
+            push!(nxt[c1], c2)
+            push!(prv[c2], c1)
+        end
+    end
+    for (c2, costs) in revCost
+        p = sortperm(costs)
+        for i in p[1:min(end,maxLink)]
+            k = revLink[c2][i]
+            push!(nxt[k], c2)
+            push!(prv[c2], k)
+        end
+    end
+
 
 
     return CustomerLinks(prv, nxt)
@@ -268,24 +334,23 @@ end
 """
     `flowLinks`, returns links for feasible flow
 """
-function flowLinks(pb::TaxiProblem, custList::IntSet = IntSet(eachindex(pb.custs)); timeRatio::Float64=0.5)
+function flowLinks(pb::TaxiProblem, times::Dict{Int,Float64})
     tt = getPathTimes(pb.times)
-    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    times = Dict{Int,Float64}([(c, timeRatio* pb.custs[c].tmin + (1-timeRatio)* pb.custs[c].tmax) for c in custList])
+    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in keys(times)])
+    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in keys(times)])
     for k in eachindex(pb.taxis)
         nxt[-k] = Set{Int}()
     end
 
     # first customers
-    for t in pb.taxis, c in custList
+    for t in pb.taxis, c in keys(times)
         if t.initTime + tt[t.initPos, pb.custs[c].orig] <= times[c]
             push!(nxt[-t.id], c)
             push!(prv[c], -t.id)
         end
     end
     # customer pairs
-    for c1 in custList, c2 in custList
+    for c1 in keys(times), c2 in keys(times)
         if c1 != c2 &&
             times[c1] + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
             tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= times[c2]
@@ -295,13 +360,17 @@ function flowLinks(pb::TaxiProblem, custList::IntSet = IntSet(eachindex(pb.custs
     end
     return CustomerLinks(prv, nxt)
 end
+function flowLinks(pb::TaxiProblem, custList::IntSet = IntSet(eachindex(pb.custs)); timeRatio::Number = 0)
+    times = Dict{Int,Float64}([(c, timeRatio* pb.custs[c].tmin + (1-timeRatio)* pb.custs[c].tmax) for c in custList])
+    flowLinks(pb, times)
+end
 
 """
     `kLinks` : k links for each cust/taxi
     - can use custList to subset customers
 """
 function flowKLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs));
-                initOnly::Bool = false, timeRatio::Float64=0.5)
+                initOnly::Bool = false, timeRatio::Float64=0.)
     tt = getPathTimes(pb.times)
     prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
     nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
@@ -365,4 +434,20 @@ function flowKLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eac
         end
     end
     return CustomerLinks(prv, nxt)
+end
+
+"""
+    `randPickupTime`: return a set of uniformly random pick-up time for each customer
+    to be used with flow
+"""
+function randPickupTime(pb::TaxiProblem, custList::IntSet = IntSet(eachindex(pb.custs)))
+    Dict{Int, Float64}([(c, pb.custs[c].tmin + (pb.custs[c].tmax - pb.custs[c].tmin) * rand()) for c in custList])
+end
+
+function randPickupTime(pb::TaxiProblem, s::OfflineSolution)
+    d = Dict{Int, Float64}([(c, pb.custs[c].tmin + (pb.custs[c].tmax - pb.custs[c].tmin) * rand()) for c in s.rejected])
+    for l in s.custs, tw in l
+        d[tw.id] = tw.tInf + rand() * (tw.tSup - tw.tInf)
+    end
+    d
 end

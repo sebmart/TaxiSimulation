@@ -100,7 +100,6 @@ function onlineSubproblem(pb::TaxiProblem, t::Number)
     for k in eachindex(pb2.taxis)
         c = rand(pb2.custs)
         t = pb.taxis[k]
-        print(c)
         taxitime = tt[c.orig, c.dest] + 2*pb.customerTime
         pb2.taxis[k] = Taxi(t.id, t.initPos, rand() < 0.2 ? 0 : rand()*taxitime)
     end
