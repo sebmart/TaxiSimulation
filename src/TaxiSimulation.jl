@@ -5,7 +5,7 @@
 
 module TaxiSimulation
 
-using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees
+using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees, LightGraphs
 using Base.Test, Base.Dates, NearestNeighbors, JLD
 import MathProgBase
 import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualScale, visualize
@@ -18,6 +18,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproble
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks, linkUnion, linkUnion!
 export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
 export localDescent, localDescent!, smartSearch!, flowSolve, flowLinks, flowKLinks, greedyInsertions, randPickupTime
+export mipSolve2, FlowLinks
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution

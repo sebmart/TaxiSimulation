@@ -6,21 +6,79 @@
 
 """
     `FlowLinks`: represents an offline problem as a flow graph between customers
+    - contains all information to solve (do not need Taxi-Problem)
+    - Abstract the problem from the city-graph representation
 """
-abstract FlowLinks
+type FlowLinks
+    "oriented graph of flow formulation"
+    g::DiGraph
+    "time of edges"
+    time::Dict{Edge, Float64}
+    "profit of edge"
+    profit::Dict{Edge, Float64}
+    "node time-windows !!!! correspond to drop-off time! !!!!"
+    tw::Vector{Tuple{Float64, Float64}}
+    "node ID to cust ID (<0 for taxi init)"
+    node2cust::Vector{Int}
+    "cust ID to node ID"
+    cust2node::Dict{Int, Int}
+    "nodes where taxis begin (sorted)"
+    taxiInit::Vector{Int}
+end
 
-"""
-    `AllLinks`: All feasible links for offline problem
-"""
-type AllLinks <: FlowLinks
-
+function Base.show(io::IO, l::FlowLinks)
+    println("MIP flow network:")
+    println(nv(l.g), " nodes - ", ne(l.g), " edges")
 end
 
 """
-    `KLinks`: sparse flow representation with K in/out edges per customer
+    `allLinks` returns FlowLinks with all feasible links.
 """
-type KLinks <: FlowLinks
+function allLinks(pb::TaxiProblem)
+    tt = getPathTimes(pb.times)
+    tc = getPathTimes(pb.costs)
+    nTaxis = length(pb.taxis)
 
+    g    = DiGraph(nTaxis + length(pb.custs))
+    time = Dict{Edge,Float64}()
+    profit = Dict{Edge,Float64}()
+    tw   = Array{Tuple{Float64,Float64}}(nv(g))
+    node2cust = Array{Int}(nv(g))
+    cust2node = Dict{Int, Int}()
+    currentNodes = IntSet(1:nv(g))
+    taxiInit = collect(1:length(pb.taxis))
+
+    for t in pb.taxis
+        node2cust[t.id] = -t.id
+        cust2node[-t.id] = t.id
+        tw[t.id] = (t.initTime, t.initTime)
+    end
+    for c in pb.custs
+        node2cust[c.id + nTaxis] = c.id
+        cust2node[c.id] = c.id + nTaxis
+        serveTime = tt[pb.custs[c].orig, pb.custs[c].dest] + 2*pb.customerTime
+        tw[c.id + nTaxis] = (pb.custs[c].tmin + serveTime, pb.custs[c].tmax + serveTime)
+    end
+
+    for t in pb.taxis, c in pb.custs
+            if t.initTime + tt[t.initPos, c.orig] <= c.tmax
+                e = Edge(t.id, c.id+nTaxis)
+                add_edge!(g, e)
+                time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
+                profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest]
+            end
+        end
+    end
+    for c1 in pb.custs, c2 in pb.custs
+        edgetime = tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime
+        if c1.id != c2.id && c1.tmin + edgetime <= c2.tmax
+            e = Edge(c1.id + nTaxis, c2.id + nTaxis)
+            add_edge!(g, e)
+            time[e]   = edgetime
+            profit[e] = c2.fare - tc[c1.dest, c2.orig] - tc[c2.orig, c2.dest]
+        end
+    end
+    return FlowLinks(g,time,profit,tw,node2cust,cust2node,currentNodes,taxiInit)
 end
 
 
@@ -44,36 +102,7 @@ end
 
 
 
-"""
-    `allLinks` : all feasible MIP links => provably optimal solution
-    - can use custList to subset customers
-"""
-function allLinks(pb::TaxiProblem, custList::IntSet = IntSet(eachindex(pb.custs)))
-    tt = getPathTimes(pb.times)
-    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    for k in eachindex(pb.taxis)
-        nxt[-k] = Set{Int}()
-    end
 
-    # first customers
-    for t in pb.taxis, c in custList
-        if t.initTime + tt[t.initPos, pb.custs[c].orig] <= pb.custs[c].tmax
-            push!(nxt[-t.id], c)
-            push!(prv[c], -t.id)
-        end
-    end
-    # customer pairs
-    for c1 in custList, c2 in custList
-        if c1 != c2 &&
-            pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
-            tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
-            push!(nxt[c1], c2)
-            push!(prv[c2], c1)
-        end
-    end
-    return CustomerLinks(prv, nxt)
-end
 
 """
     `kLinks` : k links for each cust/taxi
