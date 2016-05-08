@@ -79,41 +79,52 @@ function allLinks(pb::TaxiProblem)
     return FlowLinks(g,time,profit,tw,node2cust,cust2node,taxiInit)
 end
 
-
 """
-    `CustomerLink`, contain all customer link informations necessary to build mip
-    - all taxis must be in nxt
-    - all customers that are in prv must be in nxt and vice-versa
+    `KScores` contain scores associated with a FlowLink network
+    - used to create a k-links network and update it.
 """
-type CustomerLinks
-    "cust ID => previous customer (>0) or taxi (<0)"
-    prv::Dict{Int, Set{Int}}
-    "cust ID (>0) or taxi ID (<0) => next customer (>0)"
-    nxt::Dict{Int, Set{Int}}
+type KScores
+    k::Int
+    nxt::Vector{Vector{Tuple{Edge,Float64}}
+    prv::Vector{Vector{Tuple{Edge,Float64}}
 end
+function KScores(l::Flo)
 
-function Base.show(io::IO, l::CustomerLinks)
-    nLinks = sum([length(s) for s in values(l.prv)])
-    println("MIP links precomputation:")
-    println("$nLinks edges in network")
-end
-
-
-
-
-
-"""
-    `kLinks` : k links for each cust/taxi
-    - can use custList to subset customers
-"""
-function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachindex(pb.custs));
-                initOnly::Bool = false)
+function kLinks(l::FlowLinks, maxLink::Int)
     tt = getPathTimes(pb.times)
-    prv = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    nxt = Dict{Int,Set{Int}}([(c, Set{Int}()) for c in custList])
-    for k in eachindex(pb.taxis)
-        nxt[-k] = Set{Int}()
+    tc = getPathTimes(pb.costs)
+    nTaxis = length(pb.taxis)
+
+    g    = DiGraph(nTaxis + length(pb.custs))
+    time = Dict{Edge,Float64}()
+    profit = Dict{Edge,Float64}()
+    tw   = copy(l.tw)
+    node2cust = copy(l.node2cust)
+    cust2node = copy(l.cust2node)
+    taxiInit  = copy(l.taxiInit)
+
+
+
+    # k-limit on out edges
+    for v in vertices(l.g)
+        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
+            e = Edge(t.id, c.id+nTaxis)
+            add_edge!(g, e)
+            time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
+            profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest]
+        end
     end
+    for c1 in pb.custs, c2 in pb.custs
+        edgetime = tt[c1.dest, c2.orig] + tt[c2.orig, c2.dest] + 2*pb.customerTime
+        if c1.id != c2.id && tw[c1.id + nTaxis][1] + edgetime <= tw[c2.id + nTaxis][2]
+            e = Edge(c1.id + nTaxis, c2.id + nTaxis)
+            add_edge!(g, e)
+            time[e]   = edgetime
+            profit[e] = c2.fare - tc[c1.dest, c2.orig] - tc[c2.orig, c2.dest]
+        end
+    end
+    return FlowLinks(g,time,profit,tw,node2cust,cust2node,taxiInit)
+
 
     revLink = Dict{Int, Vector{Int}}([(c,Int[]) for c in custList])
     revCost = Dict{Int, Vector{Float64}}([(c,Float64[]) for c in custList])
@@ -173,6 +184,32 @@ function kLinks(pb::TaxiProblem, maxLink::Int, custList::IntSet = IntSet(eachind
     return CustomerLinks(prv, nxt)
 end
 
+"""
+    `CustomerLink`, contain all customer link informations necessary to build mip
+    - all taxis must be in nxt
+    - all customers that are in prv must be in nxt and vice-versa
+"""
+type CustomerLinks
+    "cust ID => previous customer (>0) or taxi (<0)"
+    prv::Dict{Int, Set{Int}}
+    "cust ID (>0) or taxi ID (<0) => next customer (>0)"
+    nxt::Dict{Int, Set{Int}}
+end
+
+function Base.show(io::IO, l::CustomerLinks)
+    nLinks = sum([length(s) for s in values(l.prv)])
+    println("MIP links precomputation:")
+    println("$nLinks edges in network")
+end
+
+
+
+
+
+"""
+    `kLinks` : k links for each cust/taxi
+    - can use custList to subset customers
+"""
 """
     `linkCost(TaxiProblem, i1,i2)`, return cost of link i1=>i2 (if i1<0, then i1 is a taxi)
     !!! customer must be  "feasible"
