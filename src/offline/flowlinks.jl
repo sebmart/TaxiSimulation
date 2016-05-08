@@ -45,7 +45,6 @@ function allLinks(pb::TaxiProblem)
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    currentNodes = IntSet(1:nv(g))
     taxiInit = collect(1:length(pb.taxis))
 
     for t in pb.taxis
@@ -56,17 +55,16 @@ function allLinks(pb::TaxiProblem)
     for c in pb.custs
         node2cust[c.id + nTaxis] = c.id
         cust2node[c.id] = c.id + nTaxis
-        serveTime = tt[pb.custs[c].orig, pb.custs[c].dest] + 2*pb.customerTime
-        tw[c.id + nTaxis] = (pb.custs[c].tmin + serveTime, pb.custs[c].tmax + serveTime)
+        serveTime = tt[c.orig, c.dest] + 2*pb.customerTime
+        tw[c.id + nTaxis] = (c.tmin + serveTime, c.tmax + serveTime)
     end
 
     for t in pb.taxis, c in pb.custs
-            if t.initTime + tt[t.initPos, c.orig] <= c.tmax
-                e = Edge(t.id, c.id+nTaxis)
-                add_edge!(g, e)
-                time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
-                profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest]
-            end
+        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
+            e = Edge(t.id, c.id+nTaxis)
+            add_edge!(g, e)
+            time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
+            profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest]
         end
     end
     for c1 in pb.custs, c2 in pb.custs
@@ -78,7 +76,7 @@ function allLinks(pb::TaxiProblem)
             profit[e] = c2.fare - tc[c1.dest, c2.orig] - tc[c2.orig, c2.dest]
         end
     end
-    return FlowLinks(g,time,profit,tw,node2cust,cust2node,currentNodes,taxiInit)
+    return FlowLinks(g,time,profit,tw,node2cust,cust2node,taxiInit)
 end
 
 

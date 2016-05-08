@@ -7,32 +7,27 @@
     can be warmstarted with a solution
 """
 
-mipSolve2(pb::TaxiProblem, links::CustomerLinks=allLinks(pb); args...) =
+mipSolve2(pb::TaxiProblem, links::FlowLinks=allLinks(pb); args...) =
     mipSolve2(pb, Nullable{OfflineSolution}(), links; args...)
-mipSolve2(pb::TaxiProblem, s::OfflineSolution, links::CustomerLinks=allLinks(pb); args...) =
+mipSolve2(pb::TaxiProblem, s::OfflineSolution, links::FlowLinks=allLinks(pb); args...) =
     mipSolve2(pb, Nullable{OfflineSolution}(s), links; args...)
 
 function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLinks=allLinks(pb); verbose::Bool=true, solverArgs...)
-    taxi = pb.taxis
-    cust = pb.custs
-    if length(cust) == 0.
+    if ne(l.g) == 0
         return OfflineSolution(pb)
     end
 
-    #short alias
-    tt = getPathTimes(pb.times)
-    tc = getPathTimes(pb.costs)
+    edgeList = collect(edges(l.g))
 
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
     m = Model(solver= GurobiSolver(OutputFlag=of; solverArgs...))
-
     # =====================================================
     # Decision variables
     # =====================================================
 
     # Edge of flow graph is used
-    @defVar(m, x[e = edges(l.g)], Bin)
+    @defVar(m, x[e = edgeList], Bin)
     # customer c picked-up only once
     @defVar(m, p[v = vertices(l.g)], Bin)
     # Pick-up time
@@ -73,8 +68,8 @@ function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLink
         end
     end
 
-    @setObjective(m, Max, sum{x[e]*(l.profit[e] + l.time[e]*pb.waitingCost), e = edges(l.g)} -
-    pb.simTime*length(taxi)*pb.waitingCost )
+    @setObjective(m, Max, sum{x[e]*(l.profit[e] + l.time[e]*pb.waitingCost), e = edgeList} -
+    pb.simTime*length(pb.taxis)*pb.waitingCost )
 
     # =====================================================
     # Constraints
@@ -88,11 +83,11 @@ function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLink
     sum{x[e], e = in_edges(l.g, v)} == p[v])
 
     # all nodes : exit
-    @addConstraint(m, cs2[v = vertices(l.g)],
+    @addConstraint(m, cs3[v = vertices(l.g)],
     sum{x[e], e = out_edges(l.g, v)} <= p[v])
 
     #Time limits rules
-    @addConstraint(m, cs5[e = edges(l.g)],
+    @addConstraint(m, cs4[e = edgeList],
     t[dst(e)] - t[src(e)] >= (l.tw[dst(e)][1] - l.tw[src(e)][2]) +
     (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
 
@@ -101,10 +96,10 @@ function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLink
         error("Model is infeasible")
     end
 
-    custs = [CustomerTimeWindow[] for k in eachindex(taxi)]
-    rejected = IntSet(keys(prv))
+    custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
+    rejected = IntSet(eachindex(pb.custs))
     # reconstruct solution
-    for k=eachindex(taxi), e = out_edges(l.g, l.cust2node[-k])
+    for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
         if getValue(x[e]) > 0.9
             c = l.node2cust[dst(e)]
             push!(custs[k], CustomerTimeWindow(c, 0., 0.))
