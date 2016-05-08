@@ -68,7 +68,7 @@ function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLink
         end
     end
 
-    @setObjective(m, Max, sum{x[e]*(l.profit[e] + l.time[e]*pb.waitingCost), e = edgeList} -
+    @setObjective(m, Max, sum{x[e]*(l.profit[e] + (l.time[e] - 2*pb.customerTime)*pb.waitingCost), e = edgeList} -
     pb.simTime*length(pb.taxis)*pb.waitingCost )
 
     # =====================================================
@@ -109,7 +109,7 @@ function mipSolve2(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLink
                 anotherCust = false
                 for e2 in out_edges(l.g, dst(e))
                     if getValue(x[e2]) > 0.9
-                        c = l.node2cust[dst(e)]
+                        c = l.node2cust[dst(e2)]
                         push!(custs[k], CustomerTimeWindow(c, 0., 0.))
                         delete!(rejected, c)
                         anotherCust = true; e = e2; break;

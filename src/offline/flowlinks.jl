@@ -68,8 +68,8 @@ function allLinks(pb::TaxiProblem)
         end
     end
     for c1 in pb.custs, c2 in pb.custs
-        edgetime = tt[c1.orig, c1.dest] + tt[c1.dest, c2.orig] + 2*pb.customerTime
-        if c1.id != c2.id && c1.tmin + edgetime <= c2.tmax
+        edgetime = tt[c1.dest, c2.orig] + tt[c2.orig, c2.dest] + 2*pb.customerTime
+        if c1.id != c2.id && tw[c1.id + nTaxis][1] + edgetime <= tw[c2.id + nTaxis][2]
             e = Edge(c1.id + nTaxis, c2.id + nTaxis)
             add_edge!(g, e)
             time[e]   = edgetime
