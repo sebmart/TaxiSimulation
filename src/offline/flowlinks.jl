@@ -16,7 +16,7 @@ type FlowLinks
     time::Dict{Edge, Float64}
     "profit of edge"
     profit::Dict{Edge, Float64}
-    "node time-windows !!!! correspond to drop-off time! !!!!"
+    "node time-windows (!!!! correspond to drop-off time! !!!!)"
     tw::Vector{Tuple{Float64, Float64}}
     "node ID to cust ID (<0 for taxi init)"
     node2cust::Vector{Int}
@@ -80,22 +80,37 @@ function allLinks(pb::TaxiProblem)
 end
 
 """
-    `KScores` contain scores associated with a FlowLink network
-    - used to create a k-links network and update it.
+    `LinkScores` contain link-scores associated with a FlowLink network
+    - stored in a sorted way (to easily get k-best or update), for each in-neighbor and out-neighbor
 """
-type KScores
-    k::Int
-    nxt::Vector{Vector{Tuple{Edge,Float64}}
-    prv::Vector{Vector{Tuple{Edge,Float64}}
+type LinkScores
+    nxt::Vector{Vector{Tuple{Int,Float64}}}
+    prv::Vector{Vector{Tuple{Int,Float64}}}
 end
-function KScores(l::Flo)
+function Base.show(io::IO, l::LinkScores)
+    println("Link Scores container")
+end
 
-function kLinks(l::FlowLinks, maxLink::Int)
+"""
+    `scoreHeuristic` assign scores to links.
+    - scores is minus the shortest possible empty driving time for link
+"""
+function scoreHeuristic(pb::TaxiProblem, l::FlowLinks)
     tt = getPathTimes(pb.times)
-    tc = getPathTimes(pb.costs)
-    nTaxis = length(pb.taxis)
+    function score(e::Edge)
+        c = pb.custs[l.node2cust[dst(e)]]
+        return -(max(l.time[e], l.tw[dst(e)][1] - l.tw[src(e)][2]) - tt[c.orig, c.dest] - 2*pb.customerTime)
+    end
+    nxt = [sort!(Tuple{Int,Float64}[(dst(e),score(e)) for e in out_edges(l.g,v)], by=x->x[2], rev=true) for v in vertices(l.g)]
+    prv = [sort!(Tuple{Int,Float64}[(src(e),score(e)) for e in in_edges(l.g,v)],  by=x->x[2], rev=true) for v in vertices(l.g)]
+    LinkScores(nxt, prv)
+end
 
-    g    = DiGraph(nTaxis + length(pb.custs))
+"""
+    `kLinks` given a LinkScores and a FlowLink object, construct a graph subset keeping the k best links
+"""
+function kLinks(l::FlowLinks, score::LinkScores, k::Int; firstK::Int=0)
+    g    = DiGraph(nv(l.g))
     time = Dict{Edge,Float64}()
     profit = Dict{Edge,Float64}()
     tw   = copy(l.tw)
@@ -103,86 +118,39 @@ function kLinks(l::FlowLinks, maxLink::Int)
     cust2node = copy(l.cust2node)
     taxiInit  = copy(l.taxiInit)
 
-
-
     # k-limit on out edges
-    for v in vertices(l.g)
-        if t.initTime + tt[t.initPos, c.orig] <= c.tmax
-            e = Edge(t.id, c.id+nTaxis)
+    for v1 in vertices(g)
+        for (v2,_) in score.nxt[v1][1:min(k,end)]
+            e = Edge(v1,v2)
             add_edge!(g, e)
-            time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
-            profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest]
+            time[e] = l.time[e]
+            profit[e] = l.profit[e]
+        end
+        for (v0,_) in score.prv[v1][1:min(k,end)]
+            e = Edge(v0,v1)
+            add_edge!(g, e)
+            time[e] = l.time[e]
+            profit[e] = l.profit[e]
         end
     end
-    for c1 in pb.custs, c2 in pb.custs
-        edgetime = tt[c1.dest, c2.orig] + tt[c2.orig, c2.dest] + 2*pb.customerTime
-        if c1.id != c2.id && tw[c1.id + nTaxis][1] + edgetime <= tw[c2.id + nTaxis][2]
-            e = Edge(c1.id + nTaxis, c2.id + nTaxis)
+
+    if firstK > 0
+        for v1 in taxiInit, (v2,_) in score.nxt[v1][1:min(firstK,end)]
+            e = Edge(v1,v2)
             add_edge!(g, e)
-            time[e]   = edgetime
-            profit[e] = c2.fare - tc[c1.dest, c2.orig] - tc[c2.orig, c2.dest]
+            time[e] = l.time[e]
+            profit[e] = l.profit[e]
         end
     end
     return FlowLinks(g,time,profit,tw,node2cust,cust2node,taxiInit)
-
-
-    revLink = Dict{Int, Vector{Int}}([(c,Int[]) for c in custList])
-    revCost = Dict{Int, Vector{Float64}}([(c,Float64[]) for c in custList])
-
-    # first customers
-    for t in pb.taxis
-        custs = Int[]; costs = Float64[]
-        for c in custList
-            if t.initTime + tt[t.initPos, pb.custs[c].orig] <= pb.custs[c].tmax
-                push!(custs, c)
-                cost = linkCost(pb, -t.id, c)
-                push!(costs, cost)
-                push!(revLink[c], -t.id)
-                push!(revCost[c], cost)
-            end
-        end
-        p = sortperm(costs)
-        for i in p[1:min(end,maxLink)]
-            c = custs[i]
-            push!(nxt[-t.id], c)
-            push!(prv[c], -t.id)
-        end
-    end
-
-    if !initOnly
-        # customer pairs
-        for c1 in custList
-            custs = Int[]; costs = Float64[]
-            for c2 in custList
-                if c1 != c2 && pb.custs[c1].tmin + tt[pb.custs[c1].orig, pb.custs[c1].dest] +
-                tt[pb.custs[c1].dest, pb.custs[c2].orig] + 2*pb.customerTime <= pb.custs[c2].tmax
-                    push!(custs, c2)
-                    cost = linkCost(pb, c1, c2)
-                    push!(costs, cost)
-                    push!(revLink[c2], c1)
-                    push!(revCost[c2], cost)
-                end
-            end
-            p = sortperm(costs)
-            for i in p[1:min(end,maxLink)]
-                c2 = custs[i]
-                push!(nxt[c1], c2)
-                push!(prv[c2], c1)
-            end
-        end
-        for (c2, costs) in revCost
-            p = sortperm(costs)
-            for i in p[1:min(end,maxLink)]
-                k = revLink[c2][i]
-                push!(nxt[k], c2)
-                push!(prv[c2], k)
-            end
-        end
-    end
-
-
-    return CustomerLinks(prv, nxt)
 end
+
+function kLinks(pb::TaxiProblem, k::Int; firstK::Int=0)  # to create from scratch
+    l = allLinks(pb)
+    sc = scoreHeuristic(pb, l)
+    kLinks(l,sc,k,firstK=firstK)
+end
+
 
 """
     `CustomerLink`, contain all customer link informations necessary to build mip
@@ -203,29 +171,6 @@ function Base.show(io::IO, l::CustomerLinks)
 end
 
 
-
-
-
-"""
-    `kLinks` : k links for each cust/taxi
-    - can use custList to subset customers
-"""
-"""
-    `linkCost(TaxiProblem, i1,i2)`, return cost of link i1=>i2 (if i1<0, then i1 is a taxi)
-    !!! customer must be  "feasible"
-    - "best-case" cost : cost = shortest possible time between drop-off of one and pickup of the other
-"""
-function linkCost(pb::TaxiProblem, i1::Int, i2::Int)
-    tt = getPathTimes(pb.times)
-    c2 = pb.custs[i2]
-    if i1 < 0 #taxi link
-        t1 = pb.taxis[-i1]
-        return max(tt[t1.initPos, c2.orig], c2.tmin - t1.initTime)
-    else #customer link
-        c1 = pb.custs[i1]
-        return max(tt[c1.dest, c2.orig], c2.tmin - c1.tmax - tt[c1.orig, c1.dest] - 2*pb.customerTime)
-    end
-end
 
 """
     `linkUnion!`
