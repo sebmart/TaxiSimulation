@@ -7,15 +7,26 @@
     can be warmstarted with a solution
 """
 
-mipSolve(pb::TaxiProblem, links::FlowLinks=allLinks(pb); args...) =
-    mipSolve(pb, Nullable{OfflineSolution}(), links; args...)
-mipSolve(pb::TaxiProblem, s::OfflineSolution, links::FlowLinks=allLinks(pb); args...) =
-    mipSolve(pb, Nullable{OfflineSolution}(s), links; args...)
+mipSolve(pb::TaxiProblem; args...) =
+    mipSolve(pb, FlowProblem(pb), Nullable{OfflineSolution}(); args...)
+mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
+    mipSolve(pb, FlowProblem(pb), Nullable{OfflineSolution}(s); args...)
 
-function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLinks=allLinks(pb); verbose::Bool=true, solverArgs...)
-    if ne(l.g) == 0
-        return OfflineSolution(pb)
+function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Nullable{OfflineSolution}; args...)
+    if !isnull(s)
+        return OfflineSolution(pb, l, mipFlow(l, FlowSolution(l, s)))
+    else
+        return OfflineSolution(pb, l, mipFlow(l))
     end
+end
+
+"""
+    `mipFlow`: take FlowProblem, give Flow Solution
+"""
+mipFlow(l::FlowProblem; args...) = mipFlow(l, Nullable{FlowSolution}(); args...)
+mipFlow(l::FlowProblem, s::FlowSolution; args...) =
+    mipFlow(l, Nullable{FlowSolution}(s); args...)
+function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, solverArgs...)
 
     edgeList = collect(edges(l.g))
 
@@ -35,41 +46,18 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLinks
 
 
     # =====================================================
-    # Initialisation
+    # Warmstart
     # =====================================================
-    if !isnull(init)
-        init2 = get(init)
-
-        for e in edges(l.g)
-            setValue(x[e],0)
+    if !isnull(s)
+        for e in edgeList
+            setValue(x[e], 0)
         end
-        for v in vertices(l.g)
-            setValue(p[v], 0)
-        end
-        for (k,ll) in enumerate(init2.custs)
-            setValue(p[l.cust2node[-k]], 1)
-            if length(ll) > 0
-                e = Edge(l.cust2node[-k], l.cust2node[ll[1].id])
-                if ! has_edge(l.g, e)
-                    error("Warmstart link not in flow graph!")
-                end
-                setValue(x[e], 1)
-                setValue(p[dst(e)], 1)
-                for j= 2:length(ll)
-                    e = Edge(l.cust2node[ll[j-1].id], l.cust2node[ll[j].id])
-                    if ! has_edge(l.g, e)
-                        error("Warmstart link not in flow graph!")
-                    end
-                    setValue(x[e], 1)
-                    setValue(p[dst(e)], 1)
-
-                end
-            end
+        for e in get(s).edges
+            setValue(x[e], 1)
         end
     end
 
-    @setObjective(m, Max, sum{x[e]*(l.profit[e] + (l.time[e] - 2*pb.customerTime)*pb.waitingCost), e = edgeList} -
-    pb.simTime*length(pb.taxis)*pb.waitingCost )
+    @setObjective(m, Max, sum{x[e]*l.profit[e], e = edgeList})
 
     # =====================================================
     # Constraints
@@ -96,28 +84,12 @@ function mipSolve(pb::TaxiProblem, init::Nullable{OfflineSolution}, l::FlowLinks
         error("Model is infeasible")
     end
 
-    custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
-    rejected = IntSet(eachindex(pb.custs))
-    # reconstruct solution
-    for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
+    sol = Set{Edge}()
+
+    for e in edgeList
         if getValue(x[e]) > 0.9
-            c = l.node2cust[dst(e)]
-            push!(custs[k], CustomerTimeWindow(c, 0., 0.))
-            delete!(rejected, c)
-            anotherCust = true
-            while anotherCust
-                anotherCust = false
-                for e2 in out_edges(l.g, dst(e))
-                    if getValue(x[e2]) > 0.9
-                        c = l.node2cust[dst(e2)]
-                        push!(custs[k], CustomerTimeWindow(c, 0., 0.))
-                        delete!(rejected, c)
-                        anotherCust = true; e = e2; break;
-                    end
-                end
-            end
+            push!(sol, e)
         end
     end
-
-    return OfflineSolution(pb, updateTimeWindows!(pb, custs), rejected, getObjectiveValue(m))
+    return FlowSolution(sol)
 end

@@ -15,10 +15,11 @@ export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolutio
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproblem
 # offline
-export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, mipSolve, allLinks, kLinks, linkUnion, linkUnion!
-export usedLinks, orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
-export localDescent, localDescent!, smartSearch!, flowSolve, flowLinks, flowKLinks, greedyInsertions, randPickupTime
-export FlowLinks, LinkScores, scoreHeuristic
+export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, FlowProblem, FlowSolution,  kLinks
+export orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
+export localDescent, localDescent!, smartSearch!, greedyInsertions
+export fixedPickupTimes, randPickupTimes, lpFlow, mipFlow, mipSolve, timeWindows
+export FlowProblem, LinkScores, scoreHeuristic
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution
@@ -40,14 +41,14 @@ include("taxiproblem/metrics.jl")
 #Offline
 include("offline/offline.jl")
 include("offline/tools.jl")
-include("offline/flowlinks.jl")
+include("offline/flowproblem.jl")
 include("offline/mipsolve.jl")
+include("offline/lpsolve.jl")
 include("offline/partialsolutions.jl")
 include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
 include("offline/localheuristics.jl")
 include("offline/metrics.jl")
-include("offline/flowsolve.jl")
 #Online
 include("online/online.jl")
 include("online/offlineplanning.jl")
