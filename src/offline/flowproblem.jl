@@ -76,6 +76,48 @@ function FlowProblem(pb::TaxiProblem)
     return FlowProblem(g,time,profit,tw,node2cust,cust2node,taxiInit)
 end
 
+"""
+    `emptyFlow`, returns an empty flow problem
+    !!! if created from FlowProblem, share same memory !!!
+"""
+function emptyFlow(f::FlowProblem)
+    g    = DiGraph(nv(f.g))
+    time = f.time
+    profit = f.profit
+    tw   = f.tw
+    node2cust = f.node2cust
+    cust2node = f.cust2node
+    taxiInit  = f.taxiInit
+    return FlowProblem(g,time,profit,tw,node2cust,cust2node,taxiInit)
+end
+
+function emptyFlow(pb::TaxiProblem)
+    tt = getPathTimes(pb.times)
+    tc = getPathTimes(pb.costs)
+    nTaxis = length(pb.taxis)
+
+    g    = DiGraph(nTaxis + length(pb.custs))
+    time = Dict{Edge,Float64}()
+    profit = Dict{Edge,Float64}()
+    tw   = Array{Tuple{Float64,Float64}}(nv(g))
+    node2cust = Array{Int}(nv(g))
+    cust2node = Dict{Int, Int}()
+    taxiInit = collect(1:length(pb.taxis))
+
+    for t in pb.taxis
+        node2cust[t.id] = -t.id
+        cust2node[-t.id] = t.id
+        tw[t.id] = (t.initTime, t.initTime)
+    end
+    for c in pb.custs
+        node2cust[c.id + nTaxis] = c.id
+        cust2node[c.id] = c.id + nTaxis
+        serveTime = tt[c.orig, c.dest] + 2*pb.customerTime
+        tw[c.id + nTaxis] = (c.tmin + serveTime, c.tmax + serveTime)
+    end
+    return FlowProblem(g,time,profit,tw,node2cust,cust2node,taxiInit)
+end
+
 
 """
     `FlowSolution`: compact representation of a flow solution (tied to a problem), just dictionary
@@ -103,6 +145,7 @@ function FlowSolution(l::FlowProblem, s::OfflineSolution)
             orig = dest
         end
     end
+    FlowSolution(sol)
 end
 
 function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
@@ -161,41 +204,30 @@ end
 
 """
     `kLinks` given a LinkScores and a FlowLink object, construct a graph subset keeping the k best links
+    !!! share memory with original object !!!
 """
 function kLinks(l::FlowProblem, k::Int, score::LinkScores ; firstK::Int=0)
-    g    = DiGraph(nv(l.g))
-    time = Dict{Edge,Float64}()
-    profit = Dict{Edge,Float64}()
-    tw   = copy(l.tw)
-    node2cust = copy(l.node2cust)
-    cust2node = copy(l.cust2node)
-    taxiInit  = copy(l.taxiInit)
+    pb = emptyFlow(l)
 
     # k-limit on out edges
-    for v1 in vertices(g)
+    for v1 in vertices(l.g)
         for (v2,_) in score.nxt[v1][1:min(k,end)]
             e = Edge(v1,v2)
-            add_edge!(g, e)
-            time[e] = l.time[e]
-            profit[e] = l.profit[e]
+            add_edge!(pb.g, e)
         end
         for (v0,_) in score.prv[v1][1:min(k,end)]
             e = Edge(v0,v1)
-            add_edge!(g, e)
-            time[e] = l.time[e]
-            profit[e] = l.profit[e]
+            add_edge!(pb.g, e)
         end
     end
 
     if firstK > 0
-        for v1 in taxiInit, (v2,_) in score.nxt[v1][1:min(firstK,end)]
+        for v1 in l.taxiInit, (v2,_) in score.nxt[v1][1:min(firstK,end)]
             e = Edge(v1,v2)
-            add_edge!(g, e)
-            time[e] = l.time[e]
-            profit[e] = l.profit[e]
+            add_edge!(pb.g, e)
         end
     end
-    return FlowProblem(g,time,profit,tw,node2cust,cust2node,taxiInit)
+    return pb
 end
 
 function kLinks(pb::TaxiProblem, k::Int; firstK::Int=0)  # to create from scratch
@@ -248,4 +280,15 @@ function timeWindows(l::FlowProblem, s::FlowSolution)
         end
     end
     return tw
+end
+
+"""
+    `addLinks!` add links of a flow solution to a flow problem
+    - !!! time/profit information must be computed already !!!
+"""
+function addLinks!(pb::FlowProblem, s::FlowSolution)
+    for e in s.edges
+        add_edge!(pb.g, e)
+    end
+    pb
 end

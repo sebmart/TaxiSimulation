@@ -19,7 +19,8 @@ export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, FlowProblem, FlowSol
 export orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
 export localDescent, localDescent!, smartSearch!, greedyInsertions
 export fixedPickupTimes, randPickupTimes, lpFlow, mipFlow, mipSolve, timeWindows
-export FlowProblem, LinkScores, scoreHeuristic
+export FlowProblem, LinkScores, scoreHeuristic, emptyFlow, addLinks!
+
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
 export partialOfflineSolution
