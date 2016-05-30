@@ -19,25 +19,25 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     # =====================================================
 
     # Edge of flow graph is used
-    @defVar(m, 0 <= x[e = edgeSet]      <= 1)
+    @variable(m, 0 <= x[e = edgeSet]      <= 1)
     # customer c picked-up only once
-    @defVar(m, 0 <= p[v = vertices(l.g)] <= 1)
+    @variable(m, 0 <= p[v = vertices(l.g)] <= 1)
 
-    @setObjective(m, Max, sum{x[e]*l.profit[e], e = edgeSet})
+    @objective(m, Max, sum{x[e]*l.profit[e], e = edgeSet})
 
     # =====================================================
     # Constraints
     # =====================================================
 
     # first nodes : entry
-    @addConstraint(m, cs1[v = l.taxiInit], p[v] == 1)
+    @constraint(m, cs1[v = l.taxiInit], p[v] == 1)
 
     # customer nodes : entry
-    @addConstraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
+    @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
     sum{x[e], e = filter( x-> x in edgeSet,in_edges(l.g, v))} == p[v])
 
     # all nodes : exit
-    @addConstraint(m, cs3[v = vertices(l.g)],
+    @constraint(m, cs3[v = vertices(l.g)],
     sum{x[e], e = filter( x-> x in edgeSet, out_edges(l.g, v))} <= p[v])
 
     status = solve(m)
@@ -49,7 +49,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     sol = Set{Edge}()
 
     for e in edgeSet
-        if getValue(x[e]) > 0.9
+        if getvalue(x[e]) > 0.9
             push!(sol, e)
         end
     end

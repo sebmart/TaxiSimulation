@@ -50,6 +50,7 @@ include("offline/solutionupdates.jl")
 include("offline/insertionsheuristics.jl")
 include("offline/localheuristics.jl")
 include("offline/metrics.jl")
+include("offline/infeasiblepaths.jl")
 #Online
 include("online/online.jl")
 include("online/offlineplanning.jl")
