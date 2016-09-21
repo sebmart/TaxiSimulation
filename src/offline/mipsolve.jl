@@ -25,17 +25,45 @@ end
     the different methods to implement the time-window restrictions can be:
     - "pickuptime" (by default) : continuous variables for each pick-up time
     - "allinfpaths": precompute all infeasible paths
+    - "lazyinfpaths": add path infeasibility in a lazy way
+    - "oainfpaths": outer approximation
 """
 mipFlow(l::FlowProblem; args...) = mipFlow(l, Nullable{FlowSolution}(); args...)
 mipFlow(l::FlowProblem, s::FlowSolution; args...) =
     mipFlow(l, Nullable{FlowSolution}(s); args...)
 function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
+
     edgeList = collect(edges(l.g))
     if method == "allinfpaths"
         fi = allInfeasibilities(l)
     end
-
+    function lazyinfpaths(cb)
+        fs = emptyFlow(l)
+        for e in edgeList
+            if getvalue(x[e]) > 0.9
+                add_edge!(fs.g, e)
+            end
+        end
+        fi = allInfeasibilities(fs)
+        for ik in fi, j=1:size(ik)[2]
+            @lazyconstraint(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+        end
+    end
+    function cutinfpaths(cb)
+        fs = emptyFlow(l)
+        for e in edgeList
+            if getvalue(x[e]) > 0.01
+                add_edge!(fs.g, e)
+            end
+        end
+        fi = allInfeasibilities(fs)
+        for ik in fi, j=1:size(ik)[2]
+            if sum([getvalue(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
+                @usercut(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+            end
+        end
+    end
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
     m = Model(solver= GurobiSolver(OutputFlag=of; solverArgs...))
@@ -48,7 +76,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     # customer c picked-up only once
     @variable(m, p[v = vertices(l.g)], Bin)
 
-    if method == "pickuptime"
+    if method == "pickuptime" || method == "cutinfpaths"
         @variable(m, l.tw[v][1] <= t[v = vertices(l.g)] <= l.tw[v][2])
     end
 
@@ -82,18 +110,43 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     @constraint(m, cs3[v = vertices(l.g)],
     sum{x[e], e = out_edges(l.g, v)} <= p[v])
 
-    if method == "pickuptime" #Time limits rules
+    if method == "pickuptime"
         @constraint(m, cs4[e = edgeList],
         t[dst(e)] - t[src(e)] >= (l.tw[dst(e)][1] - l.tw[src(e)][2]) +
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
     elseif method == "allinfpaths"
         @constraint(m, cs4[ ik in fi, j=1:size(ik)[2]],
         sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+    elseif method == "lazyinfpaths"
+        addlazycallback(m,lazyinfpaths)
+    elseif method == "cutinfpaths"
+        addcutcallback(m, cutinfpaths)
+        @constraint(m, cs4[e = edgeList],
+        t[dst(e)] - t[src(e)] >= (l.tw[dst(e)][1] - l.tw[src(e)][2]) +
+        (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
     end
 
 
-
-    status = solve(m)
+    if method=="oainfpaths"
+        outside = true
+        while outside
+            outside = false
+            status = solve(m)
+            fs = emptyFlow(l)
+            for e in edgeList
+                if getvalue(x[e]) > 0.9
+                    add_edge!(fs.g, e)
+                end
+            end
+            fi = allInfeasibilities(fs)
+            for ik in fi, j=1:size(ik)[2]
+                outside = true
+                @constraint(m, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+            end
+        end
+    else
+        status = solve(m)
+    end
     if status == :Infeasible
         error("Model is infeasible")
     end

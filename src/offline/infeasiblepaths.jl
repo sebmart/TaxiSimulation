@@ -73,7 +73,7 @@ function allInfeasibilities(pb::FlowProblem)
     infeasibilities = FlowInfeasibilities()
     while length(dep) > 0
         k += 1
-        println("$(length(dep)) $k-link paths")
+        # println("$(length(dep)) $k-link paths")
         infeasible, dep = kInfeasibilities(pb, dep, dep1, k)
         push!(infeasibilities, infeasible)
     end
