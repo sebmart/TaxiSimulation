@@ -7,7 +7,8 @@
     `addRandomCustomers!`: adds random customers (uniformly) to a TaxiProblem
     - customers are a Poisson process for each node with a mean of `custNodeHour` customer/hour
     - customers destination uniformely random
-    - last pick-up time is `maxTime` (in seconds)
+    - pickups during a time window of `simTime` seconds
+    - customers are ready to wait exactly custWait, and call exactly custCall minutes before
 """
 function addRandomCustomers!(pb::TaxiProblem,
                             simTime::Float64 = 60. * 60.,
