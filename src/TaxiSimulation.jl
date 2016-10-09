@@ -8,7 +8,7 @@ module TaxiSimulation
 using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees, LightGraphs
 using Base.Test, Base.Dates, NearestNeighbors, JLD
 import MathProgBase
-import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualScale, visualize
+import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualRedraw, visualize
 
 # taxiproblem
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics

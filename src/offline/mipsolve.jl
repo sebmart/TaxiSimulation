@@ -27,6 +27,7 @@ end
     - "allinfpaths": precompute all infeasible paths
     - "lazyinfpaths": add path infeasibility in a lazy way
     - "oainfpaths": outer approximation
+    - "cutinfpaths"
 """
 mipFlow(l::FlowProblem; args...) = mipFlow(l, Nullable{FlowSolution}(); args...)
 mipFlow(l::FlowProblem, s::FlowSolution; args...) =

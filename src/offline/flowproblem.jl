@@ -231,9 +231,9 @@ function kLinks(l::FlowProblem, k::Int, score::LinkScores ; firstK::Int=0)
 end
 
 function kLinks(pb::TaxiProblem, k::Int; firstK::Int=0)  # to create from scratch
-    l = allLinks(pb)
+    l = FlowProblem(pb)
     sc = scoreHeuristic(pb, l)
-    kLinks(l,sc,k,firstK=firstK)
+    kLinks(l,k,sc,firstK=firstK)
 end
 
 
