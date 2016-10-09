@@ -17,7 +17,7 @@ export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproble
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, FlowProblem, FlowSolution,  kLinks
 export orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
-export localDescent, localDescent!, smartSearch!, greedyInsertions
+export localDescent, localDescent!, smartSearch!, smartSearch
 export fixedPickupTimes, randPickupTimes, lpFlow, mipFlow, mipSolve, timeWindows
 export FlowProblem, LinkScores, scoreHeuristic, emptyFlow, addLinks!
 

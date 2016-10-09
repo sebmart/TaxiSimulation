@@ -14,7 +14,7 @@ mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
 
 function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Nullable{OfflineSolution}; args...)
     if !isnull(s)
-        return OfflineSolution(pb, l, mipFlow(l, FlowSolution(l, s); args...))
+        return OfflineSolution(pb, l, mipFlow(l, FlowSolution(l, get(s)); args...))
     else
         return OfflineSolution(pb, l, mipFlow(l; args...))
     end
@@ -87,10 +87,10 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     # =====================================================
     if !isnull(s)
         for e in edgeList
-            setValue(x[e], 0)
+            setvalue(x[e], 0)
         end
         for e in get(s).edges
-            setValue(x[e], 1)
+            setvalue(x[e], 1)
         end
     end
 
