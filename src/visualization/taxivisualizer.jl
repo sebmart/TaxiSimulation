@@ -37,6 +37,7 @@ type TaxiVisualizer <: NetworkVisualizer
     nodes::Vector{CircleShape}
     roads::Dict{Tuple{Int,Int},Line}
 	nodeRadius::Float64
+	colors::VizColors
 
 	"The solution to plot"
 	s::TaxiSolution
@@ -58,11 +59,13 @@ type TaxiVisualizer <: NetworkVisualizer
 	simPaused::Bool
 	"if we are following a taxi, its ID"
 	selectedTaxi::Int
-    function TaxiVisualizer(s::TaxiSolution)
+
+    function TaxiVisualizer(s::TaxiSolution; colors::VizColors=RelativeSpeedColors(s.pb.times))
         obj = new()
         obj.network = s.pb.network
 		obj.s = s
         obj.selectedTaxi = 0
+		obj.colors = colors
         return obj
     end
 end
@@ -86,7 +89,7 @@ function visualInit(v::TaxiVisualizer)
 		set_pointcount(s,4)
 		set_fillcolor(s, SFML.Color(0,255,0))
 	end
-	visualScale(v)
+	visualRedraw(v)
 
 	v.taxiEvents, v.custEvents = constructIntervals(v)
 end
@@ -183,7 +186,7 @@ function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
 
 end
 
-function visualScale(v::TaxiVisualizer)
+function visualRedraw(v::TaxiVisualizer)
 	for s in v.taxiShape
 		set_radius(s, v.nodeRadius*1.5)
 	end

@@ -63,7 +63,11 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
         updates = PeriodUpdate(customers, period, pb.simTime)
         verbose && (endTime = pb.simTime)
     end
+
+    acceptedCustomers = IntSet()
+
     verbose && (lastPrint = -Inf; realTimeStart = time())
+
     for (newCusts, tStart, tEnd) in updates
         t = time()
         if verbose && t - lastPrint >= 0.5
@@ -82,11 +86,19 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
                     append!(allAction.times,newTaxiActions[k].times)
                 end
             end
-            if !isempty(newTaxiActions[k].custs)
-                if newTaxiActions[k].custs[1].timeIn < tStart - EPS
-                    error("Customer modification back in time: $(newTaxiActions[k].custs[1].timeIn) < $tStart !")
+            custAssignments = newTaxiActions[k].custs
+            if !isempty(custAssignments)
+                if custAssignments[1].timeIn < tStart - EPS
+                    error("Customer modification back in time: $(custAssignments[1].timeIn) < $tStart !")
                 else
-                    append!(allAction.custs,newTaxiActions[k].custs)
+                    for c in custAssignments
+                        if c.id in acceptedCustomers
+                            error("\"$c\" cannot be picked-up twice!")
+                        else
+                            push!(acceptedCustomers, c.id)
+                        end
+                    end
+                    append!(allAction.custs, custAssignments)
                 end
             end
         end

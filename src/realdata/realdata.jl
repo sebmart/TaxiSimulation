@@ -34,7 +34,7 @@ function saveByDate(data::Vector{RealCustomer}, name::AbstractString)
     # creating the files
     for (d,list) in dict
         fileName = string(name, "-", d, ".jld")
-        save(fileName, "customers", RealCustomer[data[c] for c in list])
+        JLD.save(fileName, "customers", RealCustomer[data[c] for c in list])
         println("created file $fileName")
     end
 end

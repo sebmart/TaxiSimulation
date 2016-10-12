@@ -31,12 +31,15 @@ function Base.show(io::IO, l::FlowProblem)
     println(nv(l.g), " nodes - ", ne(l.g), " edges")
 end
 
-function FlowProblem(pb::TaxiProblem)
+function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:length(pb.custs))
+    # custList is the sub-list of customers we actually care about.
+
     tt = getPathTimes(pb.times)
     tc = getPathTimes(pb.costs)
     nTaxis = length(pb.taxis)
+    currentCustomers = pb.custs[custList]
 
-    g    = DiGraph(nTaxis + length(pb.custs))
+    g    = DiGraph(nTaxis + length(custList))
     time = Dict{Edge,Float64}()
     profit = Dict{Edge,Float64}()
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
@@ -49,25 +52,25 @@ function FlowProblem(pb::TaxiProblem)
         cust2node[-t.id] = t.id
         tw[t.id] = (t.initTime, t.initTime)
     end
-    for c in pb.custs
-        node2cust[c.id + nTaxis] = c.id
-        cust2node[c.id] = c.id + nTaxis
+    for (i,c) in enumerate(currentCustomers)
+        node2cust[i + nTaxis] = c.id
+        cust2node[c.id] = i + nTaxis
         serveTime = tt[c.orig, c.dest] + 2*pb.customerTime
-        tw[c.id + nTaxis] = (c.tmin + serveTime, c.tmax + serveTime)
+        tw[cust2node[c.id]] = (c.tmin + serveTime, c.tmax + serveTime)
     end
 
-    for t in pb.taxis, c in pb.custs
+    for t in pb.taxis, c in currentCustomers
         if t.initTime + tt[t.initPos, c.orig] <= c.tmax
-            e = Edge(t.id, c.id+nTaxis)
+            e = Edge(cust2node[-t.id], cust2node[c.id])
             add_edge!(g, e)
             time[e] = tt[t.initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
             profit[e] = c.fare - tc[t.initPos, c.orig] - tc[c.orig, c.dest] + (time[e] - 2*pb.customerTime)*pb.waitingCost
         end
     end
-    for c1 in pb.custs, c2 in pb.custs
+    for c1 in currentCustomers, c2 in currentCustomers
         edgetime = tt[c1.dest, c2.orig] + tt[c2.orig, c2.dest] + 2*pb.customerTime
-        if c1.id != c2.id && tw[c1.id + nTaxis][1] + edgetime <= tw[c2.id + nTaxis][2]
-            e = Edge(c1.id + nTaxis, c2.id + nTaxis)
+        if c1.id != c2.id && tw[cust2node[c1.id]][1] + edgetime <= tw[cust2node[c2.id]][2]
+            e = Edge(cust2node[c1.id], cust2node[c2.id])
             add_edge!(g, e)
             time[e]   = edgetime
             profit[e] = c2.fare - tc[c1.dest, c2.orig] - tc[c2.orig, c2.dest] + (time[e] - 2*pb.customerTime)*pb.waitingCost
@@ -231,9 +234,9 @@ function kLinks(l::FlowProblem, k::Int, score::LinkScores ; firstK::Int=0)
 end
 
 function kLinks(pb::TaxiProblem, k::Int; firstK::Int=0)  # to create from scratch
-    l = allLinks(pb)
+    l = FlowProblem(pb)
     sc = scoreHeuristic(pb, l)
-    kLinks(l,sc,k,firstK=firstK)
+    kLinks(l,k,sc,firstK=firstK)
 end
 
 

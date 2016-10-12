@@ -9,7 +9,7 @@
 """
 function localDescent!(pb::TaxiProblem, sol::OfflineSolution;
      verbose::Bool = true, maxSearch::Int = 1, iterations::Int=typemax(Int),
-      maxTime::Float64=Inf)
+      maxTime::Real=Inf)
 
     sol = localDescentWithStats!(pb, sol, verbose, maxSearch, iterations, maxTime)[1]
     updateTimeWindows!(sol)
@@ -24,7 +24,7 @@ function localDescent(pb::TaxiProblem, start::OfflineSolution = orderedInsertion
 end
 
 function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::Bool,
-            maxSearch::Int, iterations::Int, maxTime::Float64)
+            maxSearch::Int, iterations::Int, maxTime::Real)
     initT = time()
 
     if maxTime == Inf && iterations == typemax(Int)
@@ -148,4 +148,10 @@ function smartSearch!(pb::TaxiProblem, sol::OfflineSolution; verbose::Bool = tru
      updateTimeWindows!(sol)
      sol.profit = solutionProfit(pb,sol.custs)
      return sol
+end
+
+function smartSearch(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb); args...)
+    sol = copySolution(start)
+    smartSearch!(pb,sol; args...)
+    return sol
 end

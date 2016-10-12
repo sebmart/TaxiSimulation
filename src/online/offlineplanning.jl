@@ -41,7 +41,7 @@ function onlineInitialize!(op::OfflinePlanning, pb::TaxiProblem)
     pb.taxis = copy(pb.taxis)
     op.pb = pb
     if !isempty(pb.custs)
-        custs = Array{Customer}(maximum([c.id for c in pb.custs]))
+        custs = Array{Customer}(maximum(c.id for c in pb.custs))
 		for c in pb.custs
 			custs[c.id] = c
 			push!(op.currentCusts, c.id)
@@ -74,6 +74,7 @@ function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vect
         while !isempty(custs)
             c = custs[1]
             if c.tInf - tt[op.pb.taxis[k].initPos, op.pb.custs[c.id].orig] <= endTime
+                println(c)
                 path, times = getPathWithTimes(op.pb.times, op.pb.taxis[k].initPos, op.pb.custs[c.id].orig,
                                     startTime=c.tInf - tt[op.pb.taxis[k].initPos, op.pb.custs[c.id].orig])
                 append!(actions[k].path, path[2:end])
