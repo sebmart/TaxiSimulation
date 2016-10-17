@@ -155,3 +155,46 @@ function smartSearch(pb::TaxiProblem, start::OfflineSolution = orderedInsertions
     smartSearch!(pb,sol; args...)
     return sol
 end
+
+"""
+    `backboneSearch` searches is a local search that iteratively solves LPs to find a good
+     backbone, and MIPs to update the solution
+"""
+function backboneSearch(fpb::FlowProblem, start::FlowSolution; maxEdges::Int=typemax(Int), localityRatio::Real = 0.5, maxTime::Real = 60, args...)
+    i = 0
+    sol = copySolution(start)
+    @printf("Initial profit: \$%.2f\n", solutionApproxProfit(fpb, sol))
+    initT = time()
+    value::Float64 = Inf
+    while time() - initT < maxTime
+        iterStart = time()
+        i += 1
+        @printf("Iteration %d: ", i)
+        # backbone search phase
+        backbone = emptyFlow(fpb)
+        addLinks!(backbone, sol)
+        tw = timeWindows(fpb, sol)
+        while ne(backbone.g) <= maxEdges * localityRatio
+            lpSol = lpFlow(fpb, randPickupTimes(fpb, tw), verbose=false)
+            addLinks!(backbone, lpSol)
+        end
+
+        while ne(backbone.g) <= maxEdges
+            lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=false)
+            addLinks!(backbone, lpSol)
+        end
+        @printf("%.1fs exploration - ", time() - iterStart)
+
+        sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=false; args...)
+
+
+        @printf("%.1fs total - \$%.2f profit\n", time() - iterStart, solutionApproxProfit(fpb, sol))
+    end
+    return sol
+end
+
+function backboneSearch(pb::TaxiProblem, start::OfflineSolution = orderedInsertions(pb); args...)
+    fpb = FlowProblem(pb)
+    sol = backboneSearch(fpb, FlowSolution(fpb, start); args...)
+    return OfflineSolution(pb, fpb, sol)
+end

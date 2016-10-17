@@ -46,7 +46,7 @@ sort(collect(1:length(pb.custs)), by = i -> pb.custs[i].tmin)
     `insertionsDescent`: locally optimizes the order of insertions to find better solution
 """
 function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCustomers(pb);
-                    benchmark::Bool=false, verbose::Bool=true, maxTime::Float64=Inf,
+                    benchmark::Bool=false, verbose::Bool=true, maxTime::Real=Inf,
                     iterations::Int=typemax(Int), earliest::Bool = false)
     if maxTime == Inf && iterations == typemax(Int)
         maxTime = 10.
