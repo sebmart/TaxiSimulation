@@ -14,12 +14,13 @@ import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpd
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproblem
+
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, FlowProblem, FlowSolution,  kLinks
 export orderedInsertions, orderedInsertions!, testSolution, insertionsDescent, randomInsertions, copySolution
-export localDescent, localDescent!, smartSearch!, smartSearch
+export localDescent, localDescent!, smartSearch!, smartSearch, backboneSearch
 export fixedPickupTimes, randPickupTimes, lpFlow, mipFlow, mipSolve, timeWindows
-export FlowProblem, LinkScores, scoreHeuristic, emptyFlow, addLinks!
+export FlowProblem, LinkScores, scoreHeuristic, optimalScores, emptyFlow, addLinks!
 
 # online
 export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation

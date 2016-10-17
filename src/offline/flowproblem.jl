@@ -129,6 +129,14 @@ type FlowSolution
     edges::Set{Edge}
 end
 
+function copySolution(fs::FlowSolution)
+    return FlowSolution(copy(fs.edges))
+end
+
+function solutionApproxProfit(fpb::FlowProblem, s::FlowSolution)
+    return sum(fpb.profit[e] for e in s.edges)
+end
+
 function Base.show(io::IO, s::FlowSolution)
     println("Flow solution:")
     @printf("%d customers picked-up", length(s.edges))
@@ -186,6 +194,13 @@ type LinkScores
     nxt::Vector{Vector{Tuple{Int,Float64}}}
     prv::Vector{Vector{Tuple{Int,Float64}}}
 end
+
+function LinkScores(fpb::FlowProblem, score::Dict{Edge, Float64})
+    nxt = Vector{Tuple{Int,Float64}}[sort!(Tuple{Int,Float64}[(dst(e),score[e]) for e in out_edges(fpb.g,v)], by=x->x[2], rev=true) for v in vertices(fpb.g)]
+    prv = Vector{Tuple{Int,Float64}}[sort!(Tuple{Int,Float64}[(src(e),score[e]) for e in in_edges(fpb.g,v)],  by=x->x[2], rev=true) for v in vertices(fpb.g)]
+    LinkScores(nxt, prv)
+end
+
 function Base.show(io::IO, l::LinkScores)
     println("Link Scores container")
 end
@@ -206,7 +221,39 @@ function scoreHeuristic(pb::TaxiProblem, l::FlowProblem)
 end
 
 """
-    `kLinks` given a LinkScores and a FlowLink object, construct a graph subset keeping the k best links
+    `optimalScores` uses the LP flow formulation to guess how useful links of a FlowProblem
+     are.
+"""
+function optimalScores(fpb::FlowProblem, n::Int)
+    feasibleCount = Dict{Edge, Int}(e => 0 for e in edges(fpb.g))
+    optimalCount = Dict{Edge, Int}(e => 0 for e in edges(fpb.g))
+
+    for i = 1:n
+        print("\r Iteration $i")
+        randomPickupTimes = randPickupTimes(fpb)
+        sol = lpFlow(fpb, randomPickupTimes, verbose=false)
+
+        for e in feasibleEdges(fpb, randomPickupTimes)
+            feasibleCount[e] += 1
+        end
+
+        for e in sol.edges
+            optimalCount[e] += 1
+        end
+    end
+    finalScores = Dict{Edge, Float64}()
+    for e in edges(fpb.g)
+        if feasibleCount[e] == 0
+            finalScores[e] = 0.
+        else
+            finalScores[e] = optimalCount[e]/feasibleCount[e]
+        end
+    end
+    return LinkScores(fpb, finalScores)
+end
+
+"""
+    `kLinks` given a LinkScores and a FlowProblem object, construct a graph subset keeping the k best links
     !!! share memory with original object !!!
 """
 function kLinks(l::FlowProblem, k::Int, score::LinkScores ; firstK::Int=0)

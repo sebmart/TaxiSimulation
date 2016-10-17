@@ -9,7 +9,7 @@
 
 function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverArgs...)
 
-    edgeSet = Set{Edge}(filter(e -> t[dst(e)] - t[src(e)] >= l.time[e], edges(l.g)))
+    edgeSet = Set(feasibleEdges(l, t))
 
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
@@ -54,4 +54,11 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
         end
     end
     return FlowSolution(sol)
+end
+
+"""
+    `feasibleEdges` returns  feasible edges given fixed pick-up times
+"""
+function feasibleEdges(fpb::FlowProblem, t::Vector{Float64})
+    return (e for e in edges(fpb.g) if  t[dst(e)] - t[src(e)] >= fpb.time[e])
 end
