@@ -23,7 +23,7 @@ export fixedPickupTimes, randPickupTimes, lpFlow, mipFlow, mipSolve, timeWindows
 export FlowProblem, LinkScores, scoreHeuristic, optimalScores, emptyFlow, addLinks!
 
 # online
-export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, LinksOpt, NearestTaxi, onlineSimulation
+export OnlineAlgorithm, OfflinePlanning, InsertOnly, SearchBudget, BackbonePlanning, NearestTaxi, onlineSimulation
 export partialOfflineSolution
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
@@ -57,7 +57,7 @@ include("online/online.jl")
 include("online/offlineplanning.jl")
 include("online/insertonly.jl")
 include("online/searchbudget.jl")
-include("online/linksopt.jl")
+include("online/backboneplanning.jl")
 include("online/nearesttaxi.jl")
 include("online/tools.jl")
 #data
