@@ -13,21 +13,65 @@ type BackbonePlanning <: OnlineAlgorithm
     "The taxi problem, partially updated"
     pb::TaxiProblem
     "parameter that control the density of the graph representation"
-    k::Int
+    edgesPerNode::Int
     "contains the current full backbone, reduced to k incoming and outcoming links"
     fpb::FlowProblem
     "the current Flow solution of fpb"
     s::FlowSolution
     "Stores the link scores, !!! used differently, as heaps"
     scores::LinkScores
+    "time for precomputation"
+    precompTime::Float64
+    "Time for each step"
+    iterTime::Float64
 
+    function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30, maxEdges::Int=1500)
+        bp = new()
+        bp.edgesPerNode = edgesPerNode
+        bp.precompTime = precompTime
+        bp.iterTime = iterTime
+        bp.maxEdges = maxEdges
+        bp.iterTime = iterTime
+        return bp
+    end
 end
 
 function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
+    pb.taxis = copy(pb.taxis)
+    custs = pb.custs
+    pb.custs = []
+    fpb = emptyFlow(pb)
+    prevScores = Float64[(0,-Inf) for i = 1:pb.edgesPerNode]
+    nextScores = Float64[(0,-Inf) for i = 1:pb.edgesPerNode]
+    scores = LinkScores(nextScores, prevScores)
 
+    bp.pb = pb; bp.scores = scores; bp.fpb = fpb
+
+    # construct the flow-graph customer by customer.
+    if !isempty(custs)
+        pb.custs = Array{Customer}(maximum(c.id for c in custs))
+        for c in custs
+            pb.custs[c.id] = c
+            addCustomer!(bp, c.id)
+        end
+    end
+
+    # first solution
+    bp.s = backboneSearch(fpb, emptyFlowSolution(), maxEdges=maxEdges, localityRatio=1, maxTime=precompTime)
 end
 
 function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vector{Customer})
+    #Add new customers
+    for c in newCustomers
+        if length(bp.pb.custs) < c.id
+            resize!(bp.pb.custs, c.id)
+        end
+        bp.pb.custs[c.id] = c
+        addCustomer!(bp, c.id)
+    end
+    bp.s = backboneSearch(fpb, bp.s, maxEdges=maxEdges, localityRatio=1, maxTime=precompTime)
+
+
     return computeActions!(bp::BackbonePlanning, endTime::Float64)
 end
 
@@ -69,7 +113,7 @@ function computeActions!(bp::BackbonePlanning, endTime::Float64)
 
         # remove rejected customers of the past
         for c in keys(bp.fpb.cust2node)
-            if op.pb.custs[c].tmax < endTime
+            if bp.pb.custs[c].tmax < endTime
                 customerNode = bp.fpb.cust2node[c]
                 removeNode!(bp, customerNode)
             end
@@ -86,10 +130,15 @@ function moveTaxi!(bp::BackbonePlanning, k::Int, c::Int)
     fpb = bp.fpb
     #delete the old taxi node
     oldTaxiNode = fpb.cust2node[-k]
+    newTaxiNode = fpb.cust2node[c]
+
     removeNode!(bp, oldTaxiNode)
 
     # the old customer node has to become the new taxi node
-    newTaxiNode = fpb.cust2node[-k]
+
+    fpb.cust2node[-k] = newTaxiNode
+    fpb.node2cust[newTaxiNode] = -k
+
     delete!(fpb.taxiInit, oldTaxiNode)
     push!(fpb.taxiInit, newTaxiNode)
 
@@ -131,6 +180,7 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     if oldNode != newNode
         fpb.tw[newNode] = pop!(fpb.tw)
         fpb.node2cust[newNode] = pop!(fpb.node2cust)
+        fpb.cust2node[fpb.node2cust[newNode]] = newNode
     else
         pop!(fpb.tw)
         pop!(fpb.node2cust)
@@ -158,4 +208,52 @@ function removeNode!(bp::BackbonePlanning, n::Int)
 
     # finally updates the graph
     rem_vertex!(fpb.g, n)
+end
+
+"""
+    `addCustomer!` adds a customer to the flow graph, takes care of the score update tools
+"""
+function addCustomer!(bp::BackbonePlanning, newCust::Int)
+    c = bp.pb.custs[newCust]
+
+    # First, add node
+    add_vertex!(bp.fpb.g)
+    newNode = nv(bp.fpb.g)
+    serveTime = tt[c.orig, c.dest] + 2*bp.pb.customerTime
+    push!(bp.fpb.tw, (c.tmin + serveTime, c.tmax + serveTime))
+    push!(bp.fpb.node2cust, newCust)
+    bp.fpb.cust2node[newCust] = newNode
+
+    # then, add edges:
+    for n in 1:nv(bp.fpb.g)-1
+        tryAddEdge!(bp, Edge(n, newNode))
+        tryAddEdge!(bp, Edge(newNode, n))
+    end
+end
+
+"""
+    `tryAddEdge!` try to add an edge in the sparse flow graph
+"""
+function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
+
+
+    # Eliminate trivial infeasibilities
+    (bp.fpb.tw[src(newEdge)][1] > bp.tw[dst(newEdge)][2]) && return
+    idO = bp.fpb.node2cust[src(newEdge)]
+    idD = bp.fpb.node2cust[dst(newEdge)]
+    (idD < 0) && return
+
+    # now check feasibility
+    c = bp.pb.custs[idD]
+    tt = getPathTimes(bp.pb.times)
+    if idO < 0
+        edgeTime = tt[bp.pb.taxis[-idO].initPos, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
+    else
+        edgeTime = tt[bp.pb.custs[idO].dest, c.orig] + tt[c.orig, c.dest] + 2*pb.customerTime
+    end
+    (bp.fpb.tw[src(newEdge)][1] + edgeTime > bp.fpb.tw[dst(newEdge)][2]) && return
+
+    # we have a feasible edge, compute score
+    tc = getPathTimes(bp.pb.costs)
+
 end

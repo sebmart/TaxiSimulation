@@ -45,7 +45,7 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = Set(1:length(pb.taxis))
+    taxiInit = IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -105,7 +105,7 @@ function emptyFlow(pb::TaxiProblem)
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = Set(1:length(pb.taxis))
+    taxiInit = IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -134,8 +134,15 @@ function copySolution(fs::FlowSolution)
 end
 
 function solutionApproxProfit(fpb::FlowProblem, s::FlowSolution)
-    return sum(fpb.profit[e] for e in s.edges)
+    if isempty(s.edges)
+        return 0
+    else
+        return sum(fpb.profit[e] for e in s.edges)
+    end
 end
+
+emptyFlowSolution() = FlowSolution(Set{Edge}())
+
 
 function Base.show(io::IO, s::FlowSolution)
     println("Flow solution:")

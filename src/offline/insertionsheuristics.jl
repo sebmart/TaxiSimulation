@@ -8,14 +8,13 @@
 """
 function orderedInsertions(pb::TaxiProblem, order::Vector{Int} = timeOrderedCustomers(pb);
      earliest::Bool=false, verbose::Bool=false)
-    nTaxis, nCusts = length(pb.taxis), length(pb.custs)
+    nTaxis, nCusts = length(pb.taxis), length(order)
 
     sol = OfflineSolution(pb)
-    for i in 1:nCusts
+    for (i,c) in enumerate(order)
         if verbose && i%100 == 0
             @printf("\r%.2f%% customers inserted", 100 * i/nCusts)
         end
-        c = order[i]
         insertCustomer!(sol, c, earliest=earliest)
     end
     verbose && print("\n")
