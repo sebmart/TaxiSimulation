@@ -22,8 +22,8 @@ type FlowProblem
     node2cust::Vector{Int}
     "cust ID to node ID"
     cust2node::Dict{Int, Int}
-    "nodes where taxis begin (sorted)"
-    taxiInit::Vector{Int}
+    "nodes where taxis begin"
+    taxiInit::IntSet
 end
 
 function Base.show(io::IO, l::FlowProblem)
@@ -45,7 +45,7 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = collect(1:length(pb.taxis))
+    taxiInit = Set(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -105,7 +105,7 @@ function emptyFlow(pb::TaxiProblem)
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = collect(1:length(pb.taxis))
+    taxiInit = Set(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
