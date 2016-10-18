@@ -317,3 +317,12 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
         profit[newEdge] = c.fare - tc[bp.pb.custs[idO].dest, c.orig] - tc[c.orig, c.dest] + (edgeTime - 2*bp.pb.customerTime)*bp.pb.waitingCost
     end
 end
+
+"""
+    `removeEdge!` removes an edge from the FlowProblem
+"""
+function removeEdge!(fpb::FlowProblem, e::Edge)
+    delete!(fpb.time, e)
+    delete!(fpb.profit, e)
+    rem_edge!(fpb.g, e)
+end
