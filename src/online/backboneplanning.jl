@@ -27,6 +27,9 @@ type BackbonePlanning <: OnlineAlgorithm
 
     function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30, maxEdges::Int=1500)
         bp = new()
+        if edgesPerNode < 2
+            error("Not enough edges per node")
+        end
         bp.edgesPerNode = edgesPerNode
         bp.precompTime = precompTime
         bp.iterTime = iterTime
@@ -235,8 +238,6 @@ end
     `tryAddEdge!` try to add an edge in the sparse flow graph
 """
 function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
-
-
     # Eliminate trivial infeasibilities
     (bp.fpb.tw[src(newEdge)][1] > bp.tw[dst(newEdge)][2]) && return
     idO = bp.fpb.node2cust[src(newEdge)]
@@ -254,6 +255,65 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
     (bp.fpb.tw[src(newEdge)][1] + edgeTime > bp.fpb.tw[dst(newEdge)][2]) && return
 
     # we have a feasible edge, compute score
-    tc = getPathTimes(bp.pb.costs)
+    score = -(max(edgeTime, bp.fpb.tw[dst(newEdge)][1] - bp.fpb.tw[src(newEdge)][2]) - tt[c.orig, c.dest] - 2*pb.customerTime)
 
+    # Check if we should add edge. Slightly complicated, need to deal with not deleting
+    # current sol.
+    maxScoreOrder(t::Tuple{Int, Float64}) = -t[2]
+    addEdge = false
+    nxt = bp.scores.nxt[src(newEdge)]
+    prv = bp.scores.prv[dst(newEdge)]
+    if (score > nxt[1][2])
+        if Edge(src(newEdge), nxt[1][1]) in bp.s.edges
+            minScore = Collections.heappop!(nxt, maxScoreOrder)
+            if (score > nxt[1][2])
+                addEdge = true
+                dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
+                if !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
+                    removeEdge!(fpb, Edge(src(newEdge), dstEdge))
+                end
+                Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
+            end
+            Collections.heappush!(nxt, minScore, maxScoreOrder)
+        else
+            addEdge = true
+            dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
+            if !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
+                removeEdge!(fpb, Edge(src(newEdge), dstEdge))
+            end
+            Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
+        end
+    end
+    if (score > prv[1][2])
+        if Edge(prv[1][1], dst(newEdge)) in bp.s.edges
+            minScore = Collections.heappop!(prv, maxScoreOrder)
+            if (score > prv[1][2])
+                addEdge = true
+                srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
+                if !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
+                    removeEdge!(fpb, Edge(srcEdge, dst(newEdge)))
+                end
+                Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
+            end
+            Collections.heappush!(nxt, minScore, maxScoreOrder)
+        else
+            addEdge = true
+            srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
+            if !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
+                removeEdge!(fpb, Edge(srcEdge, dst(newEdge)))
+            end
+            Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
+        end
+    end
+    !(addEdge) && return
+
+    # finally, add new edge
+    add_edge!(bp.fpb.g, newEdge)
+    time[newEdge] = edgeTime
+    tc = getPathTimes(bp.pb.costs)
+    if idO < 0
+        profit[newEdge] = c.fare - tc[bp.pb.taxis[-idO].initPos, c.orig] - tc[c.orig, c.dest] + (edgeTime - 2*bp.pb.customerTime)*bp.pb.waitingCost
+    else
+        profit[newEdge] = c.fare - tc[bp.pb.custs[idO].dest, c.orig] - tc[c.orig, c.dest] + (edgeTime - 2*bp.pb.customerTime)*bp.pb.waitingCost
+    end
 end
