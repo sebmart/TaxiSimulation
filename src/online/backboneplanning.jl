@@ -65,7 +65,7 @@ function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
     end
 
     # first solution
-    bp.s = backboneSearch(fpb, bp.s, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime)
+    bp.s = backboneSearch(fpb, bp.s, verbose=1, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime)
 end
 
 function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vector{Customer})
@@ -88,8 +88,6 @@ end
     Updates the solution and FlowProblem
 """
 function computeActions!(bp::BackbonePlanning, endTime::Float64)
-
-
     offlinesol = OfflineSolution(bp.pb, bp.fpb, bp.s)
     tt = getPathTimes(bp.pb.times)
     actions = emptyActions(bp.pb)
@@ -140,19 +138,15 @@ function moveTaxi!(bp::BackbonePlanning, k::Int, c::Int)
     fpb = bp.fpb
     #delete the old taxi node
     oldTaxiNode = fpb.cust2node[-k]
-
     removeNode!(bp, oldTaxiNode)
 
     newTaxiNode = fpb.cust2node[c]
-    # the old customer node has to become the new taxi node
 
-    haskey(fpb.cust2node, -k) && error("taxi node has not been removed")
+    # the old customer node has to become the new taxi node
     fpb.cust2node[-k] = newTaxiNode
     delete!(fpb.cust2node, fpb.node2cust[newTaxiNode])
     fpb.node2cust[newTaxiNode] = -k
 
-
-    delete!(fpb.taxiInit, oldTaxiNode)
     push!(fpb.taxiInit, newTaxiNode)
 
     updateTaxiTime!(bp, k)
@@ -188,8 +182,11 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     oldNode = nv(fpb.g)
     newNode = n
 
-    # remove node from scores
+    # remove edges around node
     for e in in_edges(fpb.g, n)
+        delete!(bp.s.edges, e)
+        delete!(fpb.time, e)
+        delete!(fpb.profit, e)
         for (i,d) in enumerate(bp.scores.nxt[src(e)])
             if d[1] == n
                 bp.scores.nxt[src(e)][i] = (0, -Inf)
@@ -199,6 +196,9 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         end
     end
     for e in out_edges(fpb.g, n)
+        delete!(bp.s.edges, e)
+        delete!(fpb.time, e)
+        delete!(fpb.profit, e)
         for (i,o) in enumerate(bp.scores.prv[dst(e)])
             if o[1] == n
                 bp.scores.prv[dst(e)][i] = (0, -Inf)
@@ -212,8 +212,10 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     if oldNode != newNode
         for e in in_edges(fpb.g, oldNode)
             newEdge = Edge(src(e) , newNode)
-            fpb.time[newEdge] = pop!(fpb.time, e)
-            fpb.profit[newEdge] = pop!(fpb.profit, e)
+            if haskey(fpb.time, e)
+                fpb.time[newEdge] = pop!(fpb.time, e)
+                fpb.profit[newEdge] = pop!(fpb.profit, e)
+            end
             if e in bp.s.edges
                 delete!(bp.s.edges, e)
                 push!(bp.s.edges, newEdge)
@@ -242,20 +244,12 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         end
     end
 
-    # remove edges around node
-    for e in in_edges(fpb.g, n)
-        delete!(bp.s.edges, e)
-        delete!(fpb.time, e)
-        delete!(fpb.profit, e)
-    end
-    for e in out_edges(fpb.g, n)
-        delete!(bp.s.edges, e)
-        delete!(fpb.time, e)
-        delete!(fpb.profit, e)
-    end
 
     #remove node
     delete!(fpb.cust2node, fpb.node2cust[newNode])
+    if n in fpb.taxiInit
+        delete!(fpb.taxiInit, n)
+    end
     if oldNode != newNode
         fpb.cust2node[fpb.node2cust[oldNode]] = newNode
         fpb.tw[newNode] = pop!(fpb.tw)

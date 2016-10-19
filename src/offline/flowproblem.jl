@@ -80,6 +80,34 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
 end
 
 """
+    `testFlowProblem`, test if a FlowProblem object is consistent
+"""
+function testFlowProblem(fpb::FlowProblem)
+    # test nodes
+    @test length(fpb.tw) == nv(fpb.g)
+    @test length(fpb.node2cust) == nv(fpb.g)
+    @test length(fpb.cust2node) == nv(fpb.g)
+    for n in vertices(fpb.g)
+        @test fpb.tw[n][1] <= fpb.tw[n][2]
+        @test fpb.cust2node[fpb.node2cust[n]] == n
+        if fpb.node2cust[n] < 0
+            @test n in fpb.taxiInit
+        end
+    end
+    for n in fpb.taxiInit
+        @test n in vertices(fpb.g)
+    end
+
+    #test edges
+    @test length(fpb.time) == ne(fpb.g)
+    @test length(fpb.profit) == ne(fpb.g)
+    for e in edges(fpb.g)
+        @test haskey(fpb.time, e)
+        @test haskey(fpb.profit, e)
+    end
+end
+
+"""
     `emptyFlow`, returns an empty flow problem
     !!! if created from FlowProblem, share same memory !!!
 """
