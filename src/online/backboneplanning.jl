@@ -88,6 +88,7 @@ end
     Updates the solution and FlowProblem
 """
 function computeActions!(bp::BackbonePlanning, endTime::Float64)
+    println(bp.fpb.g)
     offlinesol = OfflineSolution(bp.pb, bp.fpb, bp.s)
     tt = getPathTimes(bp.pb.times)
     actions = emptyActions(bp.pb)
@@ -138,10 +139,10 @@ function moveTaxi!(bp::BackbonePlanning, k::Int, c::Int)
     fpb = bp.fpb
     #delete the old taxi node
     oldTaxiNode = fpb.cust2node[-k]
-    newTaxiNode = fpb.cust2node[c]
 
     removeNode!(bp, oldTaxiNode)
 
+    newTaxiNode = fpb.cust2node[c]
     # the old customer node has to become the new taxi node
 
     fpb.cust2node[-k] = newTaxiNode
@@ -182,7 +183,6 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     fpb = bp.fpb
     oldNode = nv(fpb.g)
     newNode = n
-
 
     # remove node from scores
     for e in in_edges(fpb.g, n)
@@ -251,7 +251,8 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     end
 
     #remove node
-    delete!(fpb.cust2node, fpb.node2cust[n])
+    delete!(fpb.cust2node, fpb.node2cust[oldNode])
+    delete!(fpb.cust2node, fpb.node2cust[newNode])
     if oldNode != newNode
         fpb.tw[newNode] = pop!(fpb.tw)
         fpb.node2cust[newNode] = pop!(fpb.node2cust)
