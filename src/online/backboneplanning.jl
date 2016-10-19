@@ -195,28 +195,39 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         pop!(bp.scores.prv)
     end
 
+    rem_vertex!(fpb.g, n)
+
     # update node with change of id
     if oldNode != newNode
-        for e in in_edges(fpb.g, oldNode)
-            newEdge = Edge(src(e), newNode)
-            fpb.time[newEdge] = pop!(fpb.time, e)
-            fpb.profit[newEdge] = pop!(fpb.time, e)
-            if haskey(bp.s.edges, e)
-                bp.s.edges[newEdge] = pop!(bp.s.edges, e)
+        for e in in_edges(fpb.g, newNode)
+            oldEdge = Edge(src(e) , oldNode)
+            fpb.time[e] = pop!(fpb.time, oldEdge)
+            fpb.profit[e] = pop!(fpb.profit, oldEdge)
+            if oldEdge in bp.s.edges
+                delete!(bp.s.edges, oldEdge)
+                push!(bp.s.edges, e)
+            end
+            for (i,d) in enumerate(bp.scores.nxt[src(e)])
+                if d == oldNode
+                    bp.scores.nxt[src(e)][i] = newNode
+                end
             end
         end
-        for e in out_edges(fpb.g, oldNode)
-            newEdge = Edge(newNode, dst(e))
-            fpb.time[newEdge] = pop!(fpb.time, e)
-            fpb.profit[newEdge] = pop!(fpb.time, e)
-            if haskey(bp.s.edges, e)
-                bp.s.edges[newEdge] = pop!(bp.s.edges, e)
+        for e in out_edges(fpb.g, newNode)
+            oldEdge = Edge(oldNode, dst(e))
+            fpb.time[e] = pop!(fpb.time, oldEdge)
+            fpb.profit[e] = pop!(fpb.profit, oldEdge)
+            if oldEdge in bp.s.edges
+                delete!(bp.s.edges, oldEdge)
+                push!(bp.s.edges, e)
+            end
+            for (i,o) in enumerate(bp.scores.prv[dst(e)])
+                if o == oldNode
+                    bp.scores.prv[dst(e)][i] = newNode
+                end
             end
         end
     end
-
-    # finally updates the graph
-    rem_vertex!(fpb.g, n)
 end
 
 """
