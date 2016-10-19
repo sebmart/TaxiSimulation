@@ -26,8 +26,10 @@ type BackbonePlanning <: OnlineAlgorithm
     iterTime::Float64
     "maximum number of edges in MIP"
     maxEdges::Int
+    "Maximum time of backbone exploration"
+    maxExplorationTime::Float64
 
-    function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30, maxEdges::Int=1500)
+    function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30, maxEdges::Int=1500, maxExplorationTime::Real=10)
         bp = new()
         if edgesPerNode < 2
             error("Not enough edges per node")
@@ -37,6 +39,7 @@ type BackbonePlanning <: OnlineAlgorithm
         bp.iterTime = iterTime
         bp.maxEdges = maxEdges
         bp.iterTime = iterTime
+        bp.maxExplorationTime = maxExplorationTime
         return bp
     end
 end
@@ -164,9 +167,65 @@ end
     FlowSolution attributes to the new status
 """
 function removeNode!(bp::BackbonePlanning, n::Int)
+    maxScoreOrder = Base.Order.ReverseOrdering(Base.Order.By(t -> -t[2]))
     fpb = bp.fpb
     oldNode = nv(fpb.g)
     newNode = n
+
+
+    # remove node from scores
+    for e in in_edges(fpb.g, n)
+        for (i,d) in enumerate(bp.scores.nxt[src(e)])
+            if d[1] == n
+                bp.scores.nxt[src(e)][i] = (0, -Inf)
+                Collections.heapify!(bp.scores.nxt[src(e)], maxScoreOrder)
+                break
+            end
+        end
+    end
+    for e in out_edges(fpb.g, n)
+        for (i,o) in enumerate(bp.scores.prv[dst(e)])
+            if o[1] == n
+                bp.scores.prv[dst(e)][i] = (0, -Inf)
+                Collections.heapify!(bp.scores.prv[dst(e)], maxScoreOrder)
+                break
+            end
+        end
+    end
+
+    # update node with change of id
+    if oldNode != newNode
+        for e in in_edges(fpb.g, oldNode)
+            newEdge = Edge(src(e) , newNode)
+            fpb.time[newEdge] = pop!(fpb.time, e)
+            fpb.profit[newEdge] = pop!(fpb.profit, e)
+            if e in bp.s.edges
+                delete!(bp.s.edges, e)
+                push!(bp.s.edges, newEdge)
+            end
+            for (i,d) in enumerate(bp.scores.nxt[src(e)])
+                if d[1] == oldNode
+                    bp.scores.nxt[src(e)][i] = (newNode, d[2])
+                    break
+                end
+            end
+        end
+        for e in out_edges(fpb.g, oldNode)
+            newEdge = Edge(newNode, dst(e))
+            fpb.time[newEdge] = pop!(fpb.time, e)
+            fpb.profit[newEdge] = pop!(fpb.profit, e)
+            if e in bp.s.edges
+                delete!(bp.s.edges, e)
+                push!(bp.s.edges, newEdge)
+            end
+            for (i,o) in enumerate(bp.scores.prv[dst(e)])
+                if o[1] == oldNode
+                    bp.scores.prv[dst(e)][i] = (newNode, o[2])
+                    break
+                end
+            end
+        end
+    end
 
     # remove edges around node
     for e in in_edges(fpb.g, n)
@@ -196,38 +255,6 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     end
 
     rem_vertex!(fpb.g, n)
-
-    # update node with change of id
-    if oldNode != newNode
-        for e in in_edges(fpb.g, newNode)
-            oldEdge = Edge(src(e) , oldNode)
-            fpb.time[e] = pop!(fpb.time, oldEdge)
-            fpb.profit[e] = pop!(fpb.profit, oldEdge)
-            if oldEdge in bp.s.edges
-                delete!(bp.s.edges, oldEdge)
-                push!(bp.s.edges, e)
-            end
-            for (i,d) in enumerate(bp.scores.nxt[src(e)])
-                if d == oldNode
-                    bp.scores.nxt[src(e)][i] = newNode
-                end
-            end
-        end
-        for e in out_edges(fpb.g, newNode)
-            oldEdge = Edge(oldNode, dst(e))
-            fpb.time[e] = pop!(fpb.time, oldEdge)
-            fpb.profit[e] = pop!(fpb.profit, oldEdge)
-            if oldEdge in bp.s.edges
-                delete!(bp.s.edges, oldEdge)
-                push!(bp.s.edges, e)
-            end
-            for (i,o) in enumerate(bp.scores.prv[dst(e)])
-                if o == oldNode
-                    bp.scores.prv[dst(e)][i] = newNode
-                end
-            end
-        end
-    end
 end
 
 """
@@ -314,7 +341,7 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
                 end
                 Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
             end
-            Collections.heappush!(nxt, minScore, maxScoreOrder)
+            Collections.heappush!(prv, minScore, maxScoreOrder)
         else
             addEdge = true
             srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
