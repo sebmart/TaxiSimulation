@@ -88,7 +88,8 @@ end
     Updates the solution and FlowProblem
 """
 function computeActions!(bp::BackbonePlanning, endTime::Float64)
-    println(bp.fpb.g)
+
+
     offlinesol = OfflineSolution(bp.pb, bp.fpb, bp.s)
     tt = getPathTimes(bp.pb.times)
     actions = emptyActions(bp.pb)
@@ -119,13 +120,13 @@ function computeActions!(bp::BackbonePlanning, endTime::Float64)
             bp.pb.taxis[k] = Taxi(bp.pb.taxis[k].id, bp.pb.taxis[k].initPos, endTime)
             updateTaxiTime!(bp, bp.pb.taxis[k].id)
         end
+    end
 
-        # remove rejected customers of the past
-        for c in keys(bp.fpb.cust2node)
-            if c > 0 && bp.pb.custs[c].tmax < endTime
-                customerNode = bp.fpb.cust2node[c]
-                removeNode!(bp, customerNode)
-            end
+    # remove rejected customers of the past
+    for c in keys(bp.fpb.cust2node)
+        if c > 0 && bp.pb.custs[c].tmax < endTime
+            customerNode = bp.fpb.cust2node[c]
+            removeNode!(bp, customerNode)
         end
     end
     return actions
@@ -145,8 +146,11 @@ function moveTaxi!(bp::BackbonePlanning, k::Int, c::Int)
     newTaxiNode = fpb.cust2node[c]
     # the old customer node has to become the new taxi node
 
+    haskey(fpb.cust2node, -k) && error("taxi node has not been removed")
     fpb.cust2node[-k] = newTaxiNode
+    delete!(fpb.cust2node, fpb.node2cust[newTaxiNode])
     fpb.node2cust[newTaxiNode] = -k
+
 
     delete!(fpb.taxiInit, oldTaxiNode)
     push!(fpb.taxiInit, newTaxiNode)
@@ -251,12 +255,11 @@ function removeNode!(bp::BackbonePlanning, n::Int)
     end
 
     #remove node
-    delete!(fpb.cust2node, fpb.node2cust[oldNode])
     delete!(fpb.cust2node, fpb.node2cust[newNode])
     if oldNode != newNode
+        fpb.cust2node[fpb.node2cust[oldNode]] = newNode
         fpb.tw[newNode] = pop!(fpb.tw)
         fpb.node2cust[newNode] = pop!(fpb.node2cust)
-        fpb.cust2node[fpb.node2cust[newNode]] = newNode
         bp.scores.nxt[newNode] = pop!(bp.scores.nxt)
         bp.scores.prv[newNode] = pop!(bp.scores.prv)
         if oldNode in fpb.taxiInit

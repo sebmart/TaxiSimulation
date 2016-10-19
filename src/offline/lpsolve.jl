@@ -19,7 +19,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     # =====================================================
 
     # Edge of flow graph is used
-    @variable(m, 0 <= x[e = edgeSet]      <= 1)
+    @variable(m, 0 <= x[e = edgeSet]       <= 1)
     # customer c picked-up only once
     @variable(m, 0 <= p[v = vertices(l.g)] <= 1)
 
@@ -34,7 +34,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum{x[e], e = filter( x-> x in edgeSet,in_edges(l.g, v))} == p[v])
+    sum{x[e], e = filter( x-> x in edgeSet, in_edges(l.g, v))} == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
