@@ -22,8 +22,8 @@ type FlowProblem
     node2cust::Vector{Int}
     "cust ID to node ID"
     cust2node::Dict{Int, Int}
-    "nodes where taxis begin (sorted)"
-    taxiInit::Vector{Int}
+    "nodes where taxis begin"
+    taxiInit::IntSet
 end
 
 function Base.show(io::IO, l::FlowProblem)
@@ -45,7 +45,7 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = collect(1:length(pb.taxis))
+    taxiInit = IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -80,6 +80,34 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
 end
 
 """
+    `testFlowProblem`, test if a FlowProblem object is consistent
+"""
+function testFlowProblem(fpb::FlowProblem)
+    # test nodes
+    @test length(fpb.tw) == nv(fpb.g)
+    @test length(fpb.node2cust) == nv(fpb.g)
+    @test length(fpb.cust2node) == nv(fpb.g)
+    for n in vertices(fpb.g)
+        @test fpb.tw[n][1] <= fpb.tw[n][2]
+        @test fpb.cust2node[fpb.node2cust[n]] == n
+        if fpb.node2cust[n] < 0
+            @test n in fpb.taxiInit
+        end
+    end
+    for n in fpb.taxiInit
+        @test n in vertices(fpb.g)
+    end
+
+    #test edges
+    @test length(fpb.time) == ne(fpb.g)
+    @test length(fpb.profit) == ne(fpb.g)
+    for e in edges(fpb.g)
+        @test haskey(fpb.time, e)
+        @test haskey(fpb.profit, e)
+    end
+end
+
+"""
     `emptyFlow`, returns an empty flow problem
     !!! if created from FlowProblem, share same memory !!!
 """
@@ -105,7 +133,7 @@ function emptyFlow(pb::TaxiProblem)
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = collect(1:length(pb.taxis))
+    taxiInit = IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -134,8 +162,15 @@ function copySolution(fs::FlowSolution)
 end
 
 function solutionApproxProfit(fpb::FlowProblem, s::FlowSolution)
-    return sum(fpb.profit[e] for e in s.edges)
+    if isempty(s.edges)
+        return 0
+    else
+        return sum(fpb.profit[e] for e in s.edges)
+    end
 end
+
+emptyFlowSolution() = FlowSolution(Set{Edge}())
+
 
 function Base.show(io::IO, s::FlowSolution)
     println("Flow solution:")
@@ -164,8 +199,10 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     rejected = IntSet(eachindex(pb.custs))
     # reconstruct solution
     for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
-        if e in  s.edges
+        if e in s.edges
             c = l.node2cust[dst(e)]
+            (c < 0) && error("Taxi should not have incoming edges")
+
             push!(custs[k], CustomerTimeWindow(c, 0., 0.))
             delete!(rejected, c)
             anotherCust = true
@@ -174,6 +211,8 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
                 for e2 in out_edges(l.g, dst(e))
                     if e2 in s.edges
                         c = l.node2cust[dst(e2)]
+                        (c < 0) && error("Taxi should not have incoming edges")
+
                         push!(custs[k], CustomerTimeWindow(c, 0., 0.))
                         delete!(rejected, c)
                         anotherCust = true; e = e2; break;

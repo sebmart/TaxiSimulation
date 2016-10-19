@@ -74,7 +74,6 @@ function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vect
         while !isempty(custs)
             c = custs[1]
             if c.tInf - tt[op.pb.taxis[k].initPos, op.pb.custs[c.id].orig] <= endTime
-                println(c)
                 path, times = getPathWithTimes(op.pb.times, op.pb.taxis[k].initPos, op.pb.custs[c.id].orig,
                                     startTime=c.tInf - tt[op.pb.taxis[k].initPos, op.pb.custs[c.id].orig])
                 append!(actions[k].path, path[2:end])

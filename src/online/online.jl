@@ -6,9 +6,9 @@
 """
     `OnlineAlgorithm`, abstract type inherited by online algorithms
     Needs to implement:
-    - `initialize!(OnlineAlgorithm, TaxiProblem)`, initializes a given OnlineAlgorithm with
+    - `onlineInitialize!(OnlineAlgorithm, TaxiProblem)`, initializes a given OnlineAlgorithm with
     a selected taxi problem with just initial customers.
-    - `update!(OnlineAlgorithm, Float64, Vector{Customer})`, updates OnlineAlgorithm to
+    - `onlineUpdate!(OnlineAlgorithm, Float64, Vector{Customer})`, updates OnlineAlgorithm to
     account for new customers, returns a list of TaxiActions since the last update.
 """
 
