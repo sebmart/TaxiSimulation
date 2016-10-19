@@ -171,8 +171,10 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     rejected = IntSet(eachindex(pb.custs))
     # reconstruct solution
     for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
-        if e in  s.edges
+        if e in s.edges
             c = l.node2cust[dst(e)]
+            (c < 0) && error("Taxi should not have incoming edges")
+
             push!(custs[k], CustomerTimeWindow(c, 0., 0.))
             delete!(rejected, c)
             anotherCust = true
@@ -181,6 +183,8 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
                 for e2 in out_edges(l.g, dst(e))
                     if e2 in s.edges
                         c = l.node2cust[dst(e2)]
+                        (c < 0) && error("Taxi should not have incoming edges")
+
                         push!(custs[k], CustomerTimeWindow(c, 0., 0.))
                         delete!(rejected, c)
                         anotherCust = true; e = e2; break;

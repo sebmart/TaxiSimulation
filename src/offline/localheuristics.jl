@@ -165,16 +165,16 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution;
                             localityRatio::Real = 0.5,
                             maxTime::Real = 60,
                             maxExplorationTime::Real=20,
-                            verbose::Boolean=true, args...)
+                            verbose::Int=1, args...)
     i = 0
     sol = copySolution(start)
-    verbose && @printf("Initial profit: \$%.2f\n", solutionApproxProfit(fpb, sol))
+    verbose > 0 && @printf("Initial profit: \$%.2f\n", solutionApproxProfit(fpb, sol))
     initT = time()
     value::Float64 = Inf
     while time() - initT < maxTime
         iterStart = time()
         i += 1
-        verbose && @printf("Iteration %d: ", i)
+        verbose > 0 && @printf("Iteration %d: ", i)
         # backbone search phase
         backbone = emptyFlow(fpb)
         addLinks!(backbone, sol)
@@ -185,14 +185,14 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution;
         end
 
         while ne(backbone.g) <= maxEdges && (time()-iterStart) <= maxExplorationTime
-            lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=false)
+            lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=(verbose > 2))
             addLinks!(backbone, lpSol)
         end
-        verbose && @printf("%.1fs exploration - ", time() - iterStart)
+        verbose > 0 && @printf("%.1fs exploration - ", time() - iterStart)
 
-        sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=false; args...)
+        sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=(verbose>1); args...)
 
-        verbose && @printf("%.1fs total - \$%.2f profit\n", time() - iterStart, solutionApproxProfit(fpb, sol))
+        verbose > 0 && @printf("%.1fs total - \$%.2f profit\n", time() - iterStart, solutionApproxProfit(fpb, sol))
     end
     return sol
 end

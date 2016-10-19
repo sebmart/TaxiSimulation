@@ -65,7 +65,7 @@ function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
     end
 
     # first solution
-    bp.s = backboneSearch(fpb, bp.s, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.precompTime)
+    bp.s = backboneSearch(fpb, bp.s, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime)
 end
 
 function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vector{Customer})
@@ -77,7 +77,7 @@ function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vec
         bp.pb.custs[c.id] = c
         addCustomer!(bp, c.id)
     end
-    bp.s = backboneSearch(bp.fpb, bp.s, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.iterTime)
+    bp.s = backboneSearch(bp.fpb, bp.s, verbose=1, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime)
 
 
     return computeActions!(bp::BackbonePlanning, endTime::Float64)
@@ -151,10 +151,21 @@ function moveTaxi!(bp::BackbonePlanning, k::Int, c::Int)
     push!(fpb.taxiInit, newTaxiNode)
 
     updateTaxiTime!(bp, k)
+
+    for e in in_edges(bp.fpb.g, newTaxiNode)
+        removeEdge!(bp.fpb, e)
+        for (i,d) in enumerate(bp.scores.nxt[src(e)])
+            if d[1] == newTaxiNode
+                bp.scores.nxt[src(e)][i] = (0, -Inf)
+                break
+            end
+        end
+    end
+    bp.scores.prv[newTaxiNode] = []
 end
 
 """
-    `updateTaxiTime!` : updates FlowProblem with taxi init times from TaxiProblem
+    `updateTaxiTime!` : updates FlowProblem with taxi new information
 """
 function updateTaxiTime!(bp::BackbonePlanning, k::Int)
     taxiNode = bp.fpb.cust2node[-k]
@@ -247,6 +258,10 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         fpb.cust2node[fpb.node2cust[newNode]] = newNode
         bp.scores.nxt[newNode] = pop!(bp.scores.nxt)
         bp.scores.prv[newNode] = pop!(bp.scores.prv)
+        if oldNode in fpb.taxiInit
+            delete!(fpb.taxiInit, oldNode)
+            push!(fpb.taxiInit, newNode)
+        end
     else
         pop!(fpb.tw)
         pop!(fpb.node2cust)
@@ -315,7 +330,7 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
             if (score > nxt[1][2])
                 addEdge = true
                 dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
-                if src(newEdge) > 0 && dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
+                if dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
                     removeEdge!(bp.fpb, Edge(src(newEdge), dstEdge))
                 end
                 Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
@@ -324,7 +339,7 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
         else
             addEdge = true
             dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
-            if src(newEdge) > 0  && dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
+            if dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
                 removeEdge!(bp.fpb, Edge(src(newEdge), dstEdge))
             end
             Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
@@ -336,7 +351,7 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
             if (score > prv[1][2])
                 addEdge = true
                 srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
-                if src(newEdge) > 0  && srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
+                if srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
                     removeEdge!(bp.fpb, Edge(srcEdge, dst(newEdge)))
                 end
                 Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
@@ -345,7 +360,7 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
         else
             addEdge = true
             srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
-            if src(newEdge) > 0  && srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
+            if srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
                 removeEdge!(bp.fpb, Edge(srcEdge, dst(newEdge)))
             end
             Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
@@ -370,5 +385,5 @@ end
 function removeEdge!(fpb::FlowProblem, e::Edge)
     delete!(fpb.time, e)
     delete!(fpb.profit, e)
-    rem_edge!(fpb.g, e)
+    rem_edge!(fpb.g, e) || error("Edge removal failed")
 end
