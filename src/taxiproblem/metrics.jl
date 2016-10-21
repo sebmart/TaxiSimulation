@@ -67,7 +67,7 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
 
     rev = fill(0., length(pb.taxis))
     costs = fill(0., length(pb.taxis))
-    tolalTime = 0.
+    totalTime = 0.
     for (k,a) in enumerate(actions)
         driveTime = 0.
         fullTime = 0.
@@ -87,9 +87,9 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
         m.emptyDriveTime += driveTime
 
         taxiTime = isempty(a.times) ? pb.simTime : (a.times[end][2] + pb.customerTime) # here we assume that the taxi ends with a drop-off
-        fullTime += pb.simTime
+        totalTime += pb.simTime
 
-        costs[k] += (fullTime - driveTime)*pb.waitingCost
+        costs[k] += (pb.simTime - driveTime)*pb.waitingCost
 
 
     end
@@ -99,7 +99,7 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
     m.costs = sum(costs)
     m.profit = sum(profit)
     m.emptyDriveRatio = m.emptyDriveTime/(m.driveTime + EPS)
-    m.driveRatio = m.driveTime/fullTime
+    m.driveRatio = m.driveTime/totalTime
     m.demandRatio /= length(pb.custs)
     m.taxiProfitMean = m.profit/length(pb.taxis)
     m.taxiProfitStd = std(profit)
