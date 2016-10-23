@@ -62,17 +62,16 @@ pureOffline(pb::TaxiProblem) = updateTcall(pb::TaxiProblem, Inf, random=false)
 pureOnline(pb::TaxiProblem) = updateTcall(pb::TaxiProblem, 0., random=false)
 
 """
-    `updateTmax`, change the lengths of time-windows (!not a deep copy!)
+    `updateTmax!`, change the lengths of time-windows
     - either with fixed offset time or with uniform random
 """
-function updateTmax(pb::TaxiProblem, time::Float64; random::Bool = false)
-    pb2 = copy(pb)
+function updateTmax!(pb::TaxiProblem, time::Float64; random::Bool = false)
     if random
-        pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + rand()*time, pb.simTime), c.fare) for c in pb.custs]
+        pb.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + rand()*time, pb.simTime), c.fare) for c in pb.custs]
     else
-        pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + time, pb.simTime), c.fare) for c in pb.custs]
+        pb.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + time, pb.simTime), c.fare) for c in pb.custs]
     end
-    return pb2
+    return pb
 end
 
 """

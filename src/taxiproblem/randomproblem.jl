@@ -56,6 +56,6 @@ function addDistributedTaxis!(pb::TaxiProblem, nTaxis::Int = div(nNodes(pb.netwo
     if isempty(pb.custs)
         error("customers have to be added before!")
     end
-    pb.taxis = [Taxi(i,pb.custs[rand(1:end)].orig, 0.) for i = 1:nTaxis]
+    pb.taxis = [Taxi(i, rand()<0.5 ? rand(pb.custs).dest : rand(pb.custs).orig, 0.) for i = 1:nTaxis]
     pb
 end
