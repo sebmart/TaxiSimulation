@@ -105,3 +105,12 @@ function onlineSubproblem(pb::TaxiProblem, t::Number)
     end
     return pb2
 end
+
+"""
+    `shuffleCustomers!` shuffle the customer IDs, useful to subset the customers
+"""
+function shuffleCustomers!(pb::TaxiProblem)
+    shuffle!(pb.custs)
+    pb.custs = [Customer(i, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare) for (i,c) in enumerate(pb.custs)]
+    return pb
+end

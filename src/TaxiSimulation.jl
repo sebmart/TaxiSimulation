@@ -14,6 +14,7 @@ import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpd
 export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproblem
+export shuffleCustomers!
 
 # offline
 export CustomerTimeWindow, OfflineSolution, BenchmarkPoint, FlowProblem, FlowSolution,  kLinks
