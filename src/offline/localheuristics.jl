@@ -160,7 +160,7 @@ end
     `backboneSearch` searches is a local search that iteratively solves LPs to find a good
      backbone, and MIPs to update the solution
 """
-function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlow();
+function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolution();
                             maxEdges::Int=typemax(Int),
                             localityRatio::Real = 0.5,
                             maxTime::Real = 60,
