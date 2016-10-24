@@ -41,7 +41,7 @@ end
     `updateTcall`, change the request times (!not a deep copy!)
     - either with fixed offset time or with uniform random
 """
-function updateTcall(pb::TaxiProblem, time::Float64; random::Bool = false)
+function updateTcall(pb::TaxiProblem, time::Real; random::Bool = false)
     pb2 = copy(pb)
     if random
         pb2.custs = Customer[Customer(c.id,c.orig,c.dest, max(0., c.tmin-rand()*time), c.tmin, c.tmax, c.fare) for c in pb.custs]
@@ -65,7 +65,7 @@ pureOnline(pb::TaxiProblem) = updateTcall(pb::TaxiProblem, 0., random=false)
     `updateTmax`, change the lengths of time-windows (!not a deep copy!)
     - either with fixed offset time or with uniform random
 """
-function updateTmax(pb::TaxiProblem, time::Float64; random::Bool = false)
+function updateTmax(pb::TaxiProblem, time::Real; random::Bool = false)
     pb2 = copy(pb)
     if random
         pb2.custs = Customer[Customer(c.id, c.orig, c.dest, c.tcall, c.tmin, min(c.tmin + rand()*time, pb.simTime), c.fare) for c in pb.custs]
@@ -83,7 +83,7 @@ noTmax(pb::TaxiProblem) = updateTmax(pb, Inf, random=false)
 """
     `onlineSubproblem` returns offline problem to solve at a precise time in an online setting
 """
-function onlineSubproblem(pb::TaxiProblem, t::Number)
+function onlineSubproblem(pb::TaxiProblem, t::Real)
     tt = getPathTimes(pb.times)
 
     custs = Customer[]
