@@ -48,7 +48,7 @@ function Base.show(io::IO, m::Metrics)
     else
         @printf("In total, %.2fh of driving\n", m.driveTime/3600.)
     end
-    @printf("%.2f%% of waiting time, %.2f%% of empty rides, \n", 100*(1.-m.driveRatio), m.emptyDriveRatio*100.)
+    @printf("%.2f%% of waiting time, %.2f%% of driving time is empty, \n", 100*(1.-m.driveRatio), m.emptyDriveRatio*100.)
     @printf("Fairness: taxi profit = \$%.2f +- \$%.2f\n", m.taxiProfitMean, m.taxiProfitStd)
 end
 """
@@ -70,10 +70,9 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
     totalTime = 0.
     for (k,a) in enumerate(actions)
         driveTime = 0.
-        fullTime = 0.
         for i in 1:length(a.path)-1
             costs[k] += rc[a.path[i], a.path[i+1]]
-            driveTime += rt[a.path[i], a.path[i+1]]
+            m.driveTime += rt[a.path[i], a.path[i+1]]
             m.driveDistance += pb.network.roads[a.path[i], a.path[i+1]].distance
         end
 
@@ -83,16 +82,14 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
             m.emptyDriveTime -= tt[pb.custs[c.id].orig, pb.custs[c.id].dest] + 2*pb.customerTime
             m.demandRatio += 1.
         end
-        m.driveTime      += driveTime
-        m.emptyDriveTime += driveTime
-
-        taxiTime = isempty(a.times) ? pb.simTime : (a.times[end][2] + pb.customerTime) # here we assume that the taxi ends with a drop-off
-        totalTime += pb.simTime
+        totalTime += isempty(a.times) ? pb.simTime : (a.times[end][2] + pb.customerTime) # here we assume that the taxi ends with a drop-off
 
         costs[k] += (pb.simTime - driveTime)*pb.waitingCost
 
 
     end
+    m.emptyDriveTime += m.driveTime
+
     profit = rev - costs
 
     m.revenues = sum(rev)
@@ -101,7 +98,7 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
     m.emptyDriveRatio = m.emptyDriveTime/(m.driveTime + EPS)
     m.driveRatio = m.driveTime/totalTime
     m.demandRatio /= length(pb.custs)
-    m.taxiProfitMean = m.profit/length(pb.taxis)
+    m.taxiProfitMean = mean(m.profit)
     m.taxiProfitStd = std(profit)
 
     return m
