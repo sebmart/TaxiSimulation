@@ -98,7 +98,7 @@ function computeMetrics(pb::TaxiProblem, actions::Vector{TaxiActions})
     m.emptyDriveRatio = m.emptyDriveTime/(m.driveTime + EPS)
     m.driveRatio = m.driveTime/totalTime
     m.demandRatio /= length(pb.custs)
-    m.taxiProfitMean = mean(m.profit)
+    m.taxiProfitMean = mean(profit)
     m.taxiProfitStd = std(profit)
 
     return m
