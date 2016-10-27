@@ -165,6 +165,7 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolutio
                             localityRatio::Real = 0.5,
                             maxTime::Real = 60,
                             maxExplorationTime::Real=20,
+                            maxSolvingTime::Real=20,
                             verbose::Int=1, args...)
     i = 0
     sol = copySolution(start)
@@ -193,7 +194,7 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolutio
         end
         verbose > 0 && @printf("%.1fs exploration (%d LPs) - %d links - ", time() - iterStart, explorationCount, ne(backbone.g))
 
-        sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=(verbose>1); args...)
+        sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=(verbose>1), TimeLimit=maxSolvingTime; args...)
 
         verbose > 0 && @printf("%.1fs total - \$%.2f profit\n", time() - iterStart, solutionApproxProfit(fpb, sol))
     end
