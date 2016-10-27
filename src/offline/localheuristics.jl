@@ -187,7 +187,7 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolutio
         end
 
         while ne(backbone.g) <= maxEdges && (time()-iterStart) <= maxExplorationTime
-            lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=(verbose > 2))
+            lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=(verbose > 2); args...)
             addLinks!(backbone, lpSol)
             explorationCount += 1
         end

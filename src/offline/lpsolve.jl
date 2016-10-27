@@ -13,7 +13,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
 
     #Solver : Gurobi (modify parameters)
     of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(OutputFlag=of; solverArgs...))
+    m = Model(solver= GurobiSolver(OutputFlag=of, Method=1; solverArgs...)) # Dual Simplex works well
     # =====================================================
     # Decision variables
     # =====================================================
