@@ -179,16 +179,19 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolutio
         backbone = emptyFlow(fpb)
         addLinks!(backbone, sol)
         tw = timeWindows(fpb, sol)
+        explorationCount = 0
         while ne(backbone.g) <= maxEdges * localityRatio && (time()-iterStart) <= maxExplorationTime
             lpSol = lpFlow(fpb, randPickupTimes(fpb, tw), verbose=false)
             addLinks!(backbone, lpSol)
+            explorationCount += 1
         end
 
         while ne(backbone.g) <= maxEdges && (time()-iterStart) <= maxExplorationTime
             lpSol = lpFlow(fpb, randPickupTimes(fpb), verbose=(verbose > 2))
             addLinks!(backbone, lpSol)
+            explorationCount += 1
         end
-        verbose > 0 && @printf("%.1fs exploration - ", time() - iterStart)
+        verbose > 0 && @printf("%.1fs exploration (%d LPs) - %d links - ", time() - iterStart, explorationCount, ne(backbone.g))
 
         sol = mipFlow(backbone, sol, MIPGap=1e-7, Presolve=2, FlowCoverCuts=2, verbose=(verbose>1); args...)
 
