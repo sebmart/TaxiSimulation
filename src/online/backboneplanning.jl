@@ -28,8 +28,16 @@ type BackbonePlanning <: OnlineAlgorithm
     maxEdges::Int
     "Maximum time of backbone exploration"
     maxExplorationTime::Float64
+    "Maximum time of backbone solving (mip)"
+    maxSolvingTime::Float64
+    "Level of output"
+    verbose::Int
+    "Parameters for solver"
+    solverParams
 
-    function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30, maxEdges::Int=1500, maxExplorationTime::Real=10)
+    function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30,
+                               maxEdges::Int=1500, maxExplorationTime::Real=10, maxSolvingTime::Real=10,
+                               verbose::Int=0, solverParams...)
         bp = new()
         if edgesPerNode < 2
             error("Not enough edges per node")
@@ -40,6 +48,9 @@ type BackbonePlanning <: OnlineAlgorithm
         bp.maxEdges = maxEdges
         bp.iterTime = iterTime
         bp.maxExplorationTime = maxExplorationTime
+        bp.maxSolvingTime = maxSolvingTime
+        bp.verbose = verbose
+        bp.solverParams = solverParams
         return bp
     end
 end
@@ -65,7 +76,9 @@ function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
     end
 
     # first solution
-    bp.s = backboneSearch(fpb, bp.s, verbose=1, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime)
+    bp.s = backboneSearch(fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
+                                     maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime,
+                                     maxSolvingTime=bp.maxSolvingTime; bp.solverParams...)
 end
 
 function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vector{Customer})
@@ -77,7 +90,9 @@ function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vec
         bp.pb.custs[c.id] = c
         addCustomer!(bp, c.id)
     end
-    bp.s = backboneSearch(bp.fpb, bp.s, verbose=1, maxEdges=bp.maxEdges, localityRatio=1, maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime)
+    bp.s = backboneSearch(bp.fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
+                                        maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime
+                                        maxSolvingTime=bp.maxSolvingTime; bp.solverParams...)
 
 
     return computeActions!(bp::BackbonePlanning, endTime::Float64)
