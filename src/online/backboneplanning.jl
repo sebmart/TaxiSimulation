@@ -91,7 +91,7 @@ function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vec
         addCustomer!(bp, c.id)
     end
     bp.s = backboneSearch(bp.fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
-                                        maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime
+                                        maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime,
                                         maxSolvingTime=bp.maxSolvingTime; bp.solverParams...)
 
 
