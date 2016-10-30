@@ -7,7 +7,7 @@
 
 """
     `BackbonePlanning` : OnlineAlgorithm subtype that maintains a FlowProblem and an offline
-    FlowSolution. Use local backbone search to solve the problem at each iteration.
+    FlowSolution. Use local backbone search or pure LP to solve the problem at each iteration.
 """
 type BackbonePlanning <: OnlineAlgorithm
     "The taxi problem, partially updated"
@@ -34,10 +34,12 @@ type BackbonePlanning <: OnlineAlgorithm
     verbose::Int
     "Parameters for solver"
     solverParams
+    "Method for solving problem"
+    flowSolver::String
 
     function BackbonePlanning(;edgesPerNode::Int=10, precompTime::Real=100, iterTime::Real=30,
                                maxEdges::Int=1500, maxExplorationTime::Real=10, maxSolvingTime::Real=10,
-                               verbose::Int=0, solverParams...)
+                               verbose::Int=0, flowSolver::String="backbone", solverParams...)
         bp = new()
         if edgesPerNode < 2
             error("Not enough edges per node")
@@ -51,6 +53,9 @@ type BackbonePlanning <: OnlineAlgorithm
         bp.maxSolvingTime = maxSolvingTime
         bp.verbose = verbose
         bp.solverParams = solverParams
+        bp.flowSolver = flowSolver
+
+        @test flowSolver in ["backbone", "lastflow"]
         return bp
     end
 end
@@ -76,9 +81,13 @@ function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
     end
 
     # first solution
-    bp.s = backboneSearch(fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
+    if bp.flowSolver == "backbone"
+        bp.s = backboneSearch(fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
                                      maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime,
                                      maxSolvingTime=bp.maxSolvingTime; bp.solverParams...)
+    elseif bp.flowSolver == "lastflow"
+        bp.s = lpFlow(fpb, fixedPickupTimes(fpb, 1.), verbose=(bp.verbose >= 2), TimeLimit=bp.precompTime; bp.solverParams...)
+    end
 end
 
 function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vector{Customer})
@@ -90,10 +99,12 @@ function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vec
         bp.pb.custs[c.id] = c
         addCustomer!(bp, c.id)
     end
-    bp.s = backboneSearch(bp.fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
-                                        maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime,
-                                        maxSolvingTime=bp.maxSolvingTime; bp.solverParams...)
-
+    if bp.flowSolver == "backbone"
+        bp.s = backboneSearch(bp.fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
+                                     maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime; bp.solverParams...)
+    elseif bp.flowSolver == "lastflow"
+        bp.s = lpFlow(bp.fpb, fixedPickupTimes(bp.fpb, 1.), verbose=(bp.verbose >= 2); bp.solverParams...)
+    end
 
     return computeActions!(bp::BackbonePlanning, endTime::Float64)
 end
