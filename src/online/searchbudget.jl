@@ -33,7 +33,7 @@ type SearchBudget <: OfflinePlanning
 
     function SearchBudget(;update_solver::Function = (pb,init,custs,t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
 		 time_budget::Float64=1.,  update_freq::Float64=0.,
-		 precompute_solver::Function=(pb,custs) -> update_solver(pb, orderedInsertions(pb), custs, 5))
+		 precompute_solver::Function=(pb,custs) -> localDescent(pb, orderedInsertions!(partialOfflineSolution(pb, custs)),maxTime=t, maxSearch = 1,verbose=false))
 
 		sb = new()
 
