@@ -255,8 +255,10 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         end
         for e in out_edges(fpb.g, oldNode)
             newEdge = Edge(newNode, dst(e))
-            fpb.time[newEdge] = pop!(fpb.time, e)
-            fpb.profit[newEdge] = pop!(fpb.profit, e)
+            if haskey(fpb.time, e)
+                fpb.time[newEdge] = pop!(fpb.time, e)
+                fpb.profit[newEdge] = pop!(fpb.profit, e)
+            end
             if e in bp.s.edges
                 delete!(bp.s.edges, e)
                 push!(bp.s.edges, newEdge)
