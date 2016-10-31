@@ -179,10 +179,14 @@ function backboneSearch(fpb::FlowProblem, start::FlowSolution = emptyFlowSolutio
         # backbone search phase
         backbone = emptyFlow(fpb)
         addLinks!(backbone, sol)
+
+        # last flow generally yields a good solution, so we add it first
+        addLinks!(backbone, lpFlow(fpb, fixedPickupTimes(fpb, 1.), verbose=(verbose > 2)))
+        
         tw = timeWindows(fpb, sol)
-        explorationCount = 0
+        explorationCount = 1
         while ne(backbone.g) <= maxEdges * localityRatio && (time()-iterStart) <= maxExplorationTime
-            lpSol = lpFlow(fpb, randPickupTimes(fpb, tw), verbose=false)
+            lpSol = lpFlow(fpb, randPickupTimes(fpb, tw), verbose=(verbose > 2))
             addLinks!(backbone, lpSol)
             explorationCount += 1
         end
