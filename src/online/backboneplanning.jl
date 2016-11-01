@@ -101,7 +101,7 @@ function onlineUpdate!(bp::BackbonePlanning, endTime::Float64, newCustomers::Vec
     end
     if bp.flowSolver == "backbone"
         bp.s = backboneSearch(bp.fpb, bp.s, verbose=bp.verbose, maxEdges=bp.maxEdges, localityRatio=1,
-                                     maxTime=bp.precompTime, maxExplorationTime=bp.maxExplorationTime; bp.solverParams...)
+                                     maxTime=bp.iterTime, maxExplorationTime=bp.maxExplorationTime; bp.solverParams...)
     elseif bp.flowSolver == "lastflow"
         bp.s = lpFlow(bp.fpb, fixedPickupTimes(bp.fpb, 1.), verbose=(bp.verbose >= 2); bp.solverParams...)
     end
