@@ -1,5 +1,9 @@
 # TaxiSimulation
-Tools to simulate taxi routing
+Tools to simulate taxi routing, used for the simulations of the OperationsResearch paper "Online Vehicle Routing: The Edge of Optiization in Large-Scale Applications".
+
+# Usage
+This repository contains the code of a Julia v0.5 package, that also builds on the RoutingNetworks package for real life routing network handling and visualization.
+The code is provided "as is" under GNUv3 license. 
 
 ## Visualization controls:
 View:
