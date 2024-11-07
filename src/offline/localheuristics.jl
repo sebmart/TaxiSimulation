@@ -89,7 +89,7 @@ function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::
             t = time()-initT
             min,sec = minutesSeconds(t)
             verbose && (@printf("\r====Try: %i, %.2f dollars (%dm%ds, %.2f tests/min, %.3f%% successful)   ",
-            trys, sol.profit, min, sec, 60.*trys/t, success/(trys-1.)*100.))
+            trys, sol.profit, min, sec, 60. *trys/t, success/(trys-1.) *100.))
         else
             updateSolution!(sol,revertSol)
         end

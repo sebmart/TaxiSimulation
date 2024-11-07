@@ -10,7 +10,7 @@ visualize(s::OfflineSolution)= visualize(TaxiSolution(s))
 	`TaxiEvent` => element that represent a taxi to draw
 	- taxi moves from n1 to n2 (or stays)
 """
-immutable TaxiEvent
+struct TaxiEvent
 	taxi::Int
 	n1::Int
 	n2::Int
@@ -22,7 +22,7 @@ end
 	- action <0 => represent waiting location
 	- c < 0 => rejected
 """
-immutable CustEvent
+struct CustEvent
 	cust::Int
 	action::Int
 end
@@ -30,7 +30,7 @@ end
 """
     `TaxiVisualizer`: NetworkVisualizer that shows taxis actions
 """
-type TaxiVisualizer <: NetworkVisualizer
+mutable struct TaxiVisualizer <: NetworkVisualizer
     # Mandatory attributes
     network::Network
     window::RenderWindow
@@ -78,7 +78,7 @@ function visualInit(v::TaxiVisualizer)
     # set up shapes
 	v.taxiShape = [CircleShape() for i in eachindex(v.s.pb.taxis)]
 	for s in v.taxiShape
-		set_fillcolor(s, SFML.Color(255,0,0))
+		set_fillcolor(s, sfColor_fromRGB(255,0,0))
 	end
 	v.custWaitShape  = [CircleShape() for i in 1:nNodes(v.network)]
 	for s in v.custWaitShape
@@ -87,7 +87,7 @@ function visualInit(v::TaxiVisualizer)
 	v.custDriveShape = [CircleShape() for i in eachindex(v.s.pb.taxis)]
 	for s in v.custDriveShape
 		set_pointcount(s,4)
-		set_fillcolor(s, SFML.Color(0,255,0))
+		set_fillcolor(s, sfColor_fromRGB(0,255,0))
 	end
 	visualRedraw(v)
 
@@ -116,9 +116,9 @@ function visualEvent(v::TaxiVisualizer, event::Event)
 				end
 			end
 			v.selectedTaxi = minTaxi
-			set_fillcolor(v.taxiShape[minTaxi], SFML.Color(255,255,0))
+			set_fillcolor(v.taxiShape[minTaxi], sfColor_fromRGB(255,255,0))
 		else
-			set_fillcolor(v.taxiShape[v.selectedTaxi], SFML.Color(255,0,0))
+			set_fillcolor(v.taxiShape[v.selectedTaxi], sfColor_fromRGB(255,0,0))
 			v.selectedTaxi = 0
 		end
 	end
@@ -173,9 +173,9 @@ function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
 		else #waiting
 			loc = -e.action
 			if e.cust < 0 #rejected
-				set_fillcolor(v.custWaitShape[loc], SFML.Color(255,255,255))
+				set_fillcolor(v.custWaitShape[loc], sfColor_fromRGB(255,255,255))
 			else
-				set_fillcolor(v.custWaitShape[loc], SFML.Color(0,255,0))
+				set_fillcolor(v.custWaitShape[loc], sfColor_fromRGB(0,255,0))
 			end
 			node = v.network.nodes[loc]
 			pos = Vector2f(node.x,-node.y)

@@ -324,7 +324,7 @@ function switchCost(sol::OfflineSolution, k::Int, newC::CustomerTimeWindow, coun
         end
     else
         return max(tt[custs[tw[i].id].dest, nC.orig],
-                   nC.tmin - (countWait? tw[i].tInf : custs[tw[i].id].tmax)
+                   nC.tmin - (countWait ? tw[i].tInf : custs[tw[i].id].tmax)
                            - 2*pb.customerTime
                            - tt[custs[tw[i].id].orig, custs[tw[i].id].dest]),
                i

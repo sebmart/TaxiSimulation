@@ -6,7 +6,7 @@
 """
     `Customer` All data needed to describe a customer
 """
-immutable Customer
+struct Customer
     "customer id"
     id::Int
     "Pick-up node in the graph"
@@ -24,13 +24,13 @@ immutable Customer
 end
 
 function Base.show(io::IO, c::Customer)
-    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare)
+    printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare)
 end
 
 """
     `Taxi`: All data needed to represent a taxi"
 """
-immutable Taxi
+struct Taxi
     id::Int
     initPos::Int
     initTime::Float64
@@ -43,7 +43,7 @@ end
 """
     `TaxiProblem`: All data needed for simulation
 """
-type TaxiProblem
+struct TaxiProblem
     "The routing network of the taxi problem"
     network::Network
     "routing information, time in seconds"
@@ -62,7 +62,7 @@ type TaxiProblem
     customerTime::Float64
 end
 
-TaxiProblem(n::Network, t::RoutingPaths, c::RoutingPaths; customerTime::Float64 = 10., waitingCost = 1./3600.) =
+TaxiProblem(n::Network, t::RoutingPaths, c::RoutingPaths; customerTime::Float64 = 10., waitingCost = 1. /3600.) =
 TaxiProblem(n, t, c, Customer[], Taxi[], 0., waitingCost, customerTime)
 
 function Base.show(io::IO, pb::TaxiProblem)
@@ -83,7 +83,7 @@ Base.copy(p::TaxiProblem) = TaxiProblem(p.network, p.times, p.costs, p.custs, p.
     `CustomerAssignment`:  assignement of a customer to a taxi
     - Order: timeIn - wait - trip - wait - timeOut
 """
-immutable CustomerAssignment
+struct CustomerAssignment
     "customer's ID"
     id::Int
     "pickup time"
@@ -99,7 +99,7 @@ end
 """
     `TaxiActions`: actions of a taxi during a simulation (path, timings and customers)
 """
-type TaxiActions
+mutable struct TaxiActions
     "taxi's ID"
     taxiID::Int
     "path in the network (list of nodes)"
@@ -116,13 +116,13 @@ Base.show(io::IO, t::TaxiActions)=
 """
     `TaxiSolution`: a solution to a TaxiProblem
 """
-type TaxiSolution
+mutable struct TaxiSolution
     "corresponding TaxiProblem"
     pb::TaxiProblem
     "actions of each taxi"
     actions::Vector{TaxiActions}
     "rejected customers"
-    rejected::IntSet
+    rejected::DataStructures.IntSet
     "solution's profit"
     profit::Float64
 end

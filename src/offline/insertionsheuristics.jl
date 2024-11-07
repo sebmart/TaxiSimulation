@@ -56,7 +56,7 @@ function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCus
     best = orderedInsertions(pb, order, earliest=earliest)
 
     #if no customer or only one in problem: stop
-    if best.rejected == IntSet(eachindex(pb.custs)) || length(pb.custs) == 1
+    if best.rejected == DataStructures.IntSet(eachindex(pb.custs)) || length(pb.custs) == 1
         verbose && println("Final profit: $(best.profit) dollars")
         return best
     end
@@ -81,7 +81,7 @@ function insertionsDescent(pb::TaxiProblem, start::Vector{Int} =  timeOrderedCus
                 t = time()-initT
                 min,sec = minutesSeconds(t)
                 verbose && (@printf("\r====Try: %i, %.2f dollars (%dm%ds, %.2f tests/min, %.3f%% successful)   ",
-                trys, sol.profit, min, sec, 60.*trys/t, success/(trys-1.)*100.))
+                trys, sol.profit, min, sec, 60. *trys/t, success/(trys-1.)*100.))
             end
             best = sol
             order[i], order[j] = order[j], order[i]

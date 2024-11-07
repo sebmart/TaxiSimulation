@@ -9,7 +9,7 @@
     `BackbonePlanning` : OnlineAlgorithm subtype that maintains a FlowProblem and an offline
     FlowSolution. Use local backbone search or pure LP to solve the problem at each iteration.
 """
-type BackbonePlanning <: OnlineAlgorithm
+mutable struct BackbonePlanning <: OnlineAlgorithm
     "The taxi problem, partially updated"
     pb::TaxiProblem
     "parameter that control the density of the graph representation"

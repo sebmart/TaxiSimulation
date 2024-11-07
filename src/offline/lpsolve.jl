@@ -12,8 +12,15 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     edgeSet = Set(feasibleEdges(l, t))
 
     #Solver : Gurobi (modify parameters)
-    of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(OutputFlag=of, Method=1; solverArgs...)) # Dual Simplex works well
+    of = verbose ? 1 : 0
+
+    m = Model(Gurobi.Optimizer)
+    #(OutputFlag=of, Method=1; solverArgs...)
+    set_attribute(m, "OutputFlag", of)
+    set_attribute(m, "Method", 1)
+    set_attributes(m, solverArgs)
+
+     # Dual Simplex works well
     # =====================================================
     # Decision variables
     # =====================================================

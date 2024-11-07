@@ -6,7 +6,7 @@
 """
     `RealCustomer`, represents a real customer in a network (link to precise time)
 """
-immutable RealCustomer
+struct RealCustomer
     tcall::DateTime
     tmin::DateTime
     tmax::DateTime

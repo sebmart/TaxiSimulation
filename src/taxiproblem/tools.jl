@@ -30,7 +30,7 @@ TaxiActions[TaxiActions(t.id, Int[t.initPos], Float64[], CustomerAssignment[]) f
     `rejectedCustomers`, compute set of rejected customers
 """
 function rejectedCustomers(pb::TaxiProblem, actions::Vector{TaxiActions})
-    rejected = IntSet(eachindex(pb.custs))
+    rejected = DataStructures.IntSet(eachindex(pb.custs))
     for act in actions, c in act.custs
         delete!(rejected, c.id)
     end

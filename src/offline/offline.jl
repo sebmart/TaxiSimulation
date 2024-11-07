@@ -6,7 +6,7 @@
 """
     `CustomerTimeWindow`, the pickup time window of a customer
 """
-type CustomerTimeWindow
+struct CustomerTimeWindow
     "customer's ID"
     id::Int
     "min pickup time"
@@ -19,13 +19,13 @@ end
     `OfflineSolution` : compact representation of offline solution
     - `profit = Inf` when not computed
 """
-type OfflineSolution
+struct OfflineSolution
     "corresponding TaxiProblem"
     pb::TaxiProblem
     "assignments to each taxi"
     custs::Vector{Vector{CustomerTimeWindow}}
     "rejected customers"
-    rejected::IntSet
+    rejected::DataStructures.IntSet
     "solution's profit"
     profit::Float64
 end
@@ -43,7 +43,7 @@ end
 OfflineSolution(pb::TaxiProblem) =
     OfflineSolution(pb,
                     [CustomerAssignment[] for k in 1:length(pb.taxis)],
-                    IntSet(eachindex(pb.custs)),
+                    DataStructures.IntSet(eachindex(pb.custs)),
                     -length(pb.taxis)*pb.waitingCost*pb.simTime)
 OfflineSolution(pb::TaxiProblem, custs::Vector{Vector{CustomerTimeWindow}})=
 OfflineSolution(pb, custs, getRejected(pb, custs), computeMetrics(pb, custs))
@@ -51,7 +51,7 @@ OfflineSolution(pb, custs, getRejected(pb, custs), computeMetrics(pb, custs))
 """
     `BenchmarkPoint`, Benchmark points for offline solvers
 """
-immutable BenchmarkPoint
+struct BenchmarkPoint
     "computation time"
     time::Float64
     "profit"

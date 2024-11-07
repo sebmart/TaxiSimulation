@@ -52,7 +52,7 @@ end
     `getRejected`, compute rejected customers of offline solution
 """
 function getRejected(pb::TaxiProblem, custs::Vector{Vector{CustomerTimeWindow}})
-    rejected = IntSet(1:length(pb.custs))
+    rejected = DataStructures.IntSet(1:length(pb.custs))
     for l in custs, c in l
         delete!(rejected,c.id)
     end
@@ -129,7 +129,7 @@ end
 function testSolution(sol::OfflineSolution)
     pb = sol.pb
     custs = pb.custs
-    rejected = IntSet(eachindex(pb.custs))
+    rejected = DataStructures.IntSet(eachindex(pb.custs))
     tt(i::Int, j::Int) = traveltime(pb.times,i,j)
     custTime = pb.customerTime
 

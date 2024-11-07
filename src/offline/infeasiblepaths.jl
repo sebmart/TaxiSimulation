@@ -9,12 +9,12 @@
     - f[k] corresponds to paths with k+1 edges or k+2 nodes
     - paths are represented as a list of nodes
 """
-typealias FlowInfeasibilities Vector{Array{Edge, 2}}
+const  FlowInfeasibilities=Vector{Array{Edge, 2}}
 
 """
     `DependentWindow`, represent a coupled to a destination. Store the coupling information
 """
-immutable DependentWindow
+struct DependentWindow
     "list of customers in path"
     last::Int
     "Minimum first customer coupled drop-off time"

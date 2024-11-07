@@ -8,10 +8,10 @@
 	- uses an offline solution. Customers that are not rejected yet are either already taken,
 	taken in the future or already rejected
 """
-type SearchBudget <: OfflinePlanning
+mutable struct SearchBudget <: OfflinePlanning
 	pb::TaxiProblem
 	sol::OfflineSolution
-	currentCusts::IntSet
+	currentCusts::DataStructures.IntSet
 	#parameters
 	"Function that takes an offline solution and improves it in limited time"
 	update_solver::Function

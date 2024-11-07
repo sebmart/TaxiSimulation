@@ -8,10 +8,10 @@
 	new customer
 	- pure online
 """
-type NearestTaxi <: OfflinePlanning
+mutable struct NearestTaxi <: OfflinePlanning
 	pb::TaxiProblem
 	sol::OfflineSolution
-	currentCusts::IntSet
+	currentCusts::DataStructures.IntSet
 
 	freeTaxiOnly::Bool
 	customerHeap::Vector{Int}

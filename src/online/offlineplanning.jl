@@ -12,14 +12,14 @@
     Needs to have attributes:
     - `pb::TaxiProblem` the maintained taxi problem
     - `sol::OfflineSolution` the maintained offline solution (contains pb)
-    - `currentCusts::IntSet` the known futur customers
+    - `currentCusts::DataStructures.IntSet` the known futur customers
 
     Needs to implement:
     - `initialPlanning!(OfflinePlanning)` initialize solution
     - `updatePlanning!(OfflinePlanning, endtime, newcustomersIds)`
 
 """
-abstract OfflinePlanning <: OnlineAlgorithm
+abstract type OfflinePlanning <: OnlineAlgorithm end
 
 
 """
@@ -37,7 +37,7 @@ function updatePlanning!(op::OfflinePlanning, endTime::Float64, newCusts::Vector
 end
 
 function onlineInitialize!(op::OfflinePlanning, pb::TaxiProblem)
-    op.currentCusts = IntSet()
+    op.currentCusts = DataStructures.IntSet()
     pb.taxis = copy(pb.taxis)
     op.pb = pb
     if !isempty(pb.custs)

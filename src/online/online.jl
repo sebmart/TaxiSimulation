@@ -12,7 +12,7 @@
     account for new customers, returns a list of TaxiActions since the last update.
 """
 
-abstract OnlineAlgorithm
+abstract type OnlineAlgorithm end
 Base.show(io::IO, t::OnlineAlgorithm)=
     print(io,"Online Algorithm: ", split(string(typeof(t)), ".")[end])
 
@@ -64,7 +64,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
         verbose && (endTime = pb.simTime)
     end
 
-    acceptedCustomers = IntSet()
+    acceptedCustomers = DataStructures.IntSet()
 
     verbose && (lastPrint = -Inf; realTimeStart = time())
 
@@ -112,9 +112,10 @@ end
 """
     `NewCustUpdate`, iterator on customers that creates an update for each new customer
 """
-type NewCustUpdate
+mutable struct NewCustUpdate
     custs::Vector{Customer}
 end
+
 Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
 Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
 function Base.next(it::NewCustUpdate, s::Tuple{Float64, Int})
@@ -135,7 +136,7 @@ end
 """
     `PeriodUpdate`, iterator on customers that creates an update for each fixed period
 """
-type PeriodUpdate
+mutable struct PeriodUpdate
     custs::Vector{Customer}
     period::Float64
     simTime::Float64
