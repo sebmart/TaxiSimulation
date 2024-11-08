@@ -43,7 +43,6 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     # Re-initialize condition to minimal range of valid range for initial solution
     function lazyinfpaths_callback(cb_data)
         # m as model
-        status = callback_node_status(cb_data, m)
         fs = emptyFlow(l)
         for e in edgeList
             if getvalue(x[e]) > 0.9
@@ -54,12 +53,13 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
             # Porting to generic API 
-            cond = @build_constraint(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+            cond = @build_constraint(sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
             MOI.submit(m, MOI.LazyConstraint(cb_data), cond)
         end
     end
 
-    function cutinfpaths(cb)
+    # User-cut algorithm
+    function cutinfpaths_callback(cb_data)
         fs = emptyFlow(l)
         for e in edgeList
             if getvalue(x[e]) > 0.01
@@ -71,7 +71,8 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
             if sum([getvalue(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
 
                 # Port to generic API
-                @usercut(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+                cond = @build_constraint(sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+                MOI.submit(m, MOI.UserCut(cb_data), cond)
             end
         end
     end
@@ -87,6 +88,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
 
     # Edge of flow graph is used
     @variable(m, x[e = edgeList], Bin)
+
     # customer c picked-up only once
     @variable(m, p[v = vertices(l.g)], Bin)
 
@@ -133,12 +135,15 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
     elseif method == "lazyinfpaths"
         # Undefined
-        addlazycallback(m,lazyinfpaths)
+        # addlazycallback(m,lazyinfpaths)
+        set_attribute(m, MOI.LazyConstraintCallback(), lazyinfpaths_callback)
 
     elseif method == "cutinfpaths"
 
         # Undefined
-        addcutcallback(m, cutinfpaths)
+        # addcutcallback(m, cutinfpaths)
+        set_attribute(m, MOI.UserCutCallback(), cutinfpaths_callback)
+
         @constraint(m, cs4[e = edgeList],
         t[dst(e)] - t[src(e)] >= (l.tw[dst(e)][1] - l.tw[src(e)][2]) +
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
