@@ -34,7 +34,7 @@ mutable struct TaxiVisualizer <: NetworkVisualizer
     # Mandatory attributes
     network::Network
     window::RenderWindow
-    nodes::Vector{CircleShape}
+    nodes::Vector{sfCircleShape}
     roads::Dict{Tuple{Int,Int},Line}
 	nodeRadius::Float64
 	colors::VizColors
@@ -46,11 +46,11 @@ mutable struct TaxiVisualizer <: NetworkVisualizer
 	"All the customer events to draw"
 	custEvents::IntervalMap{Float64,CustEvent}
 	"Taxi shapes"
-	taxiShape::Vector{CircleShape}
+	taxiShape::Vector{sfCircleShape}
 	"Waiting customers shapes"
-	custWaitShape::Vector{CircleShape}
+	custWaitShape::Vector{sfCircleShape}
 	"Driving customers shapes"
-	custDriveShape::Vector{CircleShape}
+	custDriveShape::Vector{sfCircleShape}
 	"Current time in simulation"
 	simTime::Float64
 	"seconds of simulation / seconds of real time"
@@ -76,18 +76,18 @@ function visualInit(v::TaxiVisualizer)
 	v.simPaused = false
 
     # set up shapes
-	v.taxiShape = [CircleShape() for i in eachindex(v.s.pb.taxis)]
+	v.taxiShape = [sfCircleShape_create() for i in eachindex(v.s.pb.taxis)]
 	for s in v.taxiShape
-		set_fillcolor(s, sfColor_fromRGB(255,0,0))
+		sfCircleShape_setFillColor(s, sfColor_fromRGB(255,0,0))
 	end
-	v.custWaitShape  = [CircleShape() for i in 1:nNodes(v.network)]
+	v.custWaitShape  = [sfCircleShape_create() for i in 1:nNodes(v.network)]
 	for s in v.custWaitShape
-		set_pointcount(s,4) #customers are "squares"
+		sfCircleShape_setPointCount(s,4) #customers are "squares"
 	end
-	v.custDriveShape = [CircleShape() for i in eachindex(v.s.pb.taxis)]
+	v.custDriveShape = [sfCircleShape_create() for i in eachindex(v.s.pb.taxis)]
 	for s in v.custDriveShape
-		set_pointcount(s,4)
-		set_fillcolor(s, sfColor_fromRGB(0,255,0))
+		sfCircleShape_setPointCount(s,4)
+		sfCircleShape_setFillColor(s, sfColor_fromRGB(0,255,0))
 	end
 	visualRedraw(v)
 
