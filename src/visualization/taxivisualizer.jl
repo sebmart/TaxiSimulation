@@ -33,7 +33,7 @@ end
 mutable struct TaxiVisualizer <: NetworkVisualizer
     # Mandatory attributes
     network::Network
-    window::RenderWindow
+    window::sfRenderWindow
     nodes::Vector{CircleShape}
     roads::Dict{Tuple{Int,Int},Line}
 	nodeRadius::Float64
@@ -105,7 +105,7 @@ function visualEvent(v::TaxiVisualizer, event::Event)
 	elseif get_type(event) == EventType.MOUSE_BUTTON_PRESSED && get_mousebutton(event).button == MouseButton.LEFT
 		if v.selectedTaxi == 0
 			x,y = get_mousebutton(event).x, get_mousebutton(event).y
-	        coord = pixel2coords(v.window,Vector2i(x,y))
+	        coord = sfRenderWindow_mapPixelToCoords(v.window,Vector2i(x,y))
 			minDist = Inf; minTaxi = 0
 			for (k,ts) in enumerate(v.taxiShape)
 				pos = get_position(ts)-Vector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
@@ -147,12 +147,12 @@ function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 	# Are we following a Taxi?
 	minutes, seconds = minutesSeconds(v.simTime)
 	if v.selectedTaxi > 0
-		view = get_view(v.window)
+		view = sfRenderWindow_getView(v.window)
 		set_center(view, get_position(v.taxiShape[v.selectedTaxi])-Vector2f(v.nodeRadius*1.5,v.nodeRadius*1.5))
-		set_view(v.window,view)
-		set_title(v.window, "Selected Taxi: $(v.selectedTaxi), Simulation time : $(minutes)m$(seconds)s")
+		sfRenderWindow_setView(v.window,view)
+		sfRenderWindow_setTitle(v.window, "Selected Taxi: $(v.selectedTaxi), Simulation time : $(minutes)m$(seconds)s")
 	else
-		set_title(v.window, "Simulation time : $(minutes)m$(seconds)s")
+		sfRenderWindow_setTitle(v.window, "Simulation time : $(minutes)m$(seconds)s")
 	end
 
 end
