@@ -1,4 +1,4 @@
-using TaxiSimulation
+using TaxiSimulationPotato
 using Base.Test
 
 tests = [
@@ -8,7 +8,7 @@ tests = [
     "metropolis",
     "online"
     ]
-testdir = joinpath(Pkg.dir("TaxiSimulation"),"test")
+testdir = joinpath(Pkg.dir("TaxiSimulationPotato"),"test")
 
 
 for t in tests
