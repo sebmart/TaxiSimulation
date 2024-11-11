@@ -32,7 +32,7 @@ end
 mipFlow(l::FlowProblem; args...) = mipFlow(l, Union{FlowSolution, Nothing}(); args...)
 mipFlow(l::FlowProblem, s::FlowSolution; args...) =
     mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
-function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
+function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
 
     edgeList = collect(edges(l.g))
@@ -53,7 +53,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
             # Porting to generic API 
-            cond = @build_constraint(sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+            cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
             MOI.submit(m, MOI.LazyConstraint(cb_data), cond)
         end
     end
@@ -71,7 +71,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
             if sum([getvalue(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
 
                 # Port to generic API
-                cond = @build_constraint(sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+                cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
                 MOI.submit(m, MOI.UserCut(cb_data), cond)
             end
         end
@@ -109,7 +109,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         end
     end
 
-    @objective(m, Max, sum{x[e]*l.profit[e], e = edgeList})
+    @objective(m, Max, sum(x[e]*l.profit[e], e = edgeList))
 
     # =====================================================
     # Constraints
@@ -120,11 +120,11 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum{x[e], e = in_edges(l.g, v)} == p[v])
+    sum(x[e], e = in_edges(l.g, v)) == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum{x[e], e = out_edges(l.g, v)} <= p[v])
+    sum(x[e], e = out_edges(l.g, v)) <= p[v])
 
     if method == "pickuptime"
         @constraint(m, cs4[e = edgeList],
@@ -132,7 +132,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
     elseif method == "allinfpaths"
         @constraint(m, cs4[ ik in fi, j=1:size(ik)[2]],
-        sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+        sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
     elseif method == "lazyinfpaths"
         # Undefined
         # addlazycallback(m,lazyinfpaths)
@@ -164,7 +164,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
             fi = allInfeasibilities(fs)
             for ik in fi, j=1:size(ik)[2]
                 outside = true
-                @constraint(m, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+                @constraint(m, sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
             end
         end
     else

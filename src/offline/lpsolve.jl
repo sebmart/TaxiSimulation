@@ -30,7 +30,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     # customer c picked-up only once
     @variable(m, 0 <= p[v = vertices(l.g)] <= 1)
 
-    @objective(m, Max, sum{x[e]*l.profit[e], e = edgeSet})
+    @objective(m, Max, sum(x[e]*l.profit[e], e = edgeSet))
 
     # =====================================================
     # Constraints
@@ -41,11 +41,11 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum{x[e], e = filter( x-> x in edgeSet, in_edges(l.g, v))} == p[v])
+    sum(x[e], e = filter( x-> x in edgeSet, in_edges(l.g, v))) == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum{x[e], e = filter( x-> x in edgeSet, out_edges(l.g, v))} <= p[v])
+    sum(x[e], e = filter( x-> x in edgeSet, out_edges(l.g, v))) <= p[v])
 
     status = solve(m)
     if status == :Infeasible

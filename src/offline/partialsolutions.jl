@@ -6,7 +6,7 @@
     `PartialSolution`: selected taxis assigned customers
     (used to sparsily represent solution changes)
 """
-typealias PartialSolution Dict{Int,Vector{CustomerTimeWindow}}
+const PartialSolution=Dict{Int,Vector{CustomerTimeWindow}}
 
 """
  `EmptyUpdate` partial solution object to avoid constructing it when not using it
@@ -60,7 +60,7 @@ end
 function profitDiff(sol::OfflineSolution, updateSol::PartialSolution)
     profit = 0.
     for (k,u) in updateSol
-        profit +=  taxiProfit(sol.pb,sol.custs[k],k)- taxiProfit(sol.pb,u,k)
+        profit +=  taxiProfit(sol.pb,sol.custs[k],k) - taxiProfit(sol.pb,u,k)
     end
     return profit
 end
