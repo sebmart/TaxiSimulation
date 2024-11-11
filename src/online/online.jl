@@ -115,10 +115,10 @@ end
 mutable struct NewCustUpdate
     custs::Vector{Customer}
 end
-
-Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
-Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
-function Base.next(it::NewCustUpdate, s::Tuple{Float64, Int})
+# Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next), this equals to Base.rest(it::NewCustUpdate, 0)
+# Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
+function Base.iterate(it::NewCustUpdate, s::Tuple{Float64, Int})
+    s[1] == Inf && return nothing
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]
@@ -141,9 +141,11 @@ mutable struct PeriodUpdate
     period::Float64
     simTime::Float64
 end
-Base.start(it::PeriodUpdate) = (0,1) # (iteration number of next, next cust)
-Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
-function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
+# Base.start(it::PeriodUpdate) = (0,1) # This equals to rest(it::PeriodUpdate, 0)
+# Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
+function Base.iterate(it::PeriodUpdate, s::Tuple{Int,Int})
+    # End condition
+    s[1] == typemax(Int) && return nothing 
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period
@@ -154,6 +156,7 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
         end
         i += 1
     end
+
     if s[1]*it.period > it.simTime
         return (newCusts, s[1]*it.period, Inf), (typemax(Int), i)
     else
