@@ -97,41 +97,44 @@ function visualInit(v::TaxiVisualizer)
 end
 
 function visualEvent(v::TaxiVisualizer, event::sfEvent)
-	if event.type == sfEventType.sfEvtKeyPressed
-		k = event.sfKeyEvent.sfKeyCode
-        if k == sfKeyCode.SPACE #pause and play
+	type = unsafe_load(event.type)
+	if type == sfEvtKeyPressed
+		k = unsafe_load(event.key).code
+        if k == sfKeySpace #pause and play
 			v.simPaused = !v.simPaused
-		elseif k == sfKeyCode.R #reverse time
+		elseif k == sfKeyR #reverse time
 			v.simSpeed = -v.simSpeed
 		end
-	elseif event.type == sfEventType.sfEvtMouseButtonPressed && event.button == sfMouseButton.sfMouseLeft
-		if v.selectedTaxi == 0
-			x,y = event.sfMouseButtonEvent.x, event.sfMouseButtonEvent.y
-	        coord = sfRenderWindow_mapPixelToCoords(v.window,
-													sfVector2i(x, y), 
-													sfRenderWindow_getView(v.window))
-			minDist = Inf; minTaxi = 0
-			for (k,ts) in enumerate(v.taxiShape)
-				pos = sfCircleShape_getPosition(ts) - sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
-				dist = distance_squared(pos,coord)
-				if dist < minDist
-					minDist = dist
-					minTaxi = k
+	elseif type == sfEvtMouseButtonPressed
+		if unsafe_unload(event.button) == sfMouseLeft
+			if v.selectedTaxi == 0
+				x,y = event.sfMouseButtonEvent.x, event.sfMouseButtonEvent.y
+				coord = sfRenderWindow_mapPixelToCoords(v.window,
+														sfVector2i(x, y), 
+														sfRenderWindow_getView(v.window))
+				minDist = Inf; minTaxi = 0
+				for (k,ts) in enumerate(v.taxiShape)
+					pos = sfCircleShape_getPosition(ts) - sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
+					dist = distance_squared(pos,coord)
+					if dist < minDist
+						minDist = dist
+						minTaxi = k
+					end
 				end
+				v.selectedTaxi = minTaxi
+				sfCircleShape_setFillColor(v.taxiShape[minTaxi], sfColor_fromRGB(255,255,0))
+			else
+				sfCircleShape_setFillColor(v.taxiShape[v.selectedTaxi], sfColor_fromRGB(255,0,0))
+				v.selectedTaxi = 0
 			end
-			v.selectedTaxi = minTaxi
-			sfCircleShape_setFillColor(v.taxiShape[minTaxi], sfColor_fromRGB(255,255,0))
-		else
-			sfCircleShape_setFillColor(v.taxiShape[v.selectedTaxi], sfColor_fromRGB(255,0,0))
-			v.selectedTaxi = 0
 		end
 	end
 end
 function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 	# Accelerate speed
-	is_key_pressed(KeyCode.E) && (v.simSpeed *= 4^frameTime)
+	sfKeyboard_isKeyPressed(sfKeyE) && (v.simSpeed *= 4^frameTime)
 	# Reduce speed
-	is_key_pressed(KeyCode.W) && (v.simSpeed /= 4^frameTime)
+	sfKeyboard_isKeyPressed(sfKeyW) && (v.simSpeed /= 4^frameTime)
 	# change time
 	!v.simPaused && (v.simTime += frameTime*v.simSpeed)
 
