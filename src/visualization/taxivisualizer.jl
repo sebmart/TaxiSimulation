@@ -105,7 +105,9 @@ function visualEvent(v::TaxiVisualizer, event::sfEvent)
 	elseif event.type == sfEventType.sfEvtMouseButtonPressed && event.button == sfMouseButton.sfMouseLeft
 		if v.selectedTaxi == 0
 			x,y = event.sfMouseButtonEvent.x, event.sfMouseButtonEvent.y
-	        coord = sfRenderWindow_mapPixelToCoords(v.window,Vector{sfVector2i}(x, y))
+	        coord = sfRenderWindow_mapPixelToCoords(v.window,
+													sfVector2i(x, y), 
+													sfRenderWindow_getView(v.window))
 			minDist = Inf; minTaxi = 0
 			for (k,ts) in enumerate(v.taxiShape)
 				pos = sfCircleShape_getPosition(ts)-Vector{sfVector{sfVector2f}}(v.nodeRadius*1.5,v.nodeRadius*1.5)

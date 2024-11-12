@@ -12,7 +12,7 @@ import MathProgBase
 import RoutingNetworksPotato: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualRedraw, visualize
 
 # taxiproblem
-export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics
+export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics, TaxiVisualizer, TaxiEvent
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproblem
 export shuffleCustomers!

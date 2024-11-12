@@ -96,7 +96,7 @@ function onlineSubproblem(pb::TaxiProblem, t::Real)
     pb2 = copy(pb)
     pb2.custs = custs
 
-    pb2.taxis = Array(Taxi, length(pb.taxis))
+    pb2.taxis = Array{Taxi}(undef, length(pb.taxis))
     for k in eachindex(pb2.taxis)
         c = rand(pb2.custs)
         t = pb.taxis[k]
