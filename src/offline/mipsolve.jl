@@ -8,12 +8,12 @@
 """
 
 mipSolve(pb::TaxiProblem; args...) =
-    mipSolve(pb, FlowProblem(pb), Union{OfflineSolution, Nothing}(); args...)
-mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
-    mipSolve(pb, FlowProblem(pb), Union{OfflineSolution, Nothing}(s); args...)
+    mipSolve(pb, FlowProblem(pb), missing; args...)
+# mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
+#     mipSolve(pb, FlowProblem(pb), Union{OfflineSolution, Nothing}(s); args...)
 
-function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Union{OfflineSolution, Nothing}; args...)
-    if !isnull(s)
+function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Union{OfflineSolution, Missing}; args...)
+    if !isequal(s, missing)
         return OfflineSolution(pb, l, mipFlow(l, FlowSolution(l, get(s)); args...))
     else
         return OfflineSolution(pb, l, mipFlow(l; args...))
@@ -29,10 +29,10 @@ end
     - "oainfpaths": outer approximation
     - "cutinfpaths"
 """
-mipFlow(l::FlowProblem; args...) = mipFlow(l, Union{FlowSolution, Nothing}(); args...)
-mipFlow(l::FlowProblem, s::FlowSolution; args...) =
-    mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
-function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
+mipFlow(l::FlowProblem; args...) = mipFlow(l, missing; args...)
+# mipFlow(l::FlowProblem, s::FlowSolution; args...) =
+#     mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
+function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
 
     edgeList = collect(edges(l.g))
@@ -100,7 +100,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=
     # =====================================================
     # Warmstart
     # =====================================================
-    if !isnull(s)
+    if !isequal(s, missing)
         for e in edgeList
             setvalue(x[e], 0)
         end
@@ -109,7 +109,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=
         end
     end
 
-    @objective(m, Max, sum(x[e]*l.profit[e], e = edgeList))
+    @objective(m, Max, sum(x[e]*l.profit[e] for e in edgeList))
 
     # =====================================================
     # Constraints
@@ -120,11 +120,11 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum(x[e], e = in_edges(l.g, v)) == p[v])
+    sum(x[edgetype(l.g)(e, v)] for e in inneighbors(l.g, v)) == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum(x[e], e = out_edges(l.g, v)) <= p[v])
+    sum(x[edgetype(l.g)(e, v)] for e in outneighbors(l.g, v)) <= p[v])
 
     if method == "pickuptime"
         @constraint(m, cs4[e = edgeList],
@@ -132,7 +132,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
     elseif method == "allinfpaths"
         @constraint(m, cs4[ ik in fi, j=1:size(ik)[2]],
-        sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+        sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
     elseif method == "lazyinfpaths"
         # Undefined
         # addlazycallback(m,lazyinfpaths)
@@ -164,7 +164,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Nothing}; verbose::Bool=
             fi = allInfeasibilities(fs)
             for ik in fi, j=1:size(ik)[2]
                 outside = true
-                @constraint(m, sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+                @constraint(m, sum(x[e]  for e in ik[:,j]) <= size(ik)[1] - 1)
             end
         end
     else

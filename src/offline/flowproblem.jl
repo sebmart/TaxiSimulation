@@ -42,8 +42,8 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
     g    = DiGraph(nTaxis + length(custList))
     time = Dict{Edge,Float64}()
     profit = Dict{Edge,Float64}()
-    tw   = Array{Tuple{Float64,Float64}}(nv(g))
-    node2cust = Array{Int}(nv(g))
+    tw   = Array{Tuple{Float64,Float64}}(undef, nv(g))
+    node2cust = Array{Int}(undef, nv(g))
     cust2node = Dict{Int, Int}()
     taxiInit = DataStructures.IntSet(1:length(pb.taxis))
 
