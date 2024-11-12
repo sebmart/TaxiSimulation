@@ -36,7 +36,7 @@ function loadManhattanCustomers(man::Network, fileName::AbstractString)
     TOLLS = findfirst(names, "tolls_amount")
 
     # Constructing tree
-    dataPos = Array(Float32,(2, nNodes(man)))
+    dataPos = Array{Float32,(2, nNodes(man))}
     for (i,node) in enumerate(man.nodes)
        dataPos[1,i] = node.lon
        dataPos[2,i] = node.lat

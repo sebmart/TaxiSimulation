@@ -65,7 +65,7 @@ getRejected(s::OfflineSolution) = getRejected(s.pb, s.custs)
     (compute max time windows)
 """
 function OfflineSolution(s::TaxiSolution)
-    tw = Array(Vector{CustomerTimeWindow}, length(s.pb.taxis))
+    tw = Array{Vector{CustomerTimeWindow}}(undef, length(s.pb.taxis))
     for k in eachindex(s.pb.taxis)
         tw[k] = [CustomerTimeWindow(c.id, s.pb.custs[c.id].tmin, s.pb.custs[c.id].tmax) for c in s.actions[k].custs]
     end
@@ -79,7 +79,7 @@ end
 """
 function TaxiSolution(s::OfflineSolution)
     nTaxis, nCusts = length(s.pb.taxis), length(s.pb.custs)
-    actions = Array(TaxiActions, nTaxis)
+    actions = Array{TaxiActions}(undef, nTaxis)
     tt(i::Int, j::Int) = traveltime(s.pb.times,i,j)
     for k in 1:nTaxis
         custs = CustomerAssignment[]
@@ -97,7 +97,7 @@ end
     - Reconstruct all of a taxi's actions from its assigned customers
     - The rule is to wait _before_ going to the next customer if the taxi has to wait
 """
-function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
+function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment ,1})
     tt(i::Int, j::Int) = traveltime(pb.times,i,j)
     times = Float64[]
     prevPos = pb.taxis[id_taxi].initPos
