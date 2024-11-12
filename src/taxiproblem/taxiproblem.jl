@@ -43,7 +43,7 @@ end
 """
     `TaxiProblem`: All data needed for simulation
 """
-struct TaxiProblem
+mutable struct TaxiProblem
     "The routing network of the taxi problem"
     network::Network
     "routing information, time in seconds"
