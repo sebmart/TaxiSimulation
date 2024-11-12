@@ -5,7 +5,8 @@
 
 visualize(s::TaxiSolution)   = visualize(TaxiVisualizer(s))
 visualize(s::OfflineSolution)= visualize(TaxiSolution(s))
-
+function Base.:-(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x - b.x, a.y - b.y) end
+function Base.:+(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x + b.x, a.y + b.y) end
 """
 	`TaxiEvent` => element that represent a taxi to draw
 	- taxi moves from n1 to n2 (or stays)
@@ -33,8 +34,9 @@ end
 mutable struct TaxiVisualizer <: NetworkVisualizer
     # Mandatory attributes
     network::Network
-    window::sfRenderWindow
-    nodes::Vector{sfCircleShape}
+    window::Ptr{sfRenderWindow}
+	view::Ptr{sfView}
+    nodes::Vector{Ptr{sfCircleShape}}
     roads::Dict{Tuple{Int,Int},RoutingNetworksPotato.Line}
 	nodeRadius::Float64
 	colors::VizColors
@@ -46,11 +48,11 @@ mutable struct TaxiVisualizer <: NetworkVisualizer
 	"All the customer events to draw"
 	custEvents::IntervalMap{Float64,CustEvent}
 	"Taxi shapes"
-	taxiShape::Vector{sfCircleShape}
+	taxiShape::Vector{Ptr{sfCircleShape}}
 	"Waiting customers shapes"
-	custWaitShape::Vector{sfCircleShape}
+	custWaitShape::Vector{Ptr{sfCircleShape}}
 	"Driving customers shapes"
-	custDriveShape::Vector{sfCircleShape}
+	custDriveShape::Vector{Ptr{sfCircleShape}}
 	"Current time in simulation"
 	simTime::Float64
 	"seconds of simulation / seconds of real time"
@@ -110,7 +112,7 @@ function visualEvent(v::TaxiVisualizer, event::sfEvent)
 													sfRenderWindow_getView(v.window))
 			minDist = Inf; minTaxi = 0
 			for (k,ts) in enumerate(v.taxiShape)
-				pos = sfCircleShape_getPosition(ts)-Vector{sfVector{sfVector2f}}(v.nodeRadius*1.5,v.nodeRadius*1.5)
+				pos = sfCircleShape_getPosition(ts) - sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
 				dist = distance_squared(pos,coord)
 				if dist < minDist
 					minDist = dist
@@ -138,19 +140,19 @@ function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 		t1, t2, e = interval.first, interval.last, interval.value
 		if e.n1 == e.n2
 			node = v.network.nodes[e.n1]
-			pos = Vector{sfVector2f}(node.x,-node.y)
+			pos = sfVector2f(node.x,-node.y)
 		else
 			p1, p2 = get_points(v.roads[e.n1,e.n2])
 			l = (v.simTime-t1)/(t2-t1)
-			pos = Vector{sfVector2f}((1-l) * p1.x + l * p2.x, (1-l) * p1.y + l * p2.y)
+			pos = sfVector2f((1-l) * p1.x + l * p2.x, (1-l) * p1.y + l * p2.y)
 		end
-		sfCircleShape_setPosition(v.taxiShape[e.taxi],pos-Vector{sfVector2f}(v.nodeRadius*1.5,v.nodeRadius*1.5))
+		sfCircleShape_setPosition(v.taxiShape[e.taxi],pos-sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5))
 	end
 	# Are we following a Taxi?
 	minutes, seconds = minutesSeconds(v.simTime)
 	if v.selectedTaxi > 0
 		view = sfRenderWindow_getView(v.window)
-		set_center(view, sfCircleShape_getPosition(v.taxiShape[v.selectedTaxi])-Vector{sfVector2f}(v.nodeRadius*1.5,v.nodeRadius*1.5))
+		sfView_setCenter(view, sfCircleShape_getPosition(v.taxiShape[v.selectedTaxi])-sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5))
 		sfRenderWindow_setView(v.window,view)
 		sfRenderWindow_setTitle(v.window, "Selected Taxi: $(v.selectedTaxi), Simulation time : $(minutes)m$(seconds)s")
 	else
@@ -169,20 +171,20 @@ function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
 	for interval in intersect(v.custEvents, (v.simTime,v.simTime))
 		t1, t2, e = interval.first, interval.last, interval.value
 		if e.action >0 # in taxi
-			pos = get_position(v.taxiShape[e.action])
-			set_position(v.custDriveShape[e.action], pos + Vector{sfVector2f}(v.nodeRadius*0.3,v.nodeRadius*0.3))
-			draw(v.window,v.custDriveShape[e.action])
+			pos = sfCircleShape_getPosition(v.taxiShape[e.action])
+			sfCircleShape_setPosition(v.custDriveShape[e.action], pos + sfVector2f(v.nodeRadius*0.3,v.nodeRadius*0.3))
+			sfRenderWindow_drawCircleShape(v.window,v.custDriveShape[e.action], C_NULL)
 		else #waiting
 			loc = -e.action
 			if e.cust < 0 #rejected
-				set_fillcolor(v.custWaitShape[loc], sfColor_fromRGB(255,255,255))
+				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(255,255,255))
 			else
-				set_fillcolor(v.custWaitShape[loc], sfColor_fromRGB(0,255,0))
+				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(0,255,0))
 			end
 			node = v.network.nodes[loc]
-			pos = Vector{sfVector2f}(node.x,-node.y)
-			set_position(v.custWaitShape[loc],pos-Vector{sfVector2f}(v.nodeRadius*1.2,v.nodeRadius*1.2))
-			draw(v.window,v.custWaitShape[loc])
+			pos = sfVector2f(node.x,-node.y)
+			sfCircleShape_setPosition(v.custWaitShape[loc],pos - sfVector2f(v.nodeRadius*1.2,v.nodeRadius*1.2))
+			sfRenderWindow_drawCircleShape(v.window,v.custWaitShape[loc], C_NULL)
 		end
 	end
 
@@ -190,16 +192,16 @@ end
 
 function visualRedraw(v::TaxiVisualizer)
 	for s in v.taxiShape
-		set_radius(s, v.nodeRadius*1.5)
+		sfCircleShape_setRadius(s, v.nodeRadius*1.5)
 	end
 	for (i,no) in enumerate(v.nodes)		#Waiting cust
-		pos = get_position(no)
+		pos = sfCircleShape_getPosition(no)
 		s = v.custWaitShape[i]
-		set_radius(s, v.nodeRadius*1.2)
-        set_position(s, pos - Vector{sfVector2f}(v.nodeRadius*1.2,v.nodeRadius*1.2))
+		sfCircleShape_setRadius(s, v.nodeRadius*1.2)
+        sfCircleShape_setPosition(s, pos - sfVector2f(v.nodeRadius*1.2,v.nodeRadius*1.2))
 	end
 	for s in v.custDriveShape		#Moving cust
-		set_radius(s, v.nodeRadius*1.2)
+		sfCircleShape_setRadius(s, v.nodeRadius*1.2)
 	end
 end
 

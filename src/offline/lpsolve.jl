@@ -56,7 +56,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     sol = Set{Edge}()
 
     for e in edgeSet
-        if getvalue(x[e]) > 0.9
+        if value.(x[e]) > 0.9
             push!(sol, e)
         end
     end
