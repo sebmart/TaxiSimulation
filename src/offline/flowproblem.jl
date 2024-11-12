@@ -3,6 +3,13 @@
 ## Flow representation of an offline problem
 ###################################################
 
+function out_edges(g, v)
+    return [edgetype(g)(v, n) for n in outneighbors(g, v)]
+end
+
+function in_edges(g, v)
+    return [edgetype(g)(n, v) for n in inneighbors(g, v)]
+end
 
 """
     `FlowProblem`: represents an offline problem as a flow graph between customers
@@ -198,7 +205,7 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
     rejected = DataStructures.IntSet(eachindex(pb.custs))
     # reconstruct solution
-    for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
+    for k=eachindex(pb.taxis), e = [(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
         if e in s.edges
             c = l.node2cust[dst(e)]
             (c < 0) && error("Taxi should not have incoming edges")
@@ -353,7 +360,7 @@ function timeWindows(l::FlowProblem, s::FlowSolution)
         endPath = false
         while !endPath
             endPath=true
-            for dest in out_neighbors(l.g, orig)
+            for dest in outneighbors(l.g, orig)
                 if e in s.edges
                     tw[dest][1] = max(tw[dest][1], tw[orig][1] + l.time[Edge(orig, dest)])
                     push!(path, dest)

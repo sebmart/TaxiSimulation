@@ -45,7 +45,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
         # m as model
         fs = emptyFlow(l)
         for e in edgeList
-            if getvalue(x[e]) > 0.9
+            if value.(x[e]) > 0.9
                 add_edge!(fs.g, e)
             end
         end
@@ -62,13 +62,13 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     function cutinfpaths_callback(cb_data)
         fs = emptyFlow(l)
         for e in edgeList
-            if getvalue(x[e]) > 0.01
+            if JuMP.value.(x[e]) > 0.01
                 add_edge!(fs.g, e)
             end
         end
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
-            if sum([getvalue(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
+            if sum([JuMP.value.(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
 
                 # Port to generic API
                 cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
@@ -124,7 +124,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum(x[edgetype(l.g)(e, v)] for e in outneighbors(l.g, v)) <= p[v])
+    sum(x[edgetype(l.g)(v, e)] for e in outneighbors(l.g, v)) <= p[v])
 
     if method == "pickuptime"
         @constraint(m, cs4[e = edgeList],
@@ -157,7 +157,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
             status = solve(m)
             fs = emptyFlow(l)
             for e in edgeList
-                if getvalue(x[e]) > 0.9
+                if JuMP.value.(x[e]) > 0.9
                     add_edge!(fs.g, e)
                 end
             end
@@ -168,7 +168,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
             end
         end
     else
-        status = solve(m)
+        status = optimize!(m)
     end
     if status == :Infeasible
         error("Model is infeasible")
@@ -177,7 +177,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     sol = Set{Edge}()
 
     for e in edgeList
-        if getvalue(x[e]) > 0.9
+        if JuMP.value.(x[e]) > 0.9
             push!(sol, e)
         end
     end
