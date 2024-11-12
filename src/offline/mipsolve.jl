@@ -8,12 +8,12 @@
 """
 
 mipSolve(pb::TaxiProblem; args...) =
-    mipSolve(pb, FlowProblem(pb), Nullable{OfflineSolution}(); args...)
-mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
-    mipSolve(pb, FlowProblem(pb), Nullable{OfflineSolution}(s); args...)
+    mipSolve(pb, FlowProblem(pb), missing; args...)
+# mipSolve(pb::TaxiProblem, s::OfflineSolution; args...) =
+#     mipSolve(pb, FlowProblem(pb), Union{OfflineSolution, Nothing}(s); args...)
 
-function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Nullable{OfflineSolution}; args...)
-    if !isnull(s)
+function mipSolve(pb::TaxiProblem, l::FlowProblem, s::Union{OfflineSolution, Missing}; args...)
+    if !isequal(s, missing)
         return OfflineSolution(pb, l, mipFlow(l, FlowSolution(l, get(s)); args...))
     else
         return OfflineSolution(pb, l, mipFlow(l; args...))
@@ -29,51 +29,66 @@ end
     - "oainfpaths": outer approximation
     - "cutinfpaths"
 """
-mipFlow(l::FlowProblem; args...) = mipFlow(l, Nullable{FlowSolution}(); args...)
-mipFlow(l::FlowProblem, s::FlowSolution; args...) =
-    mipFlow(l, Nullable{FlowSolution}(s); args...)
-function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
+mipFlow(l::FlowProblem; args...) = mipFlow(l, missing; args...)
+# mipFlow(l::FlowProblem, s::FlowSolution; args...) =
+#     mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
+function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
 
     edgeList = collect(edges(l.g))
     if method == "allinfpaths"
         fi = allInfeasibilities(l)
     end
-    function lazyinfpaths(cb)
+    
+    # Re-initialize condition to minimal range of valid range for initial solution
+    function lazyinfpaths_callback(cb_data)
+        # m as model
         fs = emptyFlow(l)
         for e in edgeList
-            if getvalue(x[e]) > 0.9
+            if value.(x[e]) > 0.9
+                add_edge!(fs.g, e)
+            end
+        end
+
+        fi = allInfeasibilities(fs)
+        for ik in fi, j=1:size(ik)[2]
+            # Porting to generic API 
+            cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+            MOI.submit(m, MOI.LazyConstraint(cb_data), cond)
+        end
+    end
+
+    # User-cut algorithm
+    function cutinfpaths_callback(cb_data)
+        fs = emptyFlow(l)
+        for e in edgeList
+            if JuMP.value.(x[e]) > 0.01
                 add_edge!(fs.g, e)
             end
         end
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
-            @lazyconstraint(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
-        end
-    end
-    function cutinfpaths(cb)
-        fs = emptyFlow(l)
-        for e in edgeList
-            if getvalue(x[e]) > 0.01
-                add_edge!(fs.g, e)
-            end
-        end
-        fi = allInfeasibilities(fs)
-        for ik in fi, j=1:size(ik)[2]
-            if sum([getvalue(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
-                @usercut(cb, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+            if sum([JuMP.value.(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
+
+                # Port to generic API
+                cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+                MOI.submit(m, MOI.UserCut(cb_data), cond)
             end
         end
     end
+
     #Solver : Gurobi (modify parameters)
-    of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(OutputFlag=of; solverArgs...))
+    of = verbose ? 1 : 0
+    m = Model(Gurobi.Optimizer)
+    #(OutputFlag=of, Method=1; solverArgs...)
+    set_attribute(m, "OutputFlag", of)
     # =====================================================
     # Decision variables
     # =====================================================
 
     # Edge of flow graph is used
     @variable(m, x[e = edgeList], Bin)
+
     # customer c picked-up only once
     @variable(m, p[v = vertices(l.g)], Bin)
 
@@ -85,7 +100,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     # =====================================================
     # Warmstart
     # =====================================================
-    if !isnull(s)
+    if !isequal(s, missing)
         for e in edgeList
             setvalue(x[e], 0)
         end
@@ -94,7 +109,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         end
     end
 
-    @objective(m, Max, sum{x[e]*l.profit[e], e = edgeList})
+    @objective(m, Max, sum(x[e]*l.profit[e] for e in edgeList))
 
     # =====================================================
     # Constraints
@@ -105,11 +120,11 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum{x[e], e = in_edges(l.g, v)} == p[v])
+    sum(x[edgetype(l.g)(e, v)] for e in inneighbors(l.g, v)) == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum{x[e], e = out_edges(l.g, v)} <= p[v])
+    sum(x[edgetype(l.g)(v, e)] for e in outneighbors(l.g, v)) <= p[v])
 
     if method == "pickuptime"
         @constraint(m, cs4[e = edgeList],
@@ -117,11 +132,18 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
     elseif method == "allinfpaths"
         @constraint(m, cs4[ ik in fi, j=1:size(ik)[2]],
-        sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+        sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
     elseif method == "lazyinfpaths"
-        addlazycallback(m,lazyinfpaths)
+        # Undefined
+        # addlazycallback(m,lazyinfpaths)
+        set_attribute(m, MOI.LazyConstraintCallback(), lazyinfpaths_callback)
+
     elseif method == "cutinfpaths"
-        addcutcallback(m, cutinfpaths)
+
+        # Undefined
+        # addcutcallback(m, cutinfpaths)
+        set_attribute(m, MOI.UserCutCallback(), cutinfpaths_callback)
+
         @constraint(m, cs4[e = edgeList],
         t[dst(e)] - t[src(e)] >= (l.tw[dst(e)][1] - l.tw[src(e)][2]) +
         (l.time[e] - (l.tw[dst(e)][1] - l.tw[src(e)][2])) * x[e])
@@ -135,18 +157,18 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
             status = solve(m)
             fs = emptyFlow(l)
             for e in edgeList
-                if getvalue(x[e]) > 0.9
+                if JuMP.value.(x[e]) > 0.9
                     add_edge!(fs.g, e)
                 end
             end
             fi = allInfeasibilities(fs)
             for ik in fi, j=1:size(ik)[2]
                 outside = true
-                @constraint(m, sum{x[e], e in ik[:,j]} <= size(ik)[1] - 1)
+                @constraint(m, sum(x[e]  for e in ik[:,j]) <= size(ik)[1] - 1)
             end
         end
     else
-        status = solve(m)
+        status = optimize!(m)
     end
     if status == :Infeasible
         error("Model is infeasible")
@@ -155,7 +177,7 @@ function mipFlow(l::FlowProblem, s::Nullable{FlowSolution}; verbose::Bool=true, 
     sol = Set{Edge}()
 
     for e in edgeList
-        if getvalue(x[e]) > 0.9
+        if JuMP.value.(x[e]) > 0.9
             push!(sol, e)
         end
     end

@@ -12,8 +12,15 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     edgeSet = Set(feasibleEdges(l, t))
 
     #Solver : Gurobi (modify parameters)
-    of = verbose ? 1:0
-    m = Model(solver= GurobiSolver(OutputFlag=of, Method=1; solverArgs...)) # Dual Simplex works well
+    of = verbose ? 1 : 0
+
+    m = Model(Gurobi.Optimizer)
+    #(OutputFlag=of, Method=1; solverArgs...)
+    set_attribute(m, "OutputFlag", of)
+    set_attribute(m, "Method", 1)
+    set_attributes(m, solverArgs)
+
+     # Dual Simplex works well
     # =====================================================
     # Decision variables
     # =====================================================
@@ -23,7 +30,7 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
     # customer c picked-up only once
     @variable(m, 0 <= p[v = vertices(l.g)] <= 1)
 
-    @objective(m, Max, sum{x[e]*l.profit[e], e = edgeSet})
+    @objective(m, Max, sum(x[e]*l.profit[e], e = edgeSet))
 
     # =====================================================
     # Constraints
@@ -34,11 +41,11 @@ function lpFlow(l::FlowProblem, t::Vector{Float64}; verbose::Bool=true, solverAr
 
     # customer nodes : entry
     @constraint(m, cs2[v = setdiff(vertices(l.g), l.taxiInit)],
-    sum{x[e], e = filter( x-> x in edgeSet, in_edges(l.g, v))} == p[v])
+    sum(x[e], e = filter( x-> x in edgeSet, in_edges(l.g, v))) == p[v])
 
     # all nodes : exit
     @constraint(m, cs3[v = vertices(l.g)],
-    sum{x[e], e = filter( x-> x in edgeSet, out_edges(l.g, v))} <= p[v])
+    sum(x[e], e = filter( x-> x in edgeSet, out_edges(l.g, v))) <= p[v])
 
     status = solve(m)
     if status == :Infeasible

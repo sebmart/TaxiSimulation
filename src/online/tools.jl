@@ -6,7 +6,7 @@
 """
     `partialSolution`, returns empty partial offline solution (some customers are not considered)
 """
-partialOfflineSolution(pb::TaxiProblem, custs::IntSet) =
+partialOfflineSolution(pb::TaxiProblem, custs::DataStructures.IntSet) =
 OfflineSolution(pb,
                 [CustomerAssignment[] for k in 1:length(pb.taxis)],
                 copy(custs),

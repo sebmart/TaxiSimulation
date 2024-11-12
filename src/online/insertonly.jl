@@ -6,10 +6,10 @@
 """
 	`InsertOnly`, OfflinePlanning that just performs insertions in taxis timelines
 """
-type InsertOnly <: OfflinePlanning
+mutable struct InsertOnly <: OfflinePlanning
 	pb::TaxiProblem
 	sol::OfflineSolution
-	currentCusts::IntSet
+	currentCusts::DataStructures.IntSet
 
 	"Do we perform earliest insertions?"
 	earliest::Bool

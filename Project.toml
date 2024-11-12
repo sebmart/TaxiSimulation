@@ -1,0 +1,21 @@
+name = "TaxiSimulationPotato"
+uuid = "9d29bdc0-2f12-4126-aba3-368964913718"
+authors = ["hoangvanphi <hoangvanphi2004@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+RoutingNetworksPotato = "a24f460d-c78e-41ec-a4f0-23a05e4df611"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+Gurobi = "2e9cd046-0924-5485-92f1-d5272153d98b"
+CSFML = "538df835-4bef-5bfa-b281-4025a4f7e8ff"
+IntervalTrees = "524e6230-43b7-53ae-be76-1e9e4d08d11b"
+LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+JLD = "4138dd39-2aa7-5051-a626-17a0bb65d9c8"
+MathProgBase = "fdba3010-5040-5b88-9595-932c9decdf73"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"

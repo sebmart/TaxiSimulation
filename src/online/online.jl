@@ -12,7 +12,7 @@
     account for new customers, returns a list of TaxiActions since the last update.
 """
 
-abstract OnlineAlgorithm
+abstract type OnlineAlgorithm end
 Base.show(io::IO, t::OnlineAlgorithm)=
     print(io,"Online Algorithm: ", split(string(typeof(t)), ".")[end])
 
@@ -64,7 +64,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
         verbose && (endTime = pb.simTime)
     end
 
-    acceptedCustomers = IntSet()
+    acceptedCustomers = DataStructures.IntSet()
 
     verbose && (lastPrint = -Inf; realTimeStart = time())
 
@@ -112,12 +112,13 @@ end
 """
     `NewCustUpdate`, iterator on customers that creates an update for each new customer
 """
-type NewCustUpdate
+mutable struct NewCustUpdate
     custs::Vector{Customer}
 end
-Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next)
-Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
-function Base.next(it::NewCustUpdate, s::Tuple{Float64, Int})
+# Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next), this equals to Base.rest(it::NewCustUpdate, 0)
+# Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
+function Base.iterate(it::NewCustUpdate, s::Tuple{Float64, Int})
+    s[1] == Inf && return nothing
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]
@@ -135,14 +136,16 @@ end
 """
     `PeriodUpdate`, iterator on customers that creates an update for each fixed period
 """
-type PeriodUpdate
+mutable struct PeriodUpdate
     custs::Vector{Customer}
     period::Float64
     simTime::Float64
 end
-Base.start(it::PeriodUpdate) = (0,1) # (iteration number of next, next cust)
-Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
-function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
+# Base.start(it::PeriodUpdate) = (0,1) # This equals to rest(it::PeriodUpdate, 0)
+# Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
+function Base.iterate(it::PeriodUpdate, s::Tuple{Int,Int})
+    # End condition
+    s[1] == typemax(Int) && return nothing 
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period
@@ -153,6 +156,7 @@ function Base.next(it::PeriodUpdate, s::Tuple{Int,Int})
         end
         i += 1
     end
+
     if s[1]*it.period > it.simTime
         return (newCusts, s[1]*it.period, Inf), (typemax(Int), i)
     else

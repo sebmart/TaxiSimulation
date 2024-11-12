@@ -3,15 +3,16 @@
 ## Module: usings, exports, includes
 ###################################################
 
-module TaxiSimulation
+module TaxiSimulationPotato
 
-using RoutingNetworks, Distributions, JuMP, Gurobi, SFML, IntervalTrees, LightGraphs
-using Base.Test, Base.Dates, NearestNeighbors, JLD
+using RoutingNetworksPotato, Distributions, JuMP, Gurobi, CSFML, CSFML.LibCSFML, IntervalTrees, LightGraphs
+using Test, Dates, NearestNeighbors, JLD
+using Pkg, Base.Filesystem, Printf, DataStructures
 import MathProgBase
-import RoutingNetworks: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualRedraw, visualize
+import RoutingNetworksPotato: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualRedraw, visualize
 
 # taxiproblem
-export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics
+export Customer, Taxi, TaxiProblem, CustomerAssignment, TaxiActions, TaxiSolution, Metrics, TaxiVisualizer, TaxiEvent
 export printSolution, addRandomCustomers!, addRandomTaxis!, addDistributedTaxis!
 export updateTcall, pureOffline, pureOnline, updateTmax, noTmax, onlineSubproblem
 export shuffleCustomers!
@@ -31,7 +32,8 @@ export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
 export NetworkVisualizer, visualize
 # Constants
-const PATH = string(Pkg.dir("TaxiSimulation"))
+pkgdir(pkg::String) = abspath(joinpath(dirname(Base.find_package(pkg)), ".."))
+const PATH = pwd()
 const EPS = 1e-4
 
 # main

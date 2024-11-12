@@ -18,7 +18,7 @@ function addRandomCustomers!(pb::TaxiProblem,
                             custCall::Float64 = 30.0 * 60.)
     pb.custs = Customer[]
     tt(i::Int, j::Int) = traveltime(pb.times,i,j)
-    waitTime = Exponential(3600./(custNodeHour*nNodes(pb.network)))
+    waitTime = Exponential(3600. /(custNodeHour*nNodes(pb.network)))
     t = rand(waitTime)
     while t <= simTime
         orig = rand(1:nNodes(pb.network))

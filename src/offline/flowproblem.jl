@@ -3,13 +3,20 @@
 ## Flow representation of an offline problem
 ###################################################
 
+function out_edges(g, v)
+    return [edgetype(g)(v, n) for n in outneighbors(g, v)]
+end
+
+function in_edges(g, v)
+    return [edgetype(g)(n, v) for n in inneighbors(g, v)]
+end
 
 """
     `FlowProblem`: represents an offline problem as a flow graph between customers
     - contains all information to solve (do not need Taxi-Problem)
     - Abstract the problem from the city-graph representation
 """
-type FlowProblem
+struct FlowProblem
     "oriented graph of flow formulation"
     g::DiGraph
     "time of edges"
@@ -23,7 +30,7 @@ type FlowProblem
     "cust ID to node ID"
     cust2node::Dict{Int, Int}
     "nodes where taxis begin"
-    taxiInit::IntSet
+    taxiInit::DataStructures.IntSet
 end
 
 function Base.show(io::IO, l::FlowProblem)
@@ -42,10 +49,10 @@ function FlowProblem(pb::TaxiProblem, custList::AbstractArray{Int64,1} = 1:lengt
     g    = DiGraph(nTaxis + length(custList))
     time = Dict{Edge,Float64}()
     profit = Dict{Edge,Float64}()
-    tw   = Array{Tuple{Float64,Float64}}(nv(g))
-    node2cust = Array{Int}(nv(g))
+    tw   = Array{Tuple{Float64,Float64}}(undef, nv(g))
+    node2cust = Array{Int}(undef, nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = IntSet(1:length(pb.taxis))
+    taxiInit = DataStructures.IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -133,7 +140,7 @@ function emptyFlow(pb::TaxiProblem)
     tw   = Array{Tuple{Float64,Float64}}(nv(g))
     node2cust = Array{Int}(nv(g))
     cust2node = Dict{Int, Int}()
-    taxiInit = IntSet(1:length(pb.taxis))
+    taxiInit = DataStructures.IntSet(1:length(pb.taxis))
 
     for t in pb.taxis
         node2cust[t.id] = -t.id
@@ -153,7 +160,7 @@ end
 """
     `FlowSolution`: compact representation of a flow solution (tied to a problem), just dictionary
 """
-type FlowSolution
+struct FlowSolution
     edges::Set{Edge}
 end
 
@@ -196,9 +203,9 @@ end
 
 function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
-    rejected = IntSet(eachindex(pb.custs))
+    rejected = DataStructures.IntSet(eachindex(pb.custs))
     # reconstruct solution
-    for k=eachindex(pb.taxis), e = out_edges(l.g, l.cust2node[-k])
+    for k=eachindex(pb.taxis), e = [(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
         if e in s.edges
             c = l.node2cust[dst(e)]
             (c < 0) && error("Taxi should not have incoming edges")
@@ -229,7 +236,7 @@ end
     `LinkScores` contain link-scores associated with a FlowProblem network
     - stored in a sorted way (to easily get k-best or update), for each in-neighbor and out-neighbor
 """
-type LinkScores
+struct LinkScores
     nxt::Vector{Vector{Tuple{Int,Float64}}}
     prv::Vector{Vector{Tuple{Int,Float64}}}
 end
@@ -353,7 +360,7 @@ function timeWindows(l::FlowProblem, s::FlowSolution)
         endPath = false
         while !endPath
             endPath=true
-            for dest in out_neighbors(l.g, orig)
+            for dest in outneighbors(l.g, orig)
                 if e in s.edges
                     tw[dest][1] = max(tw[dest][1], tw[orig][1] + l.time[Edge(orig, dest)])
                     push!(path, dest)

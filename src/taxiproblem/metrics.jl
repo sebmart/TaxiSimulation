@@ -7,7 +7,7 @@
     `Metrics`, store performance measures for taxi-routing solutions
     `Inf` if not computed
 """
-type Metrics
+mutable struct Metrics
     # Revenues
     "Solution revenues (customer fares)"
     revenues::Float64
@@ -48,7 +48,7 @@ function Base.show(io::IO, m::Metrics)
     else
         @printf("In total, %.2fh of driving\n", m.driveTime/3600.)
     end
-    @printf("%.2f%% of waiting time, %.2f%% of driving time is empty, \n", 100*(1.-m.driveRatio), m.emptyDriveRatio*100.)
+    @printf("%.2f%% of waiting time, %.2f%% of driving time is empty, \n", 100*(1. -m.driveRatio), m.emptyDriveRatio*100.)
     @printf("Fairness: taxi profit = \$%.2f +- \$%.2f\n", m.taxiProfitMean, m.taxiProfitStd)
 end
 """
