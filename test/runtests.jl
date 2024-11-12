@@ -1,5 +1,6 @@
 using TaxiSimulationPotato
-using Base.Test
+#using Base.Test
+using Pkg
 
 tests = [
     # "manhattan",
