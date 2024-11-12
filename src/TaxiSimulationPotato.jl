@@ -3,7 +3,7 @@
 ## Module: usings, exports, includes
 ###################################################
 
-module TaxiSimulation
+module TaxiSimulationPotato
 
 using RoutingNetworksPotato, Distributions, JuMP, Gurobi, CSFML, CSFML.LibCSFML, IntervalTrees, LightGraphs
 using Test, Dates, NearestNeighbors, JLD
