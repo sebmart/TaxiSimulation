@@ -97,7 +97,7 @@ end
     - Reconstruct all of a taxi's actions from its assigned customers
     - The rule is to wait _before_ going to the next customer if the taxi has to wait
 """
-function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment,1})
+function TaxiActions(pb::TaxiProblem, id_taxi::Int, custs::Array{CustomerAssignment ,1})
     tt(i::Int, j::Int) = traveltime(pb.times,i,j)
     times = Float64[]
     prevPos = pb.taxis[id_taxi].initPos
