@@ -7,6 +7,7 @@ visualize(s::TaxiSolution)   = visualize(TaxiVisualizer(s))
 visualize(s::OfflineSolution)= visualize(TaxiSolution(s))
 function Base.:-(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x - b.x, a.y - b.y) end
 function Base.:+(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x + b.x, a.y + b.y) end
+function norm(a::sfVector2f) return sqrt(a.x ^ 2 + a.y ^ 2) end
 """
 	`TaxiEvent` => element that represent a taxi to draw
 	- taxi moves from n1 to n2 (or stays)
@@ -96,7 +97,7 @@ function visualInit(v::TaxiVisualizer)
 	v.taxiEvents, v.custEvents = constructIntervals(v)
 end
 
-function visualEvent(v::TaxiVisualizer, event::sfEvent)
+function visualEvent(v::TaxiVisualizer, event::Ptr{sfEvent})
 	type = unsafe_load(event.type)
 	if type == sfEvtKeyPressed
 		k = unsafe_load(event.key).code
@@ -106,16 +107,17 @@ function visualEvent(v::TaxiVisualizer, event::sfEvent)
 			v.simSpeed = -v.simSpeed
 		end
 	elseif type == sfEvtMouseButtonPressed
-		if unsafe_unload(event.button) == sfMouseLeft
+		if unsafe_load(event.mouseButton).button == sfMouseLeft
 			if v.selectedTaxi == 0
-				x,y = event.sfMouseButtonEvent.x, event.sfMouseButtonEvent.y
+				x = unsafe_load(event.mouseButton).x
+				y = unsafe_load(event.mouseButton).y
 				coord = sfRenderWindow_mapPixelToCoords(v.window,
 														sfVector2i(x, y), 
 														sfRenderWindow_getView(v.window))
 				minDist = Inf; minTaxi = 0
 				for (k,ts) in enumerate(v.taxiShape)
 					pos = sfCircleShape_getPosition(ts) - sfVector2f(v.nodeRadius*1.5,v.nodeRadius*1.5)
-					dist = distance_squared(pos,coord)
+					dist = norm(pos - coord)
 					if dist < minDist
 						minDist = dist
 						minTaxi = k
@@ -132,9 +134,9 @@ function visualEvent(v::TaxiVisualizer, event::sfEvent)
 end
 function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 	# Accelerate speed
-	sfKeyboard_isKeyPressed(sfKeyE) && (v.simSpeed *= 4^frameTime)
+	Bool(sfKeyboard_isKeyPressed(sfKeyE)) && (v.simSpeed *= 4^frameTime)
 	# Reduce speed
-	sfKeyboard_isKeyPressed(sfKeyW) && (v.simSpeed /= 4^frameTime)
+	Bool(sfKeyboard_isKeyPressed(sfKeyW)) && (v.simSpeed /= 4^frameTime)
 	# change time
 	!v.simPaused && (v.simTime += frameTime*v.simSpeed)
 
@@ -167,7 +169,7 @@ end
 function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
 	#Draw taxis
 	for s in v.taxiShape
-		draw(v.window, s)
+		sfRenderWindow_drawCircleShape(v.window, s, C_NULL)
 	end
 
 	# Iterate through customers to plot
