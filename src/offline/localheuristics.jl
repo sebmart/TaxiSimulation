@@ -67,8 +67,8 @@ function localDescentWithStats!(pb::TaxiProblem, sol::OfflineSolution, verbose::
             if k2 != k1
                 cost, _ = switchCost(sol, k2, switch, countWait)
                 if cost < searchBest[1][1]
-                    Collections.heappop!(searchBest, costOrder)
-                    Collections.heappush!(searchBest, (cost, k2), costOrder)
+                    heappop!(searchBest, costOrder)
+                    heappush!(searchBest, (cost, k2), costOrder)
                 end
             end
         end

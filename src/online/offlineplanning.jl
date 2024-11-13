@@ -41,7 +41,7 @@ function onlineInitialize!(op::OfflinePlanning, pb::TaxiProblem)
     pb.taxis = copy(pb.taxis)
     op.pb = pb
     if !isempty(pb.custs)
-        custs = Array{Customer}(maximum(c.id for c in pb.custs))
+        custs = Array{Customer}(undef, maximum(c.id for c in pb.custs))
 		for c in pb.custs
 			custs[c.id] = c
 			push!(op.currentCusts, c.id)

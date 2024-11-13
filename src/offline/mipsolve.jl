@@ -98,13 +98,10 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     # =====================================================
     # Warmstart
     # =====================================================
+    # Notice that we cannot setValue anymore, porting to initializing variable with value
     if !isequal(s, missing)
-        for e in edgeList
-            setvalue(x[e], 0)
-        end
-        for e in get(s).edges
-            setvalue(x[e], 1)
-        end
+        set_start_value.(x[e = edgeList], 0)
+        set_start_value.(x[e = collect(s.edges)], 1)
     end
 
     @objective(m, Max, sum(x[e]*l.profit[e] for e in edgeList))
