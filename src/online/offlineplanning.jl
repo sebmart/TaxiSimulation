@@ -86,7 +86,7 @@ function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vect
                 newTime = c.tInf + 2*op.pb.customerTime + tt[op.pb.custs[c.id].orig, op.pb.custs[c.id].dest]
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tInf, newTime))
                 op.pb.taxis[k] = Taxi(op.pb.taxis[k].id, op.pb.custs[c.id].dest, newTime)
-                shift!(custs)
+                popfirst!(custs)
                 delete!(op.currentCusts, c.id)
             else
                 break

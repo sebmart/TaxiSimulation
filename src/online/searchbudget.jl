@@ -31,9 +31,14 @@ mutable struct SearchBudget <: OfflinePlanning
 	"total search time (seconds)"
 	totalSearchTime::Float64
 
-    function SearchBudget(;update_solver::Function = (pb,init,custs,t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
-		 time_budget::Float64=1.,  update_freq::Float64=0.,
-		 precompute_solver::Function=(pb,custs) -> localDescent(pb, orderedInsertions!(partialOfflineSolution(pb, custs)),maxTime=t, maxSearch = 1,verbose=false))
+    function SearchBudget(;update_solver::Function=(pb, init, custs, t)->localDescent(pb,init,maxTime=t, maxSearch = 1,verbose=false),
+							time_budget::Float64=1.,  
+							update_freq::Float64=0.,
+							precompute_solver::Function=(pb,custs)->localDescent(	pb, 
+																					orderedInsertions!(partialOfflineSolution(pb, custs)),
+																					maxSearch = 1,
+																					verbose=false)
+							)
 
 		sb = new()
 
@@ -49,6 +54,7 @@ function initialPlanning!(sb::SearchBudget)
     sb.startTime = 0.
 	sb.lastSearchTime = 0. # we consider precomputations as a search
 	sb.totalSearchTime = 0.
+	# Welp you forgot the time budget thingy
 	sb.sol = sb.precompute_solver(sb.pb, sb.currentCusts)
 end
 
