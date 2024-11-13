@@ -44,7 +44,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
         # m as model
         fs = emptyFlow(l)
         for e in edgeList
-            if value.(x[e]) > 0.9
+            if JuMP.value.(x[e]) > 0.9
                 add_edge!(fs.g, e)
             end
         end
@@ -52,7 +52,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
             # Porting to generic API 
-            cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+            cond = @build_constraint(sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
             MOI.submit(m, MOI.LazyConstraint(cb_data), cond)
         end
     end
@@ -70,7 +70,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
             if sum([JuMP.value.(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
 
                 # Port to generic API
-                cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+                cond = @build_constraint(sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
                 MOI.submit(m, MOI.UserCut(cb_data), cond)
             end
         end

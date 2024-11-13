@@ -7,7 +7,7 @@ module TaxiSimulationPotato
 
 using RoutingNetworksPotato, Distributions, JuMP, Gurobi, CSFML, CSFML.LibCSFML, IntervalTrees, LightGraphs
 using Test, Dates, NearestNeighbors, JLD
-using Pkg, Base.Filesystem, Printf, DataStructures
+using Pkg, Base.Filesystem, Printf, DataStructures, Random
 import MathProgBase
 import RoutingNetworksPotato: visualInit, visualEvent, visualStartUpdate, visualEndUpdate, visualRedraw, visualize
 

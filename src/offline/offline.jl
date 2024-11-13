@@ -19,7 +19,7 @@ end
     `OfflineSolution` : compact representation of offline solution
     - `profit = Inf` when not computed
 """
-struct OfflineSolution
+mutable struct OfflineSolution
     "corresponding TaxiProblem"
     pb::TaxiProblem
     "assignments to each taxi"
