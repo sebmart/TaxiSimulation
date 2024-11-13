@@ -6,7 +6,7 @@
 """
     `CustomerTimeWindow`, the pickup time window of a customer
 """
-struct CustomerTimeWindow
+mutable struct CustomerTimeWindow
     "customer's ID"
     id::Int
     "min pickup time"

@@ -34,7 +34,6 @@ mipFlow(l::FlowProblem; args...) = mipFlow(l, missing; args...)
 #     mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
 function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
-
     edgeList = collect(edges(l.g))
     if method == "allinfpaths"
         fi = allInfeasibilities(l)
@@ -85,7 +84,6 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     # =====================================================
     # Decision variables
     # =====================================================
-
     # Edge of flow graph is used
     @variable(m, x[e = edgeList], Bin)
 
@@ -150,11 +148,11 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     end
 
 
-    if method=="oainfpaths"
+    if method == "oainfpaths"
         outside = true
         while outside
             outside = false
-            status = solve(m)
+            status = optimize!(m)
             fs = emptyFlow(l)
             for e in edgeList
                 if JuMP.value.(x[e]) > 0.9
@@ -170,6 +168,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     else
         status = optimize!(m)
     end
+
     if status == :Infeasible
         error("Model is infeasible")
     end
@@ -178,8 +177,10 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
 
     for e in edgeList
         if JuMP.value.(x[e]) > 0.9
+            # println(e, typeof(e))
             push!(sol, e)
         end
     end
+    println(length(sol))
     return FlowSolution(sol)
 end

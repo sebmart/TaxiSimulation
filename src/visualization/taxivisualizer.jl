@@ -147,7 +147,7 @@ function visualStartUpdate(v::TaxiVisualizer, frameTime::Float64)
 			node = v.network.nodes[e.n1]
 			pos = sfVector2f(node.x,-node.y)
 		else
-			p1, p2 = get_points(v.roads[e.n1,e.n2])
+			p1, p2 = v.roads[e.n1,e.n2].rect
 			l = (v.simTime-t1)/(t2-t1)
 			pos = sfVector2f((1-l) * p1.x + l * p2.x, (1-l) * p1.y + l * p2.y)
 		end

@@ -205,7 +205,7 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
     rejected = DataStructures.IntSet(eachindex(pb.custs))
     # reconstruct solution
-    for k=eachindex(pb.taxis), e = [(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
+    for k in eachindex(pb.taxis), e in [edgetype(l.g)(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
         if e in s.edges
             c = l.node2cust[dst(e)]
             (c < 0) && error("Taxi should not have incoming edges")
@@ -228,6 +228,7 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
             end
         end
     end
+
     updateTimeWindows!(pb, custs)
     return OfflineSolution(pb, custs, rejected, solutionProfit(pb, custs))
 end

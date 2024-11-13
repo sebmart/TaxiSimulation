@@ -30,7 +30,7 @@ export partialOfflineSolution
 # data
 export RealCustomer, loadManhattanCustomers, saveByDate, addDataCustomers!
 # visual
-export NetworkVisualizer, visualize
+export NetworkVisualizer, visualize, TaxiVisualizer
 # Constants
 pkgdir(pkg::String) = abspath(joinpath(dirname(Base.find_package(pkg)), ".."))
 const PATH = pwd()
