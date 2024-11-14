@@ -84,6 +84,7 @@ function visualInit(v::TaxiVisualizer)
 	v.custWaitShape  = [sfCircleShape_create() for i in 1:nNodes(v.network)]
 	for s in v.custWaitShape
 		sfCircleShape_setPointCount(s,4) #customers are "squares"
+		sfCircleShape_setFillColor(s, sfColor_fromRGB(220,220,0))
 	end
 	v.custDriveShape = [sfCircleShape_create() for i in eachindex(v.s.pb.taxis)]
 	for s in v.custDriveShape
