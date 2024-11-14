@@ -84,12 +84,12 @@ function visualInit(v::TaxiVisualizer)
 	v.custWaitShape  = [sfCircleShape_create() for i in 1:nNodes(v.network)]
 	for s in v.custWaitShape
 		sfCircleShape_setPointCount(s,4) #customers are "squares"
-		sfCircleShape_setFillColor(s, sfColor_fromRGB(220,220,0))
+		sfCircleShape_setFillColor(s, sfColor_fromRGB(255,0,255))
 	end
 	v.custDriveShape = [sfCircleShape_create() for i in eachindex(v.s.pb.taxis)]
 	for s in v.custDriveShape
 		sfCircleShape_setPointCount(s,4)
-		sfCircleShape_setFillColor(s, sfColor_fromRGB(0,255,0))
+		sfCircleShape_setFillColor(s, sfColor_fromRGB(0,0,255))
 	end
 	visualRedraw(v)
 
@@ -181,9 +181,9 @@ function visualEndUpdate(v::TaxiVisualizer, frameTime::Float64)
 		else #waiting
 			loc = -e.action
 			if e.cust < 0 #rejected
-				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(255,255,255))
+				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(255,0,255))
 			else
-				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(0,255,0))
+				sfCircleShape_setFillColor(v.custWaitShape[loc], sfColor_fromRGB(0,255,255))
 			end
 			node = v.network.nodes[loc]
 			pos = sfVector2f(node.x,-node.y)
