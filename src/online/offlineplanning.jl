@@ -41,7 +41,7 @@ function onlineInitialize!(op::OfflinePlanning, pb::TaxiProblem)
     pb.taxis = copy(pb.taxis)
     op.pb = pb
     if !isempty(pb.custs)
-        custs = Array{Customer}(maximum(c.id for c in pb.custs))
+        custs = Array{Customer}(undef, maximum(c.id for c in pb.custs))
 		for c in pb.custs
 			custs[c.id] = c
 			push!(op.currentCusts, c.id)
@@ -86,7 +86,7 @@ function onlineUpdate!(op::OfflinePlanning, endTime::Float64, newCustomers::Vect
                 newTime = c.tInf + 2*op.pb.customerTime + tt[op.pb.custs[c.id].orig, op.pb.custs[c.id].dest]
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tInf, newTime))
                 op.pb.taxis[k] = Taxi(op.pb.taxis[k].id, op.pb.custs[c.id].dest, newTime)
-                shift!(custs)
+                popfirst!(custs)
                 delete!(op.currentCusts, c.id)
             else
                 break

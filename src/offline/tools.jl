@@ -84,7 +84,7 @@ function TaxiSolution(s::OfflineSolution)
     for k in 1:nTaxis
         custs = CustomerAssignment[]
         for c in s.custs[k]
-            push!( custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt(s.pb.custs[c.id].orig, s.pb.custs[c.id].dest) + 2*s.pb.customerTime))
+            push!(custs, CustomerAssignment(c.id,c.tInf,c.tInf + tt(s.pb.custs[c.id].orig, s.pb.custs[c.id].dest) + 2*s.pb.customerTime))
         end
         actions[k] = TaxiActions(s.pb,k,custs)
     end

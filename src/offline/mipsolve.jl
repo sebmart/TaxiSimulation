@@ -34,7 +34,6 @@ mipFlow(l::FlowProblem; args...) = mipFlow(l, missing; args...)
 #     mipFlow(l, Union{FlowSolution, Nothing}(s); args...)
 function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=true, method::AbstractString="pickuptime", solverArgs...)
 
-
     edgeList = collect(edges(l.g))
     if method == "allinfpaths"
         fi = allInfeasibilities(l)
@@ -45,7 +44,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
         # m as model
         fs = emptyFlow(l)
         for e in edgeList
-            if value.(x[e]) > 0.9
+            if JuMP.value.(x[e]) > 0.9
                 add_edge!(fs.g, e)
             end
         end
@@ -53,7 +52,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
         fi = allInfeasibilities(fs)
         for ik in fi, j=1:size(ik)[2]
             # Porting to generic API 
-            cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+            cond = @build_constraint(sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
             MOI.submit(m, MOI.LazyConstraint(cb_data), cond)
         end
     end
@@ -71,7 +70,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
             if sum([JuMP.value.(x[e]) for e in ik[:,j]]) > size(ik)[1] - 1
 
                 # Port to generic API
-                cond = @build_constraint(sum(x[e], e in ik[:,j]) <= size(ik)[1] - 1)
+                cond = @build_constraint(sum(x[e] for e in ik[:,j]) <= size(ik)[1] - 1)
                 MOI.submit(m, MOI.UserCut(cb_data), cond)
             end
         end
@@ -85,7 +84,6 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     # =====================================================
     # Decision variables
     # =====================================================
-
     # Edge of flow graph is used
     @variable(m, x[e = edgeList], Bin)
 
@@ -100,13 +98,10 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     # =====================================================
     # Warmstart
     # =====================================================
+    # Notice that we cannot setValue anymore, porting to initializing variable with value
     if !isequal(s, missing)
-        for e in edgeList
-            setvalue(x[e], 0)
-        end
-        for e in get(s).edges
-            setvalue(x[e], 1)
-        end
+        set_start_value.(x[e = edgeList], 0)
+        set_start_value.(x[e = collect(s.edges)], 1)
     end
 
     @objective(m, Max, sum(x[e]*l.profit[e] for e in edgeList))
@@ -150,11 +145,11 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     end
 
 
-    if method=="oainfpaths"
+    if method == "oainfpaths"
         outside = true
         while outside
             outside = false
-            status = solve(m)
+            status = optimize!(m)
             fs = emptyFlow(l)
             for e in edgeList
                 if JuMP.value.(x[e]) > 0.9
@@ -170,6 +165,7 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
     else
         status = optimize!(m)
     end
+
     if status == :Infeasible
         error("Model is infeasible")
     end
@@ -178,8 +174,10 @@ function mipFlow(l::FlowProblem, s::Union{FlowSolution, Missing}; verbose::Bool=
 
     for e in edgeList
         if JuMP.value.(x[e]) > 0.9
+            # println(e, typeof(e))
             push!(sol, e)
         end
     end
+    println(length(sol))
     return FlowSolution(sol)
 end

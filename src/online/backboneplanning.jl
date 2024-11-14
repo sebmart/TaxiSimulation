@@ -73,7 +73,7 @@ function onlineInitialize!(bp::BackbonePlanning, pb::TaxiProblem)
     bp.s = emptyFlowSolution()
     # construct the flow-graph customer by customer.
     if !isempty(custs)
-        pb.custs = Array{Customer}(maximum(c.id for c in custs))
+        pb.custs = Array{Customer}(undef, maximum(c.id for c in custs))
         for c in custs
             pb.custs[c.id] = c
             addCustomer!(bp, c.id)
@@ -134,7 +134,7 @@ function computeActions!(bp::BackbonePlanning, endTime::Float64)
                 newTime = c.tInf + 2*bp.pb.customerTime + tt[bp.pb.custs[c.id].orig, bp.pb.custs[c.id].dest]
                 push!(actions[k].custs, CustomerAssignment(c.id, c.tInf, newTime))
                 bp.pb.taxis[k] = Taxi(bp.pb.taxis[k].id, bp.pb.custs[c.id].dest, newTime)
-                shift!(custs)
+                popfirst!(custs)
                 moveTaxi!(bp, k, c.id)
             else
                 break
@@ -216,7 +216,7 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         for (i,d) in enumerate(bp.scores.nxt[src(e)])
             if d[1] == n
                 bp.scores.nxt[src(e)][i] = (0, -Inf)
-                Collections.heapify!(bp.scores.nxt[src(e)], maxScoreOrder)
+                heapify!(bp.scores.nxt[src(e)], maxScoreOrder)
                 break
             end
         end
@@ -228,7 +228,7 @@ function removeNode!(bp::BackbonePlanning, n::Int)
         for (i,o) in enumerate(bp.scores.prv[dst(e)])
             if o[1] == n
                 bp.scores.prv[dst(e)][i] = (0, -Inf)
-                Collections.heapify!(bp.scores.prv[dst(e)], maxScoreOrder)
+                heapify!(bp.scores.prv[dst(e)], maxScoreOrder)
                 break
             end
         end
@@ -352,44 +352,44 @@ function tryAddEdge!(bp::BackbonePlanning, newEdge::Edge)
     prv = bp.scores.prv[dst(newEdge)]
     if (score > nxt[1][2])
         if Edge(src(newEdge), nxt[1][1]) in bp.s.edges
-            minScore = Collections.heappop!(nxt, maxScoreOrder)
+            minScore = heappop!(nxt, maxScoreOrder)
             if (score > nxt[1][2])
                 addEdge = true
-                dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
+                dstEdge = heappop!(nxt, maxScoreOrder)[1]
                 if dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
                     removeEdge!(bp.fpb, Edge(src(newEdge), dstEdge))
                 end
-                Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
+                heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
             end
-            Collections.heappush!(nxt, minScore, maxScoreOrder)
+            heappush!(nxt, minScore, maxScoreOrder)
         else
             addEdge = true
-            dstEdge = Collections.heappop!(nxt, maxScoreOrder)[1]
+            dstEdge = heappop!(nxt, maxScoreOrder)[1]
             if dstEdge > 0 && !(src(newEdge) in (t[1] for t in bp.scores.prv[dstEdge]))
                 removeEdge!(bp.fpb, Edge(src(newEdge), dstEdge))
             end
-            Collections.heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
+            heappush!(nxt, (dst(newEdge), score), maxScoreOrder)
         end
     end
     if (score > prv[1][2])
         if Edge(prv[1][1], dst(newEdge)) in bp.s.edges
-            minScore = Collections.heappop!(prv, maxScoreOrder)
+            minScore = heappop!(prv, maxScoreOrder)
             if (score > prv[1][2])
                 addEdge = true
-                srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
+                srcEdge = heappop!(prv, maxScoreOrder)[1]
                 if srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
                     removeEdge!(bp.fpb, Edge(srcEdge, dst(newEdge)))
                 end
-                Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
+                heappush!(prv, (src(newEdge), score), maxScoreOrder)
             end
-            Collections.heappush!(prv, minScore, maxScoreOrder)
+            heappush!(prv, minScore, maxScoreOrder)
         else
             addEdge = true
-            srcEdge = Collections.heappop!(prv, maxScoreOrder)[1]
+            srcEdge = heappop!(prv, maxScoreOrder)[1]
             if srcEdge > 0 && !(dst(newEdge) in (t[1] for t in bp.scores.nxt[srcEdge]))
                 removeEdge!(bp.fpb, Edge(srcEdge, dst(newEdge)))
             end
-            Collections.heappush!(prv, (src(newEdge), score), maxScoreOrder)
+            heappush!(prv, (src(newEdge), score), maxScoreOrder)
         end
     end
     !(addEdge) && return

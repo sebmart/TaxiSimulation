@@ -137,8 +137,8 @@ function emptyFlow(pb::TaxiProblem)
     g    = DiGraph(nTaxis + length(pb.custs))
     time = Dict{Edge,Float64}()
     profit = Dict{Edge,Float64}()
-    tw   = Array{Tuple{Float64,Float64}}(nv(g))
-    node2cust = Array{Int}(nv(g))
+    tw   = Array{Tuple{Float64,Float64}}(undef, nv(g))
+    node2cust = Array{Int}(undef, nv(g))
     cust2node = Dict{Int, Int}()
     taxiInit = DataStructures.IntSet(1:length(pb.taxis))
 
@@ -205,7 +205,7 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
     custs = [CustomerTimeWindow[] for k in eachindex(pb.taxis)]
     rejected = DataStructures.IntSet(eachindex(pb.custs))
     # reconstruct solution
-    for k=eachindex(pb.taxis), e = [(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
+    for k in eachindex(pb.taxis), e in [edgetype(l.g)(l.cust2node[-k], v) for v in outneighbors(l.g, l.cust2node[-k])]
         if e in s.edges
             c = l.node2cust[dst(e)]
             (c < 0) && error("Taxi should not have incoming edges")
@@ -228,6 +228,7 @@ function OfflineSolution(pb::TaxiProblem, l::FlowProblem, s::FlowSolution)
             end
         end
     end
+
     updateTimeWindows!(pb, custs)
     return OfflineSolution(pb, custs, rejected, solutionProfit(pb, custs))
 end
@@ -354,6 +355,9 @@ randPickupTimes(l::FlowProblem, s::FlowSolution) = randPickupTimes(l,timeWindows
 """
 function timeWindows(l::FlowProblem, s::FlowSolution)
     tw = copy(l.tw)
+    print(typeof(tw))
+    println(tw[1][1])
+
     for n = l.taxiInit
         orig = n
         path = Int[n]
@@ -361,8 +365,11 @@ function timeWindows(l::FlowProblem, s::FlowSolution)
         while !endPath
             endPath=true
             for dest in outneighbors(l.g, orig)
+                # check if
+                e = edgetype(l.g)(orig, dest)
                 if e in s.edges
-                    tw[dest][1] = max(tw[dest][1], tw[orig][1] + l.time[Edge(orig, dest)])
+                    # Why edit tuple :D ???? Replace it with new tuple
+                    tw[dest] = (max(tw[dest][1], tw[orig][1] + l.time[Edge(orig, dest)]), tw[dest][2])
                     push!(path, dest)
                     orig = dest
                     endPath = false
@@ -372,7 +379,9 @@ function timeWindows(l::FlowProblem, s::FlowSolution)
         end
         # go backward for sup
         for i in (length(path)-1):-1:1
-            tw[path[i]][2] = min(tw[path[i]][2], tw[path[i+1]][2] - l.time[e])
+            # Update backward 
+            tw[path[i]] = (tw[path[i]][1], min( tw[path[i]][2], 
+                                                tw[path[i+1]][2] - l.time[Edge(path[i], path[i+1])]))
         end
     end
     return tw

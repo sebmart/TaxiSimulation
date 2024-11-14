@@ -25,7 +25,7 @@ end
 function initialPlanning!(nt::NearestTaxi) #just heapify the customer list by tmin
 	tminOrderF(c::Int) = nt.pb.custs[c].tmin
 	tminOrder = Base.Order.By(tminOrderF)
-	nt.customerHeap = Collections.heapify!(collect(nt.currentCusts), tminOrder)
+	nt.customerHeap = heapify!(collect(nt.currentCusts), tminOrder)
 	nt.sol = OfflineSolution(nt.pb)
 end
 
@@ -36,13 +36,13 @@ function updatePlanning!(nt::NearestTaxi, endTime::Float64, newCustomers::Vector
 	tt = getPathTimes(nt.pb.times)
 
 	for c in newCustomers
-		Collections.heappush!(nt.customerHeap, c, tminOrder)
+		heappush!(nt.customerHeap, c, tminOrder)
 	end
 
 	# Iterates through all customers that appear during interval
 	# and assigns them to the closest free taxi, if available
 	while !isempty(nt.customerHeap) && nt.pb.custs[nt.customerHeap[1]].tmin <= endTime
-		c = nt.pb.custs[Collections.heappop!(nt.customerHeap, tminOrder)]
+		c = nt.pb.custs[heappop!(nt.customerHeap, tminOrder)]
 		taxiIndex = 0; minPickupTime = Inf
 		# Free taxis can have either driven no customers at all or dropped off their last customer before the new customer appears
 		for k in eachindex(nt.pb.taxis)

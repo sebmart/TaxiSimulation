@@ -24,7 +24,7 @@ struct Customer
 end
 
 function Base.show(io::IO, c::Customer)
-    printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare)
+    @printf(io,"Cust %d, %d=>%d, t=(%.2f,%.2f,%.2f), fare=%.2f\$", c.id, c.orig, c.dest, c.tcall, c.tmin, c.tmax, c.fare)
 end
 
 """

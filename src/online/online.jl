@@ -72,7 +72,7 @@ function onlineSimulation(pb::TaxiProblem, oa::OnlineAlgorithm;
         t = time()
         if verbose && t - lastPrint >= 0.5
             m, s  = minutesSeconds(tStart)
-            m2,s2 = minutesSeconds(t-realTimeStart)
+            m2, s2 = minutesSeconds(t-realTimeStart)
             lastPrint = time()
             @printf("\rsim-time: %dm%02ds (%.2f%%) realTime:(%dm%02ds)             ", m,s, 100*tStart/endTime, m2,s2)
         end
@@ -115,10 +115,10 @@ end
 mutable struct NewCustUpdate
     custs::Vector{Customer}
 end
-# Base.start(it::NewCustUpdate) = (0., 1) # (tStart of next, index of next), this equals to Base.rest(it::NewCustUpdate, 0)
-# Base.done(it::NewCustUpdate, s::Tuple{Float64, Int}) = s[1] == Inf
+
+Base.iterate(it::NewCustUpdate) = iterate(it, (0., 1))
 function Base.iterate(it::NewCustUpdate, s::Tuple{Float64, Int})
-    s[1] == Inf && return nothing
+    s[1] == Inf && return 
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]
@@ -141,11 +141,10 @@ mutable struct PeriodUpdate
     period::Float64
     simTime::Float64
 end
+Base.iterate(it::PeriodUpdate) = iterate(it, (0, 1))
 # Base.start(it::PeriodUpdate) = (0,1) # This equals to rest(it::PeriodUpdate, 0)
-# Base.done(it::PeriodUpdate, s::Tuple{Int,Int}) = s[1] == typemax(Int)
 function Base.iterate(it::PeriodUpdate, s::Tuple{Int,Int})
-    # End condition
-    s[1] == typemax(Int) && return nothing 
+    s[1] == typemax(Int) && return  
     newCusts = Customer[]
     i = s[2]
     while i <= length(it.custs) && it.custs[i].tcall <= s[1]*it.period

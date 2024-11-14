@@ -6,7 +6,7 @@
 """
     `CustomerTimeWindow`, the pickup time window of a customer
 """
-struct CustomerTimeWindow
+mutable struct CustomerTimeWindow
     "customer's ID"
     id::Int
     "min pickup time"
@@ -19,7 +19,7 @@ end
     `OfflineSolution` : compact representation of offline solution
     - `profit = Inf` when not computed
 """
-struct OfflineSolution
+mutable struct OfflineSolution
     "corresponding TaxiProblem"
     pb::TaxiProblem
     "assignments to each taxi"
