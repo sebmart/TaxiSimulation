@@ -5,8 +5,6 @@
 
 visualize(s::TaxiSolution)   = visualize(TaxiVisualizer(s))
 visualize(s::OfflineSolution)= visualize(TaxiSolution(s))
-function Base.:-(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x - b.x, a.y - b.y) end
-function Base.:+(a::sfVector2f, b::sfVector2f) return sfVector2f(a.x + b.x, a.y + b.y) end
 function norm(a::sfVector2f) return sqrt(a.x ^ 2 + a.y ^ 2) end
 """
 	`TaxiEvent` => element that represent a taxi to draw
